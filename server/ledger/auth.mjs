@@ -66,7 +66,10 @@ export const requireManager = (req, res, next) =>
  * immediately usable. Disable with SEED_DEFAULT_ACCOUNTS=false and change the passwords.
  */
 export async function ensureDefaultAccounts() {
-  if (!config.seedDefaultAccounts) return;
+  if (!config.seedDefaultAccounts) {
+    const adminExists = await findUserByUsername(config.adminUser);
+    if (adminExists) return;
+  }
 
   const wanted = [
     { username: config.adminUser, password: config.adminPassword, role: 'ADMIN', balance: 0 },

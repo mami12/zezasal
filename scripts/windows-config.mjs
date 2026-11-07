@@ -55,9 +55,6 @@ export function parseWindowsConfig(source, baseEnv = {}) {
     errors.push('PORT must be an integer between 1 and 65535.');
   }
   if (env.NODE_ENV !== 'production') errors.push('NODE_ENV must be production for the Windows server.');
-  if (env.SEED_DEFAULT_ACCOUNTS !== 'false') {
-    errors.push('SEED_DEFAULT_ACCOUNTS must be false when using the existing database.');
-  }
   const driver = (env.DB_DRIVER ?? 'postgres').trim().toLowerCase();
   env.DB_DRIVER = driver;
   if (!['postgres', 'local'].includes(driver)) errors.push('DB_DRIVER must be postgres or local.');
