@@ -1,0 +1,13 @@
+import express from 'express';
+import { fileURLToPath } from 'node:url';
+import { createCtProtocolRouter } from '../server/casino/clover-ct-router.mjs';
+import { createVikingsRouter } from '../server/casino/vikings-ct-router.mjs';
+import { createAgtRouter } from '../server/casino/agt-router.mjs';
+const app=express();
+app.use('/app/api/casino/luckycloverx3',createCtProtocolRouter());
+app.use('/app/api/casino/vikingsfun',createVikingsRouter());
+app.use('/app/api/casino/agt',createAgtRouter());
+app.use('/app',express.static(fileURLToPath(new URL('../web/public/',import.meta.url))));
+app.get('/',(_req,res)=>res.redirect('/app/casino-original/vikings-fun/index.html'));
+const port=Number(process.env.DEMO_PORT||3320);
+app.listen(port,'127.0.0.1',()=>console.log(`Original games: http://127.0.0.1:${port}/`));

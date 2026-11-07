@@ -1,64 +1,115 @@
-import { useState, useEffect } from 'react';
+﻿import { marketDiagnosticAll } from '../../utils/marketExpiry';
+import { selectBoardMarkets, findBoardOutcome } from '../../utils/boardMarkets';
+import ViewportList,{type WindowItem} from './ViewportList';
+import {useFeedScope} from '../../api/feedScope';
+import { useState, useEffect, useRef,useCallback } from 'react';
 import { apiClient } from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
-import { Match } from '../../types';
 import OddsButton from './OddsButton';
-import MarketPanel from './MarketPanel';
+import CountryFlag from './CountryFlag';
 import { useLiveFeed } from '../../api/liveFeed';
+import { liveMatch } from '../../api/matchSync';
 import { useNavigate } from 'react-router-dom';
-import { Radio, ChevronRight, Clock, Shield, Search, CalendarDays } from 'lucide-react';
+import { ChevronRight, Star } from 'lucide-react';
+import { filterDecidedOutcomes, isMarketVisible, isOutcomeDisplayable, isMarketExpired } from '../../utils/marketExpiry';
+
+import { isHandicapMarket } from '../../utils/marketCatalog';
+import { useFavorites } from '../../context/FavoritesContext';
+import { isComboMarket } from '../../utils/comboPolicy';
+import { compareMatchDisplay } from '../../utils/matchOrder';
+import {isFixtureOnDay} from '../../utils/fixtureDates';
+import type {DateFilter} from '../../utils/fixtureDates';
+import { repairDisplayText } from '../../utils/repairDisplayText';
+
+export type MatchViewMode = 'all' | 'live' | 'prematch' | 'favorites';
 
 interface Props {
   tournamentId?: string;
   categoryId?: string;
   sportId?: string;
   isLiveOnly?: boolean;
+  viewMode: MatchViewMode;
+  onViewModeChange: (mode: MatchViewMode) => void;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-type DateFilter = 'all' | 'today' | 'tomorrow';
-
-export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnly }: Props) {
+export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnly, viewMode, searchTerm, onSearchChange }: Props) {
   const [matches, setMatches] = useState<any[]>([]);
+  const [visibleIds,setVisibleIds]=useState<string[]>([]);
+  const onVisible=useCallback((ids:string[])=>setVisibleIds(old=>old.join()===ids.join()?old:ids),[]);
+  useFeedScope('board',{boardIds:visibleIds});
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  // which match has its extra markets (corners, cards, totals) open in the list
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const [dateFilter, setDateFilter] = useState<DateFilter | 'all'>('all');
+  useEffect(()=>setDateFilter('all'),[viewMode]);
+  const { t, lang } = useLanguage();
   const navigate = useNavigate();
-  // minute / score / corners / cards arrive over the socket, so the list is live between polls
-  const { livePatches, lockedMatches, feedMode } = useLiveFeed();
-  // idle mode: while the server is filling the board again there is nothing to show yet, and
-  // "no matches" would be a lie - the fixtures are coming back in a few seconds
+  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const { livePatches, lockedMatches, lockedMarkets, lockedOutcomes, riskLockedOutcomes, feedMode, combosEnabled, refreshVersion, acceptMatches } = useLiveFeed();
   const refreshing = feedMode !== 'live';
-
-  const fetchMatches = async () => {
-    try {
-      setLoading(true);
-      const params: any = {};
-      if (tournamentId) params.tournamentId = tournamentId;
-      if (categoryId) params.categoryId = categoryId;
-      if (sportId) params.sportId = sportId;
-      if (isLiveOnly) params.status = 'LIVE';
-
-      const res = await apiClient.get('/matches', { params });
-      setMatches(res.data);
-    } catch (e) {
-      console.error('Failed to fetch matches:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refreshRef = useRef<(() => void) | null>(null);
+  const lastRefreshVersion = useRef(refreshVersion);
 
   useEffect(() => {
-    fetchMatches();
-    const interval = setInterval(fetchMatches, 15000); // refresh every 15s
-    return () => clearInterval(interval);
-  }, [tournamentId, categoryId, sportId, isLiveOnly]);
+    const controller=new AbortController();
+    let active=true, busy=false, queued=false;
+    const refresh=async()=> {
+      if(!active) return;
+      if(busy) {queued=true;return;}
+      busy=true;
+      try {
+        const params:any={view:'board', _snapshot:Date.now()};
+        if(tournamentId) params.tournamentId=tournamentId;
+        if(categoryId) params.categoryId=categoryId;
+        if(sportId) params.sportId=sportId;
+        if(isLiveOnly) params.status='LIVE';
+        if(viewMode==='prematch')params.status='PREMATCH';
+        if((viewMode==='all'||viewMode==='prematch')&&dateFilter!=='all')params.day=dateFilter;
+        // Finished favorites are fetched by ID from durable final results.
+        // The ordinary board endpoint remains unchanged and excludes ended games.
+        const historyRequest=viewMode==='favorites'&&favorites.length
+          ?apiClient.get('/matches/favorites',{params:{ids:favorites.slice(0,100).join(',')},signal:controller.signal})
+            .then(res=>Array.isArray(res.data)?res.data:[]).catch(()=>[])
+          :Promise.resolve([]);
+        const [res,finished]=await Promise.all([
+          apiClient.get('/matches',{params,signal:controller.signal}),historyRequest,
+        ]);
+        if(active) {
+          const snapshot=Array.isArray(res.data)?res.data:[];
+          acceptMatches(snapshot);
+          const archivedIds=new Set(finished.map((m:any)=>String(m.id)));
+          setMatches([...snapshot.filter((m:any)=>!archivedIds.has(String(m.id))),...finished]);
+        }
+      } catch(error) {if(active) console.error('Failed to fetch matches:',error);}
+      finally {
+        busy=false;
+        if(active) {
+          setLoading(false);
+          if(queued) {queued=false;void refresh();}
+        }
+      }
+    };
+    refreshRef.current=()=>void refresh();
+    setLoading(true);
+    void refresh();
+    const interval=window.setInterval(()=>void refresh(),30000);
+    return ()=>{active=false;refreshRef.current=null;controller.abort();window.clearInterval(interval);};
+  }, [tournamentId, categoryId, sportId, isLiveOnly,viewMode,dateFilter, acceptMatches,favorites]);
 
-  // Filter matches by search term
+  // A collector cycle must not cancel a slow request. Coalesce changes behind
+  // its response; only an actual filter change or unmount aborts that request.
+  useEffect(() => {
+    if(lastRefreshVersion.current===refreshVersion) return;
+    lastRefreshVersion.current=refreshVersion;
+    refreshRef.current?.();
+  }, [refreshVersion]);
+
+  const currentMatches = matches.map(match => match.status==='ENDED'?match:liveMatch(match, livePatches[String(match.id)]))
+    .filter(match => match.status !== 'CANCELLED' && (viewMode==='favorites'||match.status !== 'ENDED'))
+    .sort(compareMatchDisplay);
+  // The server catalog already excludes synthetic fixtures; do not hide real leagues.
   const searchFiltered = searchTerm.trim()
-    ? matches.filter(m => {
+    ? currentMatches.filter(m => {
         const search = searchTerm.toLowerCase();
         return (
           m.homeTeam?.toLowerCase().includes(search) ||
@@ -68,41 +119,27 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
           m.tournament?.category?.sport?.name?.toLowerCase().includes(search)
         );
       })
-    : matches;
+    : currentMatches;
 
-  // Filter matches by date (Today / Tomorrow)
   const filteredMatches = searchFiltered.filter(m => {
-    if (dateFilter === 'all') return true;
-    const matchDate = new Date(m.startTime);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (dateFilter === 'today') {
-      return matchDate >= today && matchDate < tomorrow;
-    }
-    if (dateFilter === 'tomorrow') {
-      const dayAfter = new Date(tomorrow);
-      dayAfter.setDate(dayAfter.getDate() + 1);
-      return matchDate >= tomorrow && matchDate < dayAfter;
-    }
-    return true;
+    if(viewMode==='live'||viewMode==='favorites')return true;
+    // Live fixtures remain visible after midnight, even when their kickoff was
+    // yesterday. The date picker applies to upcoming fixtures only.
+    if(viewMode==='all'&&m.status==='LIVE')return true;
+    return dateFilter==='all'||isFixtureOnDay(m.startTime,dateFilter);
   });
 
-  // A match the feed has not priced is not bettable: its card used to sit on the board as
-  // "Loading..." forever. It is dropped instead, and comes back on its own as soon as prices
-  // exist for it - the live board carries marketCount, so this does not wait for the 15s poll.
-  const pricedMatches = filteredMatches.filter(m => {
-    const patch = livePatches[String(m.id)];
-    if (patch?.marketCount && patch.marketCount > 0) return true;
-    return (m.markets ?? []).some((mk: any) =>
-      (mk.outcomes ?? []).some((o: any) => typeof o.odds === 'number' && o.odds > 0),
-    );
-  });
+  // Keep every provider fixture while prices load or are suspended.
+  const pricedMatches = filteredMatches;
 
   const liveMatches = pricedMatches.filter(m => m.status === 'LIVE');
   const prematchMatches = pricedMatches.filter(m => m.status !== 'LIVE');
+  const favoriteMatches = pricedMatches.filter(m => isFavorite(String(m.id)));
+  const visibleMatches =
+    viewMode === 'live' ? liveMatches :
+    viewMode === 'prematch' ? prematchMatches :
+    viewMode === 'favorites' ? favoriteMatches :
+    pricedMatches;
 
   if (loading && matches.length === 0) {
     return (
@@ -129,274 +166,100 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
     );
   }
 
+  // Render a single compact odds board per competition. All odds still use the
+  // existing OddsButton and its live-feed, suspension and betslip behavior.
+  // One board projection shared by the card renderer and the league heading, so the
+  // "Next goal" column is announced only when a fixture in that league really has it.
+  const boardSelection = (raw: any) => {
+    const m = liveMatch(raw, livePatches[String(raw.id)]);
+    const markets: any[] = m.markets ?? [];
+    const visible = (mk: any) => (combosEnabled || !isComboMarket(mk)) && !isHandicapMarket(mk) && isMarketVisible(m, mk, lockedMarkets, lockedOutcomes, riskLockedOutcomes) && filterDecidedOutcomes((mk.outcomes ?? []).filter(isOutcomeDisplayable), mk, m).length > 0;
+    const chosen = selectBoardMarkets(markets, visible, mk => !isMarketExpired(m, mk) && (mk.status === 'SUSPENDED' || lockedMarkets[String(mk.id)] === true || (mk.outcomes ?? []).some((outcome: any) => outcome.status === 'SUSPENDED' || outcome.feedSuspended === true || lockedOutcomes[String(outcome.id)] === true || riskLockedOutcomes[String(outcome.id)] === true)), m);
+    return { m, markets, chosen };
+  };
+  const boardOutcome = (m: any, mk: any, names: string[]): any => findBoardOutcome(mk ? {...mk, outcomes: filterDecidedOutcomes((mk.outcomes ?? []).filter(isOutcomeDisplayable), mk, m)} : null, names);
+  // Render a single compact odds board per competition. All odds still use the
+  // existing OddsButton and its live-feed, suspension and betslip behavior.
   const renderMatchCard = (raw: any) => {
-    // merge what the socket pushed for this match (live minute, score, corners, cards)
-    const m = { ...raw, ...(livePatches[String(raw.id)] ?? {}) };
-
-    const isPriced = (o: any) => typeof o.odds === 'number' && o.odds > 0;
-    const pricedOutcomes = (mk: any) => (mk.outcomes ?? []).filter(isPriced);
-    const pricedMarkets = (m.markets ?? []).filter((mk: any) => pricedOutcomes(mk).length > 0);
-
-    // Convenience detectors for the fallback chain: each market type is detected by its
-    // real name / type first, so one market can never be mistaken for another.
-    const is1X2 = (mk: any) =>
-      mk.marketType === '1X2' ||
-      /1x2|match result|full time result|\bwinner\b|moneyline/i.test(mk.name ?? '');
-    const isBothScore = (mk: any) =>
-      /both teams? to score|both score|\bbtts\b|\bgg\/?ng\b|\bgg\b|\bng\b/i.test(mk.name ?? '');
-    const isOverUnder = (mk: any) =>
-      mk.marketType === 'OVER_UNDER' ||
-      /total goals|over\/?under|under\/?over|^ou$|goals over|goal line/i.test(mk.name ?? '');
-
-    /** Returns the best market to show on the card. The first market type that exists wins
-     *  (1X2 > GG/NG > O/U), even if it has only partial outcomes — missing positions show
-     *  a "-" instead of borrowing odds from another market. */
-    const pickQuickMarket = (): { market: any; slots: (any | null)[]; mode: '1x2' | 'btts' | 'ou' } | null => {
-      const findOutcome = (mk: any, names: string[]) => (mk.outcomes ?? []).find((o: any) => names.includes(o.name));
-      // 1) 1X2 — always 3 slots: 1, X, 2
-      const m1 = (m.markets ?? []).find(is1X2);
-      if (m1) {
-        const slots = [
-          findOutcome(m1, ['1', 'Home', 'home', 'W1']),
-          findOutcome(m1, ['X', 'Draw', 'draw', 'Tie']),
-          findOutcome(m1, ['2', 'Away', 'away', 'W2']),
-        ];
-        return { market: m1, slots, mode: '1x2' };
-      }
-      // 2) BTTS — always 2 slots: Yes, No
-      const m2 = (m.markets ?? []).find(isBothScore);
-      if (m2) {
-        const slots = [
-          findOutcome(m2, ['Yes', 'yes', 'GG', 'gg']),
-          findOutcome(m2, ['No', 'no', 'NG', 'ng']),
-        ];
-        return { market: m2, slots, mode: 'btts' };
-      }
-      // 3) Over/Under — always 2 slots: Over, Under (or the first 2 priced outcomes)
-      const m3 = (m.markets ?? []).find(isOverUnder);
-      if (m3) {
-        const slots = [
-          findOutcome(m3, ['Over', 'over', 'O']),
-          findOutcome(m3, ['Under', 'under', 'U']),
-        ];
-        return { market: m3, slots, mode: 'ou' };
-      }
-      return null;
-    };
-
-    const quick = pickQuickMarket();
-    const quickMarket = quick?.market ?? null;
-    const quickSlots: (any | null)[] = quick?.slots ?? [];
-    // a short label on the "+" row so the user always knows which market the card shows
-    const quickLabel = quick?.mode === '1x2' ? '1X2' : quick?.mode === 'btts' ? 'GG/NG' : quick?.mode === 'ou' ? 'O/U' : '';
-    const quickCols = quick?.mode === '1x2' ? 3 : 2; // 1X2=3cols, BTTS/O-U=2cols
-    const isLocked = lockedMatches[String(m.id)] === true;
-
-    const totalMarketsCount = Math.max(m.markets?.length || 0, Number(m.marketCount) || 0);
-
-    return (
-      <div 
-        key={m.id} 
-        className="bg-card-bg/90 hover:bg-card-hover/90 rounded-2xl border border-tertiary/80 hover:border-slate-600/70 shadow-md transition-all duration-200 overflow-hidden group"
-      >
-        {/* Card Header: Tournament & Time/Status */}
-        <div className="bg-primary/60 px-3.5 sm:px-4 py-2 border-b border-tertiary/60 flex items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-text-secondary truncate">
-            <span className="font-semibold text-text-primary text-[11px] sm:text-xs truncate tracking-wide">
-              {m.tournament?.category?.name ? `${m.tournament.category.name} • ` : ''}{m.tournament?.name || 'League'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {isLocked && (
-              <span
-                className="inline-flex items-center gap-1 bg-accent-red/20 border border-accent-red/40 text-accent-red text-[10px] font-black px-2 py-0.5 rounded-full"
-                title={t('sections.odds_locked')}
-              >
-                🔒 {t('sections.odds_locked')}
-              </span>
-            )}
-            {m.status === 'LIVE' ? (
-              <span className="inline-flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-red opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-red"></span>
-                </span>
-                LIVE {m.currentMinute || 0}:{String(m.currentSecond ?? 0).padStart(2, '0')}'
-              </span>
-            ) : (
-              <span className="text-text-secondary flex items-center gap-1.5 text-[11px] font-medium bg-primary/40 px-2 py-0.5 rounded-md border border-tertiary/40">
-                <Clock size={12} className="text-text-muted" />
-                {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull; {new Date(m.startTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-              </span>
-            )}
-          </div>
+    // A completed favorite is a result summary, never a betting market.
+    if(raw.status==='ENDED'){
+      const m=raw;
+      const goals=(Array.isArray(m.events)?m.events:[]).filter((event:any)=>
+        event?.type==='goal'&&['home','away'].includes(event.team)&&
+        Number.isInteger(Number(event.minute)));
+      const minuteLabels=goals.map((event:any)=>
+        (event.team==='home'?'1':'2')+': '+(event.minuteLabel??event.minute)+'′').join(' · ');
+      const shots=m.shotsOnTarget;
+      return <div className="zshop-match zshop-match-no-next" key={m.id} data-zshop-match={m.id}>
+        <div className="zshop-match-info">
+          <button type="button" aria-label={t('Hiq nga të preferuarat')} aria-pressed={true} onClick={()=>toggleFavorite(String(m.id))}><Star size={14} fill="#d29500"/></button>
+          <button type="button" className="zshop-match-teams" onClick={()=>navigate('/match/'+m.id)}>
+            <span className="zshop-match-meta">{lang==='en'?'FULL TIME':'PËRFUNDUAR'}</span>
+            <span className="zshop-team"><span title={repairDisplayText(m.homeTeam)}>{repairDisplayText(m.homeTeam)}</span><strong>{m.homeScore??'—'}</strong></span>
+            <span className="zshop-team"><span title={repairDisplayText(m.awayTeam)}>{repairDisplayText(m.awayTeam)}</span><strong>{m.awayScore??'—'}</strong></span>
+          </button>
         </div>
-
-        {/* Card Body: Teams, Score & Odds */}
-        <div className="p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-          {/* Teams & Score (Clickable to detail) */}
-          <div 
-            className="flex-1 cursor-pointer space-y-1.5 min-w-0"
-            onClick={() => navigate(`/match/${m.id}`)}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-text-secondary/40 group-hover:bg-accent-green transition-colors"></span>
-                <span className="font-bold text-white text-xs sm:text-sm group-hover:text-accent-green transition truncate">
-                  {m.homeTeam}
-                </span>
-              </div>
-              {m.status === 'LIVE' && (
-                <span className="font-mono font-black text-xs sm:text-sm px-2 py-0.5 bg-primary/90 border border-tertiary rounded text-accent-yellow tabular-nums shrink-0 shadow-inner">
-                  {m.homeScore ?? 0}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-text-secondary/40 group-hover:bg-accent-green transition-colors"></span>
-                <span className="font-bold text-white text-xs sm:text-sm group-hover:text-accent-green transition truncate">
-                  {m.awayTeam}
-                </span>
-              </div>
-              {m.status === 'LIVE' && (
-                <span className="font-mono font-black text-xs sm:text-sm px-2 py-0.5 bg-primary/90 border border-tertiary rounded text-accent-yellow tabular-nums shrink-0 shadow-inner">
-                  {m.awayScore ?? 0}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Main Odds Buttons Column */}
-          <div className="flex items-center gap-2 w-full md:w-auto pt-2 md:pt-0 border-t border-tertiary/40 md:border-t-0">
-            {quickMarket && quickSlots.length >= 2 ? (
-              <div className="flex-1 md:w-72">
-                {quickLabel && quickLabel !== '1X2' && (
-                  <div className="text-[9px] font-black uppercase tracking-wider text-accent-green/90 mb-1 pl-1">
-                    {quickLabel}
-                  </div>
-                )}
-                <div className={`grid ${quickCols === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5`}>
-                  {quickSlots.map((slot: any, i: number) =>
-                    slot ? (
-                      <OddsButton key={slot.id ?? i} match={m} market={quickMarket} outcome={slot} />
-                    ) : (
-                      <div
-                        key={`empty-${i}`}
-                        className="px-2.5 py-2 rounded-lg border border-tertiary/50 bg-primary/40 text-text-secondary text-center text-xs font-bold opacity-40 cursor-not-allowed"
-                      >
-                        —
-                      </div>
-                    ),
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-text-secondary italic text-center flex-1 md:w-72">—</div>
-            )}
-
-            {/* Opens the extra markets (corners, cards, totals, ...) right here */}
-            <button
-              onClick={() => setExpandedId(prev => (prev === String(m.id) ? null : String(m.id)))}
-              className={`px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
-                expandedId === String(m.id)
-                  ? 'bg-accent-green text-primary shadow-glow-green'
-                  : 'bg-primary/80 hover:bg-tertiary text-text-secondary hover:text-white border border-tertiary/80'
-              }`}
-              title={t('sections.view_markets')}
-              aria-expanded={expandedId === String(m.id)}
-            >
-              <span>+{totalMarketsCount}</span>
-              <ChevronRight
-                size={13}
-                className={`transition-transform duration-200 ${expandedId === String(m.id) ? 'rotate-90' : ''}`}
-              />
-            </button>
-          </div>
+        <div data-board-market="primary" className="zshop-board-odds zshop-main-odds">
+          <small>{lang==='en'?'Shots on target':'Goditje në portë'}</small>
+          <span className="text-xs font-semibold">{shots?.home!=null&&shots?.away!=null?shots.home+' - '+shots.away:'—'}</span>
         </div>
-
-        {expandedId === String(m.id) && <MarketPanel match={m} />}
-      </div>
-    );
+        <div data-board-market="total" className="zshop-board-odds zshop-totals">
+          <small>{lang==='en'?'Goal minutes':'Minutat e golave'}</small>
+          <span className="text-xs font-semibold" title={minuteLabels||undefined}>{minuteLabels||'—'}</span>
+        </div>
+        <button type="button" className="zshop-extra" aria-label={lang==='en'?'Match summary':'Përmbledhja e ndeshjes'} onClick={()=>navigate('/match/'+m.id)}><ChevronRight size={12}/></button>
+      </div>;
+    }
+    const { m, markets, chosen } = boardSelection(raw);
+    const main = chosen.primary, goals = chosen.total;
+    const find = (mk: any, names: string[]): any => boardOutcome(m, mk, names);
+    const oneXtwo = chosen.primaryType === 'DC' ? [
+      find(main, ['1x', '1/x', 'home or draw']), find(main, ['12', '1/2', 'home or away']), find(main, ['x2', 'x/2', 'draw or away']),
+    ] : chosen.primaryType === 'BTTS' ? [find(main, ['yes', 'gg']), find(main, ['no', 'ng'])] : [
+      find(main, ['1', 'home', 'w1', 'h', repairDisplayText(m.homeTeam).toLowerCase()]),
+      find(main, ['x', 'draw', 'tie', 'wx', 'd']),
+      find(main, ['2', 'away', 'w2', 'a', repairDisplayText(m.awayTeam).toLowerCase()]),
+    ];
+    const total = [
+      find(goals, ['over', 'o', '1', `over ${chosen.totalLine}`, `o${chosen.totalLine}`]),
+      find(goals, ['under', 'u', '2', `under ${chosen.totalLine}`, `u${chosen.totalLine}`]),
+    ];
+    const primaryLabels = chosen.primaryType === 'DC' ? ['1X','12','X2'] : chosen.primaryType === 'BTTS' ? [t('Po'),t('Jo')] : ['1','X','2'];
+    const marketCount = Math.max(markets.length, Number(m.marketCount) || 0);
+    const hasPrimary = !!main && oneXtwo.some(Boolean);
+    const locked = lockedMatches[String(m.id)] === true;
+    const oddsCells=(mk:any,outcomes:any[],labels:string[])=><div>{labels.map((label,i)=><div key={outcomes[i]?.id??label}>{mk&&outcomes[i]?<OddsButton match={m} market={mk} outcome={outcomes[i]} showRawLabel/>:<span className="zshop-quote-empty" title={label}>—</span>}</div>)}</div>;
+    const title=chosen.primaryType==='DC'?(lang==='en'?'Double chance':'Dopjo shans'):chosen.primaryType==='BTTS'?(lang==='en'?'Both teams to score':'Shënojnë të dyja skuadrat'):'1X2';
+    return <div className="zshop-match zshop-match-no-next" key={m.id} data-zshop-match={m.id}>
+      <div className="zshop-match-info"><button type="button" aria-label={t('Shto te të preferuarat')} aria-pressed={isFavorite(String(m.id))} onClick={()=>toggleFavorite(String(m.id))}><Star size={14} fill={isFavorite(String(m.id))?'#d29500':'none'}/></button><button type="button" className="zshop-match-teams" onClick={()=>navigate('/match/'+m.id)}>
+       <span className={m.status==='LIVE'?'zshop-match-meta !text-emerald-400 !font-extrabold':'zshop-match-meta'}>{m.status==='LIVE'?(t('NË LOJË')+' · '+(m.currentMinute??'—')+'′'):(<><span>{new Date(m.startTime).toLocaleDateString('en-GB',{timeZone:'Europe/Tirane',day:'2-digit',month:'2-digit'})}</span><span>{new Date(m.startTime).toLocaleTimeString('en-GB',{timeZone:'Europe/Tirane',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}</span></>)}{locked?' · 🔒':''}</span>
+       <span className="zshop-team"><span title={repairDisplayText(m.homeTeam)}>{repairDisplayText(m.homeTeam)}</span>{m.status==='LIVE'&&<strong>{m.homeScore??'—'}</strong>}</span><span className="zshop-team"><span title={repairDisplayText(m.awayTeam)}>{repairDisplayText(m.awayTeam)}</span>{m.status==='LIVE'&&<strong>{m.awayScore??'—'}</strong>}</span>
+      </button></div>
+      <div data-board-market="primary" className={'zshop-board-odds zshop-main-odds'+(!hasPrimary?' mobile-empty-primary':'')}><small>{title}</small>{oddsCells(main,oneXtwo,primaryLabels)}</div>
+      <div data-board-market="total" className={'zshop-board-odds zshop-totals'+(!hasPrimary?' mobile-fallback-total':'')}><small>{t('Totali i golave')}</small><div><div>{goals&&total[1]?<OddsButton match={m} market={goals} outcome={total[1]} showRawLabel/>:<span className="zshop-quote-empty">—</span>}</div><span className="zshop-total-line">{chosen.totalLine||'—'}</span><div>{goals&&total[0]?<OddsButton match={m} market={goals} outcome={total[0]} showRawLabel/>:<span className="zshop-quote-empty">—</span>}</div></div></div>
+      <button type="button" className="zshop-extra" aria-label={t('Tregjet e tjera')+' · '+repairDisplayText(m.homeTeam)+' - '+repairDisplayText(m.awayTeam)} onClick={()=>navigate('/match/'+m.id)}>+{marketCount}<ChevronRight size={12}/></button>
+    </div>;
   };
 
+  const entries:WindowItem[]=[];
+  const appendCompetition=(items:any[],sectionTitle:string,prefix:string)=>{
+    entries.push({key:prefix+':section',estimate:34,node:()=><div className={'zshop-section-title '+(items.some(m=>m.status==='LIVE')?'is-live':'')}><span>{sectionTitle}</span><span>{items.length}</span></div>});
+    const groups=new Map<string,any[]>();for(const m of items){const league=[m.tournament?.category?.name,m.tournament?.name].filter(Boolean).map(repairDisplayText).join(' · ')||t('sections.league');if(!groups.has(league))groups.set(league,[]);groups.get(league)!.push(m);}
+    for(const[league,fixtures]of groups){entries.push({key:prefix+league,estimate:60,node:()=><><div className="zshop-league-heading"><CountryFlag country={fixtures[0]?.tournament?.category?.name} countryCode={fixtures[0]?.tournament?.category?.countryCode}/><span>{league.replace(' · ',' / ')}</span><small>{fixtures.length}</small></div><div className="zshop-market-heading zshop-market-heading-no-next"><span>{t('Ndeshja')}</span><span>{lang==='en'?'Main market':'Tregu kryesor'}</span><span className="zshop-totals">{t('Poshtë')} · {t('Totali')} · {t('Lart')}</span><span>+</span></div></>});for(const m of fixtures)entries.push({key:prefix+':'+m.id,...(m.status==='ENDED'?{}:{matchId:String(m.id)}),estimate:90,node:()=>renderMatchCard(m)});}
+  };
+  if((viewMode==='all'||viewMode==='live')&&liveMatches.length)appendCompetition(liveMatches,t('Futboll në lojë'),'live');
+  if((viewMode==='all'||viewMode==='prematch')&&prematchMatches.length)appendCompetition(prematchMatches,lang==='en'?'Prematch':'Para ndeshjes','pre');
+  if(viewMode==='favorites')appendCompetition(favoriteMatches,t('Favoritet'),'fav');
+
   return (
-    <div className="p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 max-w-6xl mx-auto">
-      {/* Control Panel: Search & Filters */}
-      <div className="bg-secondary/70 backdrop-blur-sm border border-tertiary/80 p-3 sm:p-4 rounded-2xl shadow-sm space-y-3">
-        {/* Search Bar */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <Search size={16} className="text-text-secondary" />
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder={t('common.search_matches')}
-            className="w-full bg-primary/80 border border-tertiary/80 rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-text-secondary/70 focus:outline-none focus:border-accent-green transition"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary hover:text-white transition"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Date Filter Tabs */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1.5 text-text-secondary text-xs font-semibold mr-1.5">
-            <CalendarDays size={15} />
-            <span className="hidden sm:inline">Filter:</span>
-          </div>
-          <div className="bg-primary/70 p-1 rounded-xl border border-tertiary/60 flex items-center gap-1">
-            <button
-              onClick={() => setDateFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                dateFilter === 'all' 
-                  ? 'bg-accent-green text-primary shadow-sm' 
-                  : 'text-text-secondary hover:text-white hover:bg-tertiary/50'
-              }`}
-            >
-              {t('dates.all')}
-            </button>
-            <button
-              onClick={() => setDateFilter('today')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                dateFilter === 'today' 
-                  ? 'bg-accent-green text-primary shadow-sm' 
-                  : 'text-text-secondary hover:text-white hover:bg-tertiary/50'
-              }`}
-            >
-              {t('dates.today')}
-            </button>
-            <button
-              onClick={() => setDateFilter('tomorrow')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                dateFilter === 'tomorrow' 
-                  ? 'bg-accent-green text-primary shadow-sm' 
-                  : 'text-text-secondary hover:text-white hover:bg-tertiary/50'
-              }`}
-            >
-              {t('dates.tomorrow')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Search Results Count */}
+    <div className="zshop-board">
+      <div className="zshop-board-tools">{viewMode==='prematch'?<label className="flex items-center gap-2 text-xs">{lang==='en'?'Date':'Data'}<select aria-label={lang==='en'?'Filter fixtures by date':'Filtro ndeshjet sipas datës'} value={dateFilter} onChange={e=>setDateFilter(e.target.value as DateFilter)}><option value="all">{lang==='en'?'All dates':'Të gjitha datat'}</option>{(['today','tomorrow','dayAfterTomorrow'] as const).map(value=><option key={value} value={value}>{value==='today'?t('Sot'):value==='tomorrow'?t('Nesër'):lang==='en'?'Day after tomorrow':'Pasnesër'}</option>)}</select></label>:<span>{viewMode==='all'?t('TË GJITHA'):viewMode==='live'?t('NË LOJË'):t('Favoritet')}</span>}<span>{visibleMatches.length} {lang==='en'?'matches':'ndeshje'}</span></div>
       {searchTerm && (
         <div className="text-xs font-semibold text-text-secondary px-1">
           {filteredMatches.length} {t('common.results_found')}
         </div>
       )}
 
-      {/* No search results */}
       {searchTerm && filteredMatches.length === 0 && (
         <div className="p-12 text-center text-text-secondary space-y-3 max-w-md mx-auto bg-secondary/50 rounded-2xl border border-tertiary">
           <div className="text-4xl">🔍</div>
@@ -405,7 +268,6 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
         </div>
       )}
 
-      {/* No matches for selected date */}
       {!searchTerm && filteredMatches.length === 0 && (
         <div className="p-12 text-center text-text-secondary space-y-3 max-w-md mx-auto bg-secondary/50 rounded-2xl border border-tertiary">
           <div className="text-4xl">📅</div>
@@ -413,7 +275,6 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
         </div>
       )}
 
-      {/* there are fixtures, but the feed has not priced any of them yet */}
       {filteredMatches.length > 0 && pricedMatches.length === 0 && (
         <div className="p-8 sm:p-12 text-center text-text-secondary space-y-3 max-w-md mx-auto bg-secondary/50 rounded-2xl border border-tertiary">
           <div className="font-bold text-white text-base">
@@ -423,44 +284,8 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
         </div>
       )}
 
-      {/* Live Matches Section */}
-      {liveMatches.length > 0 && !tournamentId && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-red opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-red"></span>
-            </span>
-            <span className="text-accent-red font-black text-sm uppercase tracking-wider">{t('sections.live_now')}</span>
-            <span className="text-xs text-text-secondary font-bold bg-secondary px-2 py-0.5 rounded-full border border-tertiary">
-              {liveMatches.length}
-            </span>
-          </div>
+      <div className="zshop-league"><ViewportList items={entries} onVisible={onVisible}/></div>
 
-          <div className="space-y-2.5">
-            {liveMatches.map(renderMatchCard)}
-          </div>
-        </div>
-      )}
-
-      {/* Prematch / Upcoming Section */}
-      {prematchMatches.length > 0 && (
-        <div className="space-y-3">
-          <div className="text-white font-bold text-sm tracking-wide uppercase flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-accent-green"></span>
-              <span>{isLiveOnly ? t('sections.live_now') : t('sections.upcoming_fixtures')}</span>
-              <span className="text-xs text-text-secondary font-bold bg-secondary px-2 py-0.5 rounded-full border border-tertiary">
-                {prematchMatches.length}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            {prematchMatches.map(renderMatchCard)}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

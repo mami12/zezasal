@@ -2,12 +2,15 @@ import pg from 'pg';
 import { config, pgClientOptions } from './config.mjs';
 import { SCHEMA_SQL } from './schema.mjs';
 import { splitByKickoff, DEFAULT_SOON_MS } from './subscribe-plan.mjs';
+import { createLocalPool } from './local-database.mjs';
 
 // bigint + numeric arrive as strings by default; normalise them for JSON output
 pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 
-export const pool = new pg.Pool(pgClientOptions());
+export const pool = config.databaseDriver === 'local'
+  ? createLocalPool({ dataDir: config.localDatabaseDir })
+  : new pg.Pool(pgClientOptions());
 
 pool.on('error', (e) => console.error('[db] idle client error:', e.message));
 
@@ -42,11 +45,12 @@ export async function upsertMatches(rows, chunkSize = 150) {
         values.push(col === 'raw' ? JSON.stringify(row[col] ?? {}) : (row[col] ?? null));
         return `$${idx}`;
       });
-      return `(${placeholders.join(',')}, now(), now())`;
+      const serviceParameter = `$${r * MATCH_COLUMNS.length + MATCH_COLUMNS.indexOf('service') + 1}`;
+      return `(${placeholders.join(',')}, now(), now(), case when ${serviceParameter}='LIVE' then now() end, case when ${serviceParameter}='PREMATCH' then now() end)`;
     });
 
     const sql = `
-      insert into matches (${MATCH_COLUMNS.join(',')}, last_seen_at, updated_at)
+      insert into matches (${MATCH_COLUMNS.join(',')}, last_seen_at, updated_at, live_first_seen_at, prematch_first_seen_at)
       values ${tuples.join(',')}
       on conflict (match_id) do update set
         sport_id        = excluded.sport_id,
@@ -68,6 +72,9 @@ export async function upsertMatches(rows, chunkSize = 150) {
         status          = excluded.status,
         raw             = excluded.raw,
         active          = true,
+        listing_stale   = false,
+        live_first_seen_at = case when excluded.service='LIVE' then coalesce(matches.live_first_seen_at,now()) else matches.live_first_seen_at end,
+        prematch_first_seen_at = case when excluded.service='PREMATCH' then coalesce(matches.prematch_first_seen_at,now()) else matches.prematch_first_seen_at end,
         last_seen_at    = now(),
         updated_at      = now()`;
 
@@ -77,24 +84,31 @@ export async function upsertMatches(rows, chunkSize = 150) {
   return written;
 }
 
-/** Marks matches that vanished from the feed as finished/inactive. */
+/** Suspend missing listings first; only real FT or long feed loss retires them. */
 export async function expireStaleMatches(graceSeconds = 150) {
   const res = await query(
     `update matches
         set active = false,
-            status = case when status in ('live','scheduled') then 'ended' else status end,
+            listing_stale = true,
+            status = case when lower(coalesce(feed_status,'')) in ('finished','ended','ft','full time') then 'ended' else status end,
             updated_at = now()
       where active
-        and last_seen_at < now() - make_interval(secs => $1::int)
+        and greatest(last_seen_at,updated_at,score_at,clock_at,feed_status_at) < now() - make_interval(secs => $1::int)
+        and (status='ended' or lower(coalesce(feed_status,'')) in ('finished','ended','ft','full time')
+          or greatest(last_seen_at,updated_at,score_at,clock_at,feed_status_at) < now()-interval '6 hours')
       returning match_id`,
     [graceSeconds],
   );
+  await query(`update matches set listing_stale=true where active and listing_stale=false
+    and greatest(last_seen_at,updated_at,score_at,clock_at,feed_status_at) < now()-make_interval(secs=>$1::int)`, [graceSeconds]);
   return res.rows.map((r) => r.match_id);
 }
 
-export async function getMatches({ service = null, league = null, q = null, limit = 500, offset = 0, includeEnded = false }) {
+export async function getMatches({ service = null, league = null, tournamentId = null, sportId = null, q = null, limit = 500, offset = 0, includeEnded = false,catalog=false }) {
   const res = await query(
-    `select * from matches
+    `select matches.*, (select min(case when matches.service='LIVE' then all_matches.live_first_seen_at else all_matches.prematch_first_seen_at end)
+      from matches all_matches where all_matches.sport_id is not distinct from matches.sport_id
+        and all_matches.tournament_id is not distinct from matches.tournament_id) as competition_first_seen_at from matches
       where active
         and ($1::text is null or service = upper($1))
         and ($2::text is null or category_slug = $2)
@@ -102,9 +116,14 @@ export async function getMatches({ service = null, league = null, q = null, limi
                             or category_name ilike '%' || $3 || '%'
                             or tournament_name ilike '%' || $3 || '%')
         and ($6::boolean or status <> 'ended')
-      order by (service = 'LIVE') desc, start_at asc
+        and ($7::text is null or tournament_id::text = $7)
+        and ($8::text is null or sport_id::text = $8)
+      order by (service = 'LIVE') desc, competition_first_seen_at asc nulls last,
+        coalesce(tournament_id,category_id,0) asc,
+        case when service='LIVE' then coalesce(live_first_seen_at,first_seen_at) else coalesce(prematch_first_seen_at,first_seen_at) end asc, match_id asc
       limit $4 offset $5`,
-    [service, league, q, Math.min(limit, 2000), offset, includeEnded === true],
+    [service, league, q, catalog?null:Math.min(limit, 2000), offset, includeEnded === true,
+      tournamentId == null ? null : String(tournamentId), sportId == null ? null : String(sportId)],
   );
   return res.rows;
 }
@@ -303,12 +322,15 @@ export async function applyMatchInfo(info) {
         match_time_ms = case when $11::boolean then $7::bigint else match_time_ms end,
         clock_at      = case when $11::boolean then now()      else clock_at end,
         feed_status   = coalesce($8, feed_status),
+        feed_status_at = case when $8::text is not null then now() else feed_status_at end,
         has_open_odds = coalesce($9, has_open_odds),
         broadcast_url = coalesce($12, broadcast_url),
+        active        = true,
+        listing_stale = false,
         updated_at    = now()
       where match_id = $1
       returning match_id, home_score, away_score, periods_score, odds_count, stats, raw,
-                match_time_ms, clock_at, score_at, feed_status, has_open_odds, broadcast_url`,
+                match_time_ms, clock_at, score_at, feed_status, feed_status_at, has_open_odds, broadcast_url, updated_at`,
     [
       info.matchId,
       hasScore ? info.homeScore : null,
@@ -377,21 +399,21 @@ export async function getOddsHistory(matchId, limit = 200) {
  * driver answers - the pusher must not care which store is in use.
  */
 export async function getSubscriptionIds({
-  liveLimit = 250,
-  prematchLimit = 150,
+  liveLimit = 0,
+  prematchLimit = 0,
   soonMs = DEFAULT_SOON_MS,
 } = {}) {
   const live = await query(
     `select match_id from matches
       where active and service = 'LIVE' and status <> 'ended'
       order by start_at limit $1`,
-    [liveLimit],
+    [Number(liveLimit)>0?Math.floor(Number(liveLimit)):null],
   );
   const prematch = await query(
     `select match_id, start_at from matches
       where active and service = 'PREMATCH' and status <> 'ended'
       order by start_at limit $1`,
-    [prematchLimit],
+    [Number(prematchLimit)>0?Math.floor(Number(prematchLimit)):null],
   );
   const ids = prematch.rows.map((r) => r.match_id);
   const kickoff = {};

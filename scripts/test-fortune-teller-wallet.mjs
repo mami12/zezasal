@@ -1,0 +1,58 @@
+import {fortuneFixture} from './fixtures/fortune-teller-env.mjs';
+import assert from 'node:assert/strict';
+import {getGameProfiles} from '../server/casino/game-rtp-profiles.mjs';
+const f=await fortuneFixture(),id='fortune-teller';let http;
+try{
+ const token=(await f.store.launch(f.user,id)).sessionId;let seq=0;
+ const command=(name,fields={})=>({command:name,sequence_number:seq++,...fields});
+ const act=async(c,session=token)=>(await f.store.act(f.user,id,session,[c]))[0];
+ const start=await act(command('create_session'));assert.equal(start.enabled_denoms[0].cents,1);assert.equal(start.account_status.credit,1000000);
+ const config=await act(command('init_game'));assert.equal(config.game_config.lines.length,20);
+ const play=command('play',{game_denom:1,lines:20,line_bet:100,total_bet:2000});f.scenario('free');
+ const [round,replay]=await Promise.all([act(play),act(play)]);assert.deepEqual(round,replay);
+ assert.equal(await f.count(),1);assert.equal(await f.balance(),9980);assert.equal(f.remainingDraws,0);
+ const games=round.result.filter(x=>x.type==='slot_subgame');assert.equal(games.length,16);assert.equal(games[1].cards_bonus.multiplier,5);assert.equal(games[1].cards_bonus.win,500);
+ const win=games.at(-1).total_win/100,drawCount=f.drawCount;
+ await assert.rejects(act({...play,line_bet:200,total_bet:4000}),/reused/);
+ await assert.rejects(f.store.act(f.other,id,token,[command('poll')]),/expired/);
+ await assert.rejects(f.store.act(f.user,id,token,[command('poll')],{epoch:99}),/expired/);
+ assert.equal(f.drawCount,drawCount,'replays and rejected commands never redraw');
+ // Change settings and replace the process. The accepted free games and Tarot stay fixed.
+ await f.sql.query('update app_casino_settings set game_profiles=$1::jsonb where id=1',[JSON.stringify({[id]:getGameProfiles(id)[0].id})]);
+ f.restart();assert.deepEqual(await act(play),round,'durable response survives restart and profile change');
+ await f.store.close(f.user,id,token);assert.equal(await f.balance(),9980+win);
+ await f.store.close(f.user,id,token);assert.equal(await f.balance(),9980+win,'close settles once');
+ await assert.rejects(act(command('poll')),/expired/);
+ await f.sql.query('update app_casino_settings set game_profiles=$1::jsonb where id=1',['{}']);
+ const next=(await f.store.launch(f.user,id)).sessionId;
+ await act(command('create_session'),next);f.scenario();const second=await act({...play,sequence_number:seq++},next);
+ const before=await f.balance(),finish=command('game_finished',{gameplay_id:second.gameplay_id});
+ const collected=await act(finish,next);assert.deepEqual(await act(finish,next),collected);assert.equal(await f.balance(),before+second.result.at(-1).total_win/100);
+ for(const fields of [{line_bet:99,total_bet:1980},{line_bet:25001,total_bet:500020},{lines:5,total_bet:500},{game_denom:99}])await assert.rejects(act({...play,...fields,sequence_number:seq++},next));
+ assert.equal(await f.count(),2,'invalid stakes do not create rounds');
+ await f.sql.query('insert into app_player_controls(user_id,self_excluded_until) values($1,now()+interval \'1 day\')',[f.user]);
+ await assert.rejects(act({...play,sequence_number:seq++},next),/vetëpërjashtim/);
+ await f.sql.query('delete from app_player_controls where user_id=$1',[f.user]);
+ // Relaunch collects a pending bonus and invalidates the previous frame.
+ f.scenario();const pending=await act({...play,sequence_number:seq++},next),pendingBalance=await f.balance();
+ await f.store.launch(f.user,id);assert.equal(await f.balance(),pendingBalance+pending.result.at(-1).total_win/100);
+ await assert.rejects(act(command('poll'),next),/expired/);
+ http=f.app.listen(0,'127.0.0.1');await new Promise(resolve=>http.once('listening',resolve));const origin='http://127.0.0.1:'+http.address().port,prefix=origin+'/app/api/casino/original/'+id;
+ assert.equal((await fetch(prefix+'/session',{method:'POST'})).status,401);
+ const launch=await fetch(prefix+'/session',{method:'POST',headers:{'x-test-player':'isolated-player'}});assert.equal(launch.status,200);
+ const setCookie=launch.headers.get('set-cookie');assert.match(setCookie,/HttpOnly/i);assert.match(setCookie,/SameSite=Strict/i);const cookie=setCookie.split(';')[0];
+ const page=await fetch(origin+(await launch.json()).gameUrl,{headers:{cookie}});assert.equal(page.status,200);const html=await page.text();
+ assert.match(html,/<base href="\/app\/casino-original\/fortune-teller\/">/);assert.match(html,/native-wallet.js/);assert.match(html,/fortuneteller_desktop.bundle.js/);assert.match(html,/wallet-bridge.js/);
+ const path='/rgsm?request='+encodeURIComponent(JSON.stringify([{command:'create_session',sequence_number:0}]));
+ assert.equal((await fetch(prefix+path)).status,401);assert.equal((await fetch(prefix+path,{headers:{cookie,'sec-fetch-site':'cross-site'}})).status,403);
+ assert.equal((await fetch(prefix+path,{headers:{cookie}})).status,200);
+ const nativeSessionId=JSON.parse(html.match(/window\.casinoWalletConfig=(\{[^<]+\});<\/script>/)[1]).nativeSessionId;
+ const postNative=(sessionId,extra={})=>fetch(prefix+'/native',{method:'POST',headers:{cookie,'content-type':'text/plain',...extra},body:'d=10\r\n'+sessionId+'\r\n104 196 0\r\n'});
+ assert.equal((await postNative('old-frame')).status,401,'native frame must match the authenticated session');
+ assert.equal((await postNative(nativeSessionId,{'sec-fetch-site':'cross-site'})).status,403);
+ assert.match(await (await postNative(nativeSessionId)).text(),/104 1/);
+ const posted=Number((await f.sql.query('select coalesce(sum(amount),0) as amount from app_transaction where user_id=$1',[f.user])).rows[0].amount);
+ assert.equal(Math.round((await f.balance())*100),1000000+Math.round(posted*100),'wallet reconciles with the financial ledger');
+ assert.equal(await f.balance(f.manager),10000);assert.equal(Number((await f.sql.query('select count(*) as n from app_transaction where user_id=$1',[f.manager])).rows[0].n),0);
+ console.log('PASS Fortune Teller wallet: atomic stake, complete free/Tarot round, concurrent/durable retries, profile/restart recovery, collect/close/relaunch once, limits, player controls, HttpOnly session and same-origin auth, ledger reconciliation');
+}finally{if(http)await new Promise(resolve=>http.close(resolve));await f.close();}

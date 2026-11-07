@@ -1,0 +1,191 @@
+/* Sports presentation based on the supplied 365ecco365 templates and red-theme
+   variables: grey rows, separate date/team columns, compact flat odds. */
+.zshop-shell{--ecco-accent:#7F00FF;--zs-page:#666;--zs-card:#505050;--zs-heading:#7F00FF;--zs-border:#777;--zs-text:#ddd;--zs-odd:#ffdf1b}
+.zshop-shell [data-sportsbook-scroll]{background:#666!important}
+.zshop-sports-strip{background:#474747;border-color:#777;height:60px;min-height:60px}
+.zshop-sports-strip>button{color:#ddd}
+.zshop-sports-strip>button:hover{background:#595959}
+.zshop-sports-strip>button[aria-pressed=true]{background:#7F00FF;border-color:#b980ff;color:#fff}
+.zshop-board{padding:0 6px 12px;background:#666}
+.zshop-board-tools{background:#474747;padding:8px 10px;color:#eee;border-bottom:1px solid #777}
+.zshop-board-tools select{background:#505050;border:1px solid #888;color:#fff;padding:5px 22px 5px 8px;border-radius:0}
+.zshop-section-title,.zshop-section-title.is-live{background:#7F00FF;min-height:40px;color:#fff;padding:0 10px;font-size:15px;border:0;border-radius:0}
+.zshop-league{padding:0;background:#666;border-radius:0}
+.zshop-league-heading{background:#505050;min-height:34px;border-bottom:1px solid #777;padding:5px 10px;color:#ddd;font-size:13px}
+.zshop-market-heading,.zshop-match{grid-template-columns:minmax(170px,1fr) 23% 23% 23% 36px;gap:1px}
+.zshop-market-heading{background:#a7a7a7;color:#444;height:24px;margin:0;font-size:11px}
+.zshop-match{background:#777;min-height:64px;margin-top:0;border-bottom:1px solid #777}
+.zshop-match-info{background:#666;padding:0 5px;gap:0;grid-template-columns:20px minmax(0,1fr)}
+.zshop-match-teams{display:grid;grid-template-columns:78px minmax(0,1fr);grid-template-rows:1fr 1fr;gap:0 7px;padding:7px 4px;color:#ddd;font-size:13px}
+.zshop-match-meta{grid-column:1;grid-row:1/3;align-self:center;display:flex;flex-direction:column;white-space:normal;gap:3px;color:#ccc;font-size:11px;line-height:16px}
+.zshop-team{grid-column:2;line-height:22px;font-size:13px}
+.zshop-team>strong{color:#ffdf1b}
+.zshop-match-info>button:first-child{color:#bbb}
+.zshop-match-info>button:first-child[aria-pressed=true]{color:#ffdf1b}
+.zshop-board-odds,.zshop-board-odds>div>div{background:#505050}
+.zshop-board-odds>small{background:#a7a7a7;color:#444;line-height:18px;font-size:10px}
+.zshop-board-odds>div{background:#777}
+.zshop-board-odds button{background:#505050!important;min-height:44px;gap:2px}
+.zshop-board-odds button:not(:disabled):hover{background:#626262!important}
+.zshop-board-odds button span:first-child{color:#ddd!important;font-size:10px!important}
+.zshop-board-odds button span[data-odds-value]{font-size:16px!important;font-weight:500!important}
+.zshop-total-line{background:#666;color:#eee;font-size:12px}
+.zshop-extra{background:#505050;color:#ddd;border:0;border-radius:0;font-size:11px}
+.zshop-extra:hover{background:#7F00FF;color:#fff}
+.zshop-detail{background:#666;color:#ddd}
+.zshop-detail .zs-market-search input{background:#505050;border-color:#777;border-radius:0;color:#fff}
+.zshop-detail .zs-market-filters{background:#666}
+.zshop-detail .zs-market-tabs{background:#474747;border-color:#7F00FF}
+.zshop-detail .zs-market-tabs button{background:#505050;color:#ddd;min-height:36px}
+.zshop-detail .zs-market-tabs button[aria-pressed=true]{background:#7F00FF;color:#fff}
+.zshop-market-list section{border-color:#777!important;border-radius:0}
+.zshop-market-list .zs-market-toggle{background:#7F00FF!important;min-height:36px;padding:8px 10px!important}
+.zshop-market-list .zs-market-outcomes,.zshop-market-list .zs-market-outcomes>div{background:#505050!important}
+.zshop-market-list .zs-market-outcomes button{background:#505050!important;min-height:42px;justify-content:space-between}
+.zshop-market-list .zs-market-outcomes button>span:first-child{color:#ddd}
+.zshop-market-list .zs-market-outcomes button:hover:not(:disabled){background:#626262!important}
+.zshop-shell button[data-outcome-id][aria-pressed=true]:not(:disabled){background:#7F00FF!important;color:#fff;box-shadow:inset 0 0 0 1px #cda3ff!important;--tw-ring-color:transparent}
+.zshop-shell button[data-outcome-id]:disabled{background:#606060!important;color:#bbb!important}
+.zshop-shell button[data-outcome-id][data-odds-direction=up]:not(:disabled) span[data-odds-value]{color:#30d158!important}
+.zshop-shell button[data-outcome-id][data-odds-direction=down]:not(:disabled) span[data-odds-value]{color:#ff453a!important}
+@media(max-width:767px){
+ .zshop-board{padding:0 2px 10px}
+ .zshop-market-heading,.zshop-match{grid-template-columns:minmax(0,1fr) clamp(126px,36vw,158px) 25px}
+ .zshop-market-heading{height:24px;font-size:10px}
+ .zshop-match{min-height:78px}
+ .zshop-match-info{position:relative;grid-template-columns:minmax(0,1fr);min-height:78px;padding:3px 5px}
+ .zshop-match-info>button:first-child{position:absolute;top:4px;left:2px;width:19px;height:19px;display:flex;align-items:center;justify-content:center}
+ .zshop-match-teams{grid-template-columns:minmax(0,1fr);grid-template-rows:17px 21px 21px;align-content:center;gap:0;padding:1px 0}
+ .zshop-match-meta{grid-column:1;grid-row:1;flex-direction:row;gap:5px;padding-left:18px;line-height:15px;font-size:9px;white-space:nowrap}
+ .zshop-team{grid-column:1;font-size:12px;line-height:21px;min-width:0}
+ .zshop-totals,.zshop-nextgoal,.zshop-nextgoal-h,.zshop-main-odds.mobile-empty-primary{display:none}
+ .zshop-totals.mobile-fallback-total{display:flex;grid-column:2}
+ .zshop-extra{position:static;width:auto;height:auto;font-size:9px;flex-direction:column}
+ .zshop-board-odds{min-width:0}.zshop-board-odds button{min-height:44px!important}.zshop-board-odds button span[data-odds-value]{font-size:14px!important}
+ .zshop-sports-strip{height:58px;min-height:58px}.zshop-sports-strip>button{min-width:72px;padding:5px 9px}
+}
+
+/* Restrained violet accents for the sportsbook chrome. These selectors stay
+   inside the sports shell: account reports, admin and casino keep their theme. */
+.zshop-shell{--sports-violet:#7F00FF;--sports-lilac:#d5b5ff;--sports-chrome:#21152e;--sports-edge:#513766;--sports-soft:#35233f}
+.zshop-shell .zshop-header{background:linear-gradient(110deg,#251334,#3c1b56)!important;border-bottom:1px solid #62417d!important}
+.zshop-shell .zshop-header button{color:#f0e7fa;border-radius:6px}
+.zshop-shell .zshop-header button:hover{background:#ffffff0d;color:#e7d2ff}
+.zshop-shell .zshop-header svg{color:#d5b5ff}
+.zshop-shell [data-language-picker]{background:#20132d!important;border-color:#70558a!important;border-radius:6px;color:#f4ecff}
+.zshop-shell [data-language-picker] option{background:#241630;color:#f4ecff}
+.zshop-shell [data-mobile-sports-header]>header{background:linear-gradient(110deg,#251334,#3c1b56);border-bottom:1px solid #62417d}
+.zshop-shell [data-mobile-sports-header]>header button:hover{background:#ffffff0d;color:#ead9ff}
+.zshop-shell [data-mobile-sports-header]>header button:first-child{border-color:#62417d}
+.zshop-shell [data-mobile-sports-header]>header button>svg{color:#ddc6ff}
+.zshop-shell [data-mobile-sports-header] .sports-account-panel{background:#261a32;border-color:#674681;border-radius:0 0 10px 10px;color:#f4ecff}
+.zshop-shell [data-mobile-sports-header] .sports-account-panel button:hover{background:#40264f}
+.zshop-shell .zshop-sports-strip{background:#291b36;border-bottom:1px solid #62417d;gap:2px;padding:3px 5px}
+.zshop-shell .zshop-sports-strip>button{border-radius:7px;color:#ddcce9;border-bottom:2px solid transparent;gap:3px;padding:4px 12px;line-height:12px}
+.zshop-shell .zshop-sports-strip>button>svg{color:#cda7f4}
+.zshop-shell .zshop-sports-strip>button:hover{background:#443052;color:#fff}
+.zshop-shell .zshop-sports-strip>button[aria-pressed=true]{background:#7F00FF;border-color:#cda3ff;color:#fff;box-shadow:inset 0 1px 0 #ffffff21}
+.zshop-shell .zshop-sports-strip>button[aria-pressed=true]>svg{color:#fff}
+.zshop-shell .zshop-sports-strip .zs-strip-extra{border-left:1px solid #62417d}
+.zshop-shell .zshop-league-heading{background:#3b2d47;border-bottom:1px solid #776782;border-left:3px solid #a85cff;color:#f0e7f7;padding-left:8px}
+.zshop-shell .zshop-league-heading>small{color:#e4d1f2;background:#594368;border-radius:4px;padding:1px 6px}
+.zshop-shell .zshop-board-tools{background:#3b3144;border-bottom-color:#796786}
+.zshop-shell .zshop-board-tools select{background:#2f223b;border-color:#856798;border-radius:5px}
+.zshop-shell .zshop-sidebar{background:#211a29!important}
+.zshop-shell .zshop-sidebar>div:nth-child(2){background:#2d2236!important;border-color:#574264!important}
+.zshop-shell .zshop-sidebar>div:nth-child(2)>label{background:#483355}
+.zshop-shell .zshop-sidebar>div:nth-child(2)>div{background:#22172c!important;border-color:#70558a!important;border-radius:5px}
+.zshop-shell .zshop-sidebar section{border-color:#4c395b!important;border-radius:5px}
+.zshop-shell [data-sports-group-heading]{background:#493057;color:#f3eafa}
+.zshop-shell [data-sports-group-heading] button:hover{background:#5b3d6b}
+.zshop-shell [data-sports-country-list]{background:#2b2233}
+.zshop-shell [data-sports-country-row]{color:#e0d4e7;border-left:3px solid transparent}
+.zshop-shell [data-sports-country-row]:hover{background:#392944}
+.zshop-shell [data-sports-country-row][data-selected=true]{background:#49305c;border-left-color:#a85cff;color:#fff}
+.zshop-shell [data-sports-country-row][data-selected=true]>button:first-child>span{background:#7F00FF;border-color:#b780ff;color:#fff}
+.zshop-shell [data-sports-country-row] button[aria-expanded=true]{color:#d5b5ff;background:#ffffff08}
+.zshop-shell [data-sports-league-list]{background:#231a2b;border-color:#523a63}
+.zshop-shell [data-sports-league-row]{color:#d0c3da}
+.zshop-shell [data-sports-league-row]:hover{background:#3b294a;color:#fff}
+.zshop-shell [data-sports-league-row][aria-pressed=true]{background:#3c2554;color:#f2e8ff}
+.zshop-shell [data-sports-league-row][aria-pressed=true]>span:first-child{background:#7F00FF;border-color:#c69aff}
+.zshop-shell .zshop-slip-frame{background:#1c1723!important}
+.zshop-shell .zshop-betslip{background:#1c1723!important;border-color:#624678;border-radius:7px;color:#eee6f3}
+.zshop-shell .zshop-betslip .betslip-heading{background:#4a2568!important;border-bottom:1px solid #795193!important}
+.zshop-shell .zshop-betslip .betslip-heading-row svg{color:#dcc0ff}
+.zshop-shell .zshop-betslip .betslip-config{background:#302437;border-color:#1c1723}
+.zshop-shell .zshop-betslip .betslip-config select{background:#493356;border-radius:5px;color:#f0e6f5}
+.zshop-shell .zshop-betslip .betslip-scroll{background:#1c1723!important}
+.zshop-shell .zshop-betslip .betslip-match{background:#302a37;border-left:2px solid #9860bf;border-radius:5px;padding:6px}
+.zshop-shell .betslip-match-title{color:#eee5f5}
+.zshop-shell .betslip-match-bet button{color:#c2a1dc}
+.zshop-shell .zshop-betslip .betslip-footer{background:#2e2735!important;border-color:#1c1723}
+.zshop-shell .zshop-betslip .betslip-actions{background:#2e2735}
+.zshop-shell .zs-stake-control input{background:#211b28;border-color:#715884;border-radius:5px}
+.zshop-shell .zs-stake-control input:focus{border-color:#bc86ff;box-shadow:0 0 0 2px #7f00ff24}
+
+.zshop-shell .zshop-board{padding:8px 10px 14px;background:#17131c}
+.zshop-shell .zshop-section{margin:0 0 10px;border:1px solid #493957;border-radius:8px;background:#211a28}
+.zshop-shell .zshop-section-title{height:38px;min-height:38px;border-bottom:1px solid #574365;background:#34243f;font-size:14px}
+.zshop-shell .zshop-league-heading{min-height:34px;background:#292130;border-color:#403448}
+.zshop-shell .zshop-market-heading.zshop-market-heading-no-next,
+.zshop-shell .zshop-match.zshop-match-no-next{grid-template-columns:minmax(190px,1.15fr) minmax(180px,1fr) minmax(180px,1fr) 40px;gap:4px}
+.zshop-shell .zshop-market-heading{height:30px;margin:0;padding:0 4px;background:#392a45;color:#e8dff0;font-size:11px;font-weight:700}
+.zshop-shell .zshop-market-heading>span:first-child{text-align:left;padding-left:6px}
+.zshop-shell .zshop-match{min-height:74px;margin-top:3px;border:1px solid #342a3b;border-radius:6px;overflow:hidden;background:#201a27}
+.zshop-shell .zshop-match-info{background:#292230}
+.zshop-shell .zshop-match-teams{color:#f1eaf5}
+.zshop-shell .zshop-match-meta{color:#c1b4ca}
+.zshop-shell .zshop-board-odds,.zshop-shell .zshop-board-odds>div>div{background:#292230}
+.zshop-shell .zshop-board-odds>small{height:20px;line-height:20px;background:#34283d;color:#e0d3e8;font-size:10px;font-weight:700}
+.zshop-shell .zshop-board-odds>div{gap:2px;background:#17131c}
+.zshop-shell .zshop-board-odds button{background:#292230!important}
+.zshop-shell .zshop-board-odds button:hover:not(:disabled){background:#40334a!important}
+.zshop-shell .zshop-total-line{background:#241d2a;color:#cfc2d7;font-weight:700}
+.zshop-shell .zshop-extra{background:#292230;color:#d9c8e5}
+
+@media(max-width:767px){
+ .zshop-shell .zshop-board{padding:4px 4px 12px}
+ .zshop-shell .zshop-market-heading.zshop-market-heading-no-next,
+ .zshop-shell .zshop-match.zshop-match-no-next{grid-template-columns:minmax(0,1fr) minmax(132px,1.05fr) 28px;gap:2px}
+ .zshop-shell .zshop-market-heading{height:30px;padding:0 2px;font-size:9px}
+ .zshop-shell .zshop-market-heading>span:first-child{padding-left:4px}
+ .zshop-shell .zshop-match{min-height:78px;border-radius:4px}
+ .zshop-shell .zshop-match-info{grid-column:1;min-height:76px;padding:3px 4px}
+ .zshop-shell .zshop-match-teams{grid-template-rows:17px 21px 21px;padding:1px 0}
+ .zshop-shell .zshop-team{font-size:11px;line-height:21px}
+ .zshop-shell .zshop-main-odds{grid-column:2}
+ .zshop-shell .zshop-totals,.zshop-shell .zshop-main-odds.mobile-empty-primary{display:none}
+ .zshop-shell .zshop-totals.mobile-fallback-total{display:flex;grid-column:2;min-width:0}
+ .zshop-shell .zshop-nextgoal,.zshop-shell .zshop-nextgoal-h{display:none}
+ .zshop-shell .zshop-board-odds>small{height:18px;line-height:18px;font-size:9px}
+ .zshop-shell .zshop-board-odds button{min-height:52px!important;padding:2px 1px!important}
+ .zshop-shell .zshop-board-odds button span:first-child{font-size:8px!important;line-height:10px!important}
+ .zshop-shell .zshop-board-odds button span[data-odds-value]{font-size:13px!important}
+ .zshop-shell .zshop-quote-empty{min-height:48px}
+ .zshop-shell .zshop-total-line{font-size:10px}
+ .zshop-shell .zshop-extra{grid-column:3;min-height:76px;font-size:9px}
+}
+.zshop-shell .zshop-betslip .betslip-quick-stakes button{background:#493357!important;border-radius:4px;color:#eee3f7!important}
+.zshop-shell .zshop-betslip .betslip-quick-stakes button:hover{background:#614475!important}
+.zshop-shell .zshop-betslip [data-betslip-place]{background:#7F00FF;color:#fff;border:1px solid #a455f4;border-radius:6px;font-weight:700}
+.zshop-shell .zshop-betslip [data-betslip-place]:hover:not(:disabled){background:#9030ef}
+.zshop-shell .zshop-betslip [data-betslip-place]:disabled{background:#554660;border-color:#756480;color:#c5b8ce;opacity:.65}
+.zshop-shell .zshop-betslip .betslip-book{background:#483654;color:#e8daf1;border:1px solid #745c86;border-radius:6px}
+.zshop-shell [data-betslip-sheet]{border-color:#9f61d2;border-radius:12px 12px 0 0;background:#1c1723}
+.zshop-shell [data-betslip-sheet]>button{background:#30223d}
+.zshop-shell .zshop-detail .zs-market-tabs{background:#302339;border-color:#9b5acb}
+.zshop-shell .zshop-detail .zs-market-tabs button{background:#44334f;border-radius:5px!important}
+.zshop-shell .zshop-detail .zs-market-tabs button[aria-pressed=true]{background:#7F00FF}
+.zshop-shell .zshop-market-list .zs-market-toggle{background:#542b72!important;border-left:3px solid #a55aff;padding-left:7px!important}
+.zshop-shell .zshop-scoreboard-title{background:#44324f;border-bottom:1px solid #775787}
+.zshop-shell .zshop-detail-info:not(.is-live){background:#493b52}
+.zshop-shell button:focus-visible,.zshop-shell select:focus-visible{outline:2px solid #d5b5ff;outline-offset:-2px}
+@media(max-width:767px){
+ .zshop-shell .zshop-sports-strip{padding:3px 2px;gap:1px}
+ .zshop-shell .zshop-sports-strip>button{padding:3px 7px;line-height:11px}
+ .zshop-shell [data-sports-country-row]>button{min-height:44px}
+ .zshop-shell [data-sports-league-row]{min-height:40px}
+ .zshop-shell .zshop-betslip .betslip-quick-stakes button{min-height:34px}
+ .zshop-shell .zshop-betslip [data-betslip-place]{min-height:44px}
+}

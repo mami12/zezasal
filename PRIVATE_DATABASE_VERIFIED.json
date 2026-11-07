@@ -1,0 +1,127 @@
+{
+  "verified": true,
+  "createdAt": "2026-11-05T08:24:55.324Z",
+  "accounts": 14,
+  "tables": {
+    "app_admin_audit": {
+      "rows": 9,
+      "sha256": "deaa02be43fae569bb8346aa642d1d68813d8536952d1b2a57395a85433f2fbc"
+    },
+    "app_bet_builder_template": {
+      "rows": 11,
+      "sha256": "d77cece242f7ab4f725af859f448fba987943816b33282dbd0bad6796cd090b5"
+    },
+    "app_bet_rejection": {
+      "rows": 3,
+      "sha256": "fda134a03b1a2c8278c5e258e9dd350076947a80afb1af73274f505cbdd0ed09"
+    },
+    "app_board_settings": {
+      "rows": 1,
+      "sha256": "e73f29b2864e1552afb2ffc936225471b278ed45e6cc40246dc56a542ec29cbb"
+    },
+    "app_casino_freespin_state": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_casino_gamble_event": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_casino_gamble_state": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_casino_original_event": {
+      "rows": 314,
+      "sha256": "e032f910546837f69f18d2fbe53751067caeaf9d6de5d2201abf0810aebfa146"
+    },
+    "app_casino_original_state": {
+      "rows": 6,
+      "sha256": "c615a4bd1d640ee24cf07a1a98baac0cfb1c67a5437583e5a38411a773b04ec2"
+    },
+    "app_casino_round": {
+      "rows": 104,
+      "sha256": "cd94666cac8b8a50d3a662b4fd6bbe481abd3d7a31b6ac7e43435bfc563c39d5"
+    },
+    "app_casino_settings": {
+      "rows": 1,
+      "sha256": "f8d9c7186f2fca3cf049d8af0638d8bd5e74c37eefdb1c03b65df52fd236e3a2"
+    },
+    "app_commission_config": {
+      "rows": 1,
+      "sha256": "3c60d8c699ca53fb216a77b5241d5852cc4e04e9eddfa20c0336fed8075b0a3e"
+    },
+    "app_feed_override": {
+      "rows": 11,
+      "sha256": "bed2f859a21f7766307ec6198fd453fda2e9930f8c6837a239ed05f7e3caa2e5"
+    },
+    "app_financial_reset": {
+      "rows": 1,
+      "sha256": "b8c1c68433d1b935a51b626563f0ba8994d0de06aab2dca938bdff9bb0b9d396"
+    },
+    "app_live_risk_settings": {
+      "rows": 1,
+      "sha256": "7dba5984c4303ad6d1c71fc128f180cc7a70aa8104a77f2c7eeb820616ac55f0"
+    },
+    "app_manager_commission": {
+      "rows": 60,
+      "sha256": "af44239ef4d8a54ef743ecd5cfa81f94ef4cfed7343a43536fdaea02038c41fd"
+    },
+    "app_market_catalog": {
+      "rows": 13558,
+      "sha256": "8f32fe4ad5f9b73b72cb65c3c93c638962f8985a158286ef7456fb649db1e223"
+    },
+    "app_market_category_policy": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_market_scope_policy": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_match_result": {
+      "rows": 4093,
+      "sha256": "a23f59d82680145ccac51d5f9ee33234971ba7f282c4fce453477fb0cdd443cd"
+    },
+    "app_match_snapshot": {
+      "rows": 1883,
+      "sha256": "5932f3f0cdcdc89a8f615500fb24620c06be3430e2c5ec4f3331acb442ee98d0"
+    },
+    "app_player_controls": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "app_staff_transfer": {
+      "rows": 2,
+      "sha256": "ecd14e07fdc7cb557f662d2d8453a3e489289589d863b30a208cbab48ddfaace"
+    },
+    "app_stats_cache": {
+      "rows": 128,
+      "sha256": "6447a09aebeea1dada2c870c52d5211cb2c52aaf0d5e2eeb11dbb7ec2400420e"
+    },
+    "app_stats_usage": {
+      "rows": 40,
+      "sha256": "6843e2a74f1ef431c072cc37cb9f046755f20253ce1c6eb68803a656b252eb17"
+    },
+    "app_ticket": {
+      "rows": 13,
+      "sha256": "fe4f006edc7ba7a87f6d331f9fd3c533f8e9dfc5171d58c23df286ff89894032"
+    },
+    "app_ticket_batch": {
+      "rows": 1,
+      "sha256": "1b4ff7fd26cd7f6f7ea546580e064ea05a6a34b24fe0b89b7298fa84f7b89020"
+    },
+    "app_ticket_line": {
+      "rows": 13,
+      "sha256": "1243aea4d73eb57bf572277217c3cc72d5b0f075fe3ab857634f0b3c995bb371"
+    },
+    "app_transaction": {
+      "rows": 144,
+      "sha256": "f237c4044719fa002e2e71b2e400aff4bfb979ae446bc25d20f00a015bd21543"
+    },
+    "app_user": {
+      "rows": 14,
+      "sha256": "7ad602b4faaee7573536f2750239b4cf50864f48150b3ef82a3be15eab31ca22"
+    }
+  }
+}

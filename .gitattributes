@@ -1,0 +1,8 @@
+# Preserve original client resource hashes across Windows and Linux checkouts.
+web/public/casino-original/lucky-clover-x3/vendor/** -text
+
+web/public/casino-original/vikings-fun/vendor/** -text
+web/public/casino-original/agt/** -text
+# Keep every packaged original byte-identical, including renderer and font data.
+web/public/casino-original/** -text
+data/** -text

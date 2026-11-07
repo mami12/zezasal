@@ -1,0 +1,94 @@
+{"frames": {
+
+"shifter/0_0":
+{
+	"frame": {"x":1,"y":1,"w":222,"h":222},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":222,"h":222},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/1_0":
+{
+	"frame": {"x":225,"y":1,"w":222,"h":222},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":222,"h":222},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/2_0":
+{
+	"frame": {"x":449,"y":1,"w":222,"h":222},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":222,"h":222},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/3_0":
+{
+	"frame": {"x":673,"y":1,"w":213,"h":222},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":6,"y":0,"w":213,"h":222},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/4_0":
+{
+	"frame": {"x":888,"y":1,"w":180,"h":202},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":21,"y":8,"w":180,"h":202},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/5_0":
+{
+	"frame": {"x":1401,"y":1,"w":182,"h":172},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":18,"y":23,"w":182,"h":172},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/6_0":
+{
+	"frame": {"x":1235,"y":1,"w":164,"h":179},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":37,"y":20,"w":164,"h":179},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/7_0":
+{
+	"frame": {"x":1070,"y":1,"w":163,"h":182},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":31,"y":22,"w":163,"h":182},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/8_0":
+{
+	"frame": {"x":1585,"y":1,"w":159,"h":169},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":31,"y":25,"w":159,"h":169},
+	"sourceSize": {"w":222,"h":222}
+},
+"shifter/9_0":
+{
+	"frame": {"x":1746,"y":1,"w":154,"h":167},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":33,"y":25,"w":154,"h":167},
+	"sourceSize": {"w":222,"h":222}
+}},
+"animations": {
+},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "shifter_0.png",
+	"format": "RGBA5555",
+	"size": {"w":1901,"h":224},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:91525acec07fdbd7a1b17c18dfba8d64:7e98a57eda3c16b5da4735c273f08052:86ae71aabe99d7f04ee524e854efc43c$"
+}
+}

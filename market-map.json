@@ -5,9 +5,9 @@
     "'types'  -> the FIRST number inside the odds id bracket, e.g. the '264' of",
     "            12:L:18636649:[264,[2.5],[0],1,4,[]]",
     "'groups' -> the oddsGroup id, e.g. the '54211' of {\"id\":\"54211\", ...}",
-    "groups wins over types. Anything not listed falls back to heuristics in",
-    "server/push-decode.mjs (1x2 when outcomes contain x, under/over with a line",
-    ">= 6.5 is shown as corners, otherwise total).",
+    "groups wins over types. Unknown groups without a trusted provider name are hidden;",
+    "Do not infer a market from odds size or selection pattern.",
+    "A verified group map or descriptive provider name is required.",
     "To find the ids for CORNERS and CARDS: open a football match on the site,",
     "locate the corners / cards price in the UI, note the group id (or the number",
     "in the odds id) from the frames relayed to your backend, then add it here.",
@@ -32,16 +32,63 @@
     "types below ensure correct classification when the heuristic disagrees."
   ],
   "types": {
-    "1": { "column": "result", "name": "Full Time Result" },
-    "264": { "column": "total", "name": "Total Goals" },
-    "301": { "column": "other", "name": "Asian Handicap" },
-    "302": { "column": "result", "name": "Double Chance" },
-    "303": { "column": "result", "name": "Both Teams to Score" },
-    "311": { "column": "cards", "name": "Yellow Cards" },
-    "312": { "column": "cards", "name": "Red Cards" },
-    "320": { "column": "corners", "name": "Total Corners" },
-    "321": { "column": "corners", "name": "Asian Corners" },
-    "323": { "column": "cards", "name": "Total Cards" }
+    "1": {
+      "column": "result",
+      "name": "Full Time Result"
+    },
+    "264": {
+      "column": "total",
+      "name": "Total Goals"
+    },
+    "301": {
+      "column": "other",
+      "name": "Asian Handicap"
+    },
+    "302": {
+      "column": "result",
+      "name": "Double Chance"
+    },
+    "303": {
+      "column": "total",
+      "name": "Both Teams to Score"
+    },
+    "304": {
+      "column": "result",
+      "name": "Half Time Result"
+    },
+    "305": {
+      "column": "other",
+      "name": "Half Time / Full Time"
+    },
+    "306": {
+      "column": "other",
+      "name": "Correct Score"
+    },
+    "311": {
+      "column": "cards",
+      "name": "Yellow Cards"
+    },
+    "312": {
+      "column": "cards",
+      "name": "Red Cards"
+    },
+    "320": {
+      "column": "corners",
+      "name": "Total Corners"
+    },
+    "321": {
+      "column": "corners",
+      "name": "Asian Corners"
+    },
+    "323": {
+      "column": "cards",
+      "name": "Total Cards"
+    }
   },
-  "groups": {}
+  "groups": {
+    "6379": {
+      "column": "total",
+      "name": "Total Goals"
+    }
+  }
 }

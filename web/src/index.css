@@ -18,18 +18,60 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: #503566;
     border-radius: 9999px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: #6e488e;
   }
 
   body {
-    background-color: #090d16;
+    background-color: #120a1b;
     color: #f8fafc;
     overflow-x: hidden;
+  }
+}
+
+@media print {
+  @page {
+    margin: 2mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .ticket-print-overlay,
+  .ticket-print-overlay * {
+    visibility: visible !important;
+  }
+
+  .ticket-print-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .ticket-print-panel {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 72mm !important;
+    max-width: none !important;
+    padding: 2mm !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .ticket-print-actions {
+    display: none !important;
   }
 }
 
@@ -41,18 +83,32 @@
     animation: flashRed 1s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  /* Subtle glassmorphism */
+  /* Subtle glassmorphism with violet tone */
   .glass-card {
-    background: rgba(19, 27, 46, 0.7);
+    background: rgba(35, 20, 51, 0.94);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Older Android browsers keep the vh fallback. On phones the board is a
+   viewport frame: document scrolling must never hide its betslip/header bar. */
+.sportsbook-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+@media (max-width: 767px) {
+  .sportsbook-shell {
+    position: fixed;
+    inset: 0;
+    width: 100%;
   }
 }
 
 @keyframes flashGreen {
   0% { 
     background-color: rgba(16, 185, 129, 0.35);
-    border-color: #10b981;
+    border-color: #329448;
     color: #ffffff;
   }
   100% { 
@@ -69,4 +125,60 @@
   100% { 
     background-color: transparent; 
   }
+}
+
+
+/* A reserved toolbar stays outside every provider iframe, including fullscreen. */
+.casino-game-stage {
+ position: fixed; inset: 0; z-index: 9999;
+ display: flex; flex-direction: column;
+ width: 100vw; height: 100dvh; overflow: hidden; background: #000;
+}
+.casino-game-toolbar { min-height: 44px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+.casino-game-rotated {
+ inset: auto; left: 100vw; top: 0; width: 100dvh; height: 100vw;
+ transform: rotate(90deg); transform-origin: top left;
+}
+.casino-game-content iframe { width: 100%; height: 100%; min-height: 0; border: 0; }
+.casino-game-content { display: flex; align-items: center; justify-content: center; }
+.casino-session-layout { width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; }
+.casino-session-stage { width: 100%; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; container-type: size; }
+.casino-session-layout .casino-session-stage .casino-wallet-surface { width: min(100cqw, calc(100cqh * 16 / 9)); height: min(100cqh, calc(100cqw * 9 / 16)); }
+.casino-wallet-surface {
+ width: min(100vw, calc((100dvh - 44px) * 16 / 9));
+ height: min(calc(100dvh - 44px), calc(100vw * 9 / 16));
+}
+.casino-game-rotated .casino-wallet-surface {
+ width: min(100dvh, calc((100vw - 44px) * 16 / 9));
+ height: min(calc(100vw - 44px), calc(100dvh * 9 / 16));
+}
+.casino-game-windowed {
+ position: relative; inset: auto; z-index: 1;
+ width: calc(100% - 24px); height: 72dvh; min-height: 260px;
+ margin: 12px; border: 1px solid #ffffff33; border-radius: 12px;
+}
+.casino-game-windowed .casino-wallet-surface {
+ width: min(100%, calc((72dvh - 46px) * 16 / 9));
+ height: auto; aspect-ratio: 16 / 9; max-height: 100%;
+}
+
+/* Rotate hint shown in portrait before the stage is rotated. */
+.casino-rotate-hint {
+ position: fixed; inset: 0; z-index: 10000;
+ display: flex; flex-direction: column; align-items: center; justify-content: center;
+ gap: 12px;
+ padding: 24px max(16px, env(safe-area-inset-left)) 24px max(16px, env(safe-area-inset-right));
+ background: #0b1220; color: #e2e8f0; text-align: center;
+}
+.casino-rotate-hint p { max-width: 22rem; font-size: 14px; font-weight: 700; line-height: 1.4; }
+.casino-rotate-hint-btn {
+ min-height: 44px; padding: 0 18px; border-radius: 10px;
+ border: 1px solid #f59e0b66; background: #f59e0b; color: #000;
+ font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.casino-rotate-hint-btn:hover { background: #fbbf24; }
+.casino-game-content iframe { display: block; }
+@media (max-width: 420px) {
+ .casino-game-toolbar { gap: 6px; }
+ .casino-game-fullscreen-label { display: none; }
 }

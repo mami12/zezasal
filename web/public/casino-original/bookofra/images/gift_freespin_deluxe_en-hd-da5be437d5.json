@@ -1,0 +1,20 @@
+{"frames": {
+
+"gift_freespin_deluxe/popupBack":
+{
+	"frame": {"x":1,"y":1,"w":590,"h":578},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":4,"y":0,"w":590,"h":578},
+	"sourceSize": {"w":620,"h":602}
+}},
+"meta": {
+	"app": "http://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "gift_freespin_deluxe_en-hd.png",
+	"format": "BGRA8888",
+	"size": {"w":592,"h":580},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:267a0fc887c2eed5726623619b1b9d79:c71d435b908deebdd79e79d8aadd9be7:fccaaa18986340fc33c3abd896ab68be$"
+}
+}

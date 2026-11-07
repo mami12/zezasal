@@ -1,0 +1,100 @@
+/* Sizzling 777 Deluxe inspired cabinet layout. Preserves the Goldsvet
+   standalone demo's original SPIN, reel strips, paylines and calculations.
+   Visual design follows the reference cabinet screenshot; it is NOT the
+   separate proprietary Wazdan/GWT s777d runtime. */
+:root { color-scheme:dark; }
+html,body{background:#120007!important;overscroll-behavior:none}
+#game-wrapper{
+  width:min(100%,1024px);max-width:1024px;max-height:760px;
+  border-radius:0;border:0;box-shadow:0 0 65px #e11b5b66,inset 0 0 44px #5b0011;
+  background:
+    radial-gradient(ellipse at 90% 2%,#e73a98a8,transparent 46%),
+    radial-gradient(ellipse at 4% 84%,#fb4326cc,transparent 47%),
+    radial-gradient(ellipse at 47% 15%,#bc0005,transparent 65%),
+    linear-gradient(115deg,#870014,#3d002d 55%,#b70036);
+  position:relative;isolation:isolate;min-height:510px;
+}
+#game-wrapper:before{content:"";pointer-events:none;position:absolute;inset:0;z-index:-1;opacity:.4;
+ background:
+ repeating-linear-gradient(159deg,transparent 0 63px,#ffffff15 64px 66px,transparent 69px 106px),
+ radial-gradient(circle at 14% 12%,#fff9 0 1px,transparent 3px),
+ radial-gradient(circle at 76% 19%,#fff9 0 1px,transparent 3px);
+}
+#header-bar{background:transparent;border:0;height:100px;min-height:85px;justify-content:center;padding:0 16px;position:relative;z-index:2;}
+.logo-title{font-size:clamp(30px,5.7vw,64px);line-height:.87;letter-spacing:-2px;
+ color:#ffd844;font-weight:1000;font-style:italic;
+ -webkit-text-stroke:1.5px #200219;
+ text-shadow:0 3px 0 #f60,0 6px 1px #1719ab,0 10px 1px #080932,0 13px 15px #000;
+ transform:scaleX(1.1);white-space:nowrap;}
+.logo-badge{display:inline-block;background:linear-gradient(#fff1a3,#ffac29 55%,#a70000 57%,#fc4742);
+ -webkit-text-stroke:1px #27051b;color:#ffdf52;font-size:clamp(13px,2.2vw,23px);letter-spacing:0;
+ margin-left:3px;transform:translateY(7px);border:1px solid #ffe08b;padding:3px 7px;box-shadow:0 3px #370022}
+#header-bar>.controls-group{position:absolute;top:6px;right:7px;gap:5px;}
+#header-bar>.controls-group .btn-game{font-size:10px;padding:6px 8px;min-height:30px;opacity:.88}
+.reel-stage{position:relative;min-height:0;flex:1;margin:0 30px;display:flex;align-items:stretch;gap:4px;}
+#reels-container{margin:0;flex:1;min-width:0;border:5px ridge #d9a33d;border-radius:5px;
+ box-shadow:0 0 0 2px #421307,0 8px 16px #10000588,0 0 19px #ff9b20;
+ background:#3b000d;isolation:isolate;}
+.reel-col{border-right:5px ridge #bd883c;
+ background:radial-gradient(ellipse at 44% 28%,#610611 0%,#24000a 68%);
+ box-shadow:inset 0 0 22px #0009;}
+.reel-col:last-child{border:0}
+.symbol-cell{transition:none!important;}
+.symbol-cell img{max-width:94%;max-height:90%;width:min(95%,155px);height:90%;object-fit:contain;filter:drop-shadow(0 8px 3px #0009);}
+.line-rail{width:28px;flex:0 0 28px;display:flex;flex-direction:column;justify-content:space-around;align-items:center;z-index:3;padding:3px 0;}
+.line-star{border:0;background:none;color:#ffde37;-webkit-text-stroke:1px #540010;text-shadow:1px 2px 1px #47000b,0 0 5px #fff7;
+ font-size:clamp(17px,2.7vw,28px);line-height:1;cursor:pointer;filter:drop-shadow(0 1px 1px #000);}
+.line-star:nth-child(2){color:#80beff}
+.line-star:nth-child(3){color:#fc629e}
+.line-star:nth-child(4){color:#73ed40}
+.line-star:nth-child(5){color:#a387f4}
+.line-star.active{color:#fff9b1;transform:scale(1.25);filter:drop-shadow(0 0 6px yellow);}
+#win-banner{max-width:85%;padding:12px 28px}
+#dashboard{height:auto;min-height:83px;display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,3fr) minmax(106px,1fr);
+ grid-template-areas:"balance betting actions";gap:6px;padding:8px 10px;
+ background:linear-gradient(180deg,#762f66,#4d1045 52%,#230a32);border-top:5px ridge #c89442;}
+#dashboard .balance-box{grid-area:balance;display:flex;flex-direction:column;justify-content:center;gap:5px}
+#dashboard .balance-box .info-box{width:100%;min-width:0;padding:5px 8px;background:#18050d;border:3px ridge #bb8735;border-radius:4px}
+#dashboard .balance-box .value{font-size:17px;color:#ffe83d}
+#dashboard .balance-box .label{font-size:10px;color:#ffe3a0}
+#dashboard .stake-box{grid-area:betting;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.cabinet-status{border:3px ridge #a65c57;min-height:24px;background:#16070c;color:#ffdf7a;
+ text-align:center;font:700 13px/19px Arial,sans-serif;text-shadow:0 0 4px #fff1}
+#dashboard .bet-strip{display:flex;align-items:center;gap:2px;min-width:0}
+#dashboard .bet-strip .btn-game{min-height:29px;min-width:26px;padding:4px 6px;font-size:12px;border-radius:4px;
+ background:linear-gradient(#ffcc6b,#de280a 51%,#9e0900);border:1px solid #ffdc8b}
+#dashboard .chip{flex:1;min-width:0;padding:6px 2px!important;font-size:clamp(10px,1.35vw,14px)!important;
+ font-weight:900;text-align:center;border-radius:1px!important;background:linear-gradient(#7a270a,#a12c14)!important;}
+#dashboard .chip.selected{background:linear-gradient(#cce955,#689c10)!important;color:#101000;border-color:#fbff6d!important}
+#dashboard .action-box{grid-area:actions;display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+#dashboard .action-box .btn-spin{font-size:0;width:clamp(66px,9vw,96px);height:clamp(66px,9vw,96px);
+ padding:0;border-radius:50%;border:6px ridge #efc44f!important;
+ background:radial-gradient(circle at 33% 24%,#ffd162,#ff750d 48%,#b40805 75%)!important;
+ box-shadow:0 0 0 3px #3d1433,0 0 12px #ffce4c,inset 0 0 5px #fff3!important;}
+#dashboard .action-box .btn-spin:after{content:"⟳";font-size:54px;line-height:1;color:white;text-shadow:1px 3px #7d0101;}
+#dashboard .action-box .btn-spin.spinning:after{content:"■";font-size:33px;}
+#dashboard .action-box #btn-auto{font-size:10px;padding:5px 7px;min-height:28px;}
+#dashboard .info-box.win{display:none}
+#dashboard .info-box{box-shadow:inset 0 0 10px #000}
+#game-wrapper .paytable-overlay{top:91px;height:calc(100% - 160px);border:3px ridge #dfb04c}
+#header-bar>.controls-group{z-index:5}
+@media(max-width:670px){
+ #game-wrapper{min-height:400px;max-height:none;height:100%;border:0}
+ #header-bar{height:80px;min-height:70px;align-items:flex-end;padding-bottom:6px}
+ .logo-title{font-size:clamp(26px,6.7vw,47px)}
+ #header-bar>.controls-group{top:0;right:3px}
+ #header-bar>.controls-group .btn-game{font-size:9px;padding:4px}
+ .reel-stage{margin:0 4px;gap:1px}
+ .line-rail{width:18px;flex-basis:18px}
+ .line-star{font-size:16px}
+ #reels-container{border-width:3px}
+ .reel-col{border-right-width:2px}
+ #dashboard{grid-template-columns:1fr 2.2fr;grid-template-areas:"balance actions" "betting betting";padding:5px;gap:3px;}
+ #dashboard .action-box{justify-content:flex-end}
+ #dashboard .action-box .btn-spin{width:64px;height:64px}
+ #dashboard .action-box .btn-spin:after{font-size:43px}
+ #dashboard .balance-box .value{font-size:13px}
+ #dashboard .chip{font-size:10px!important}
+ #dashboard .bet-strip .btn-game{min-width:22px;padding:4px 2px}
+ .paytable-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

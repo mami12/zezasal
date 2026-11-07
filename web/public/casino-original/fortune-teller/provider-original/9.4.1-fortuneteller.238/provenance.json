@@ -1,0 +1,221 @@
+{
+  "version": "9.4.1-fortuneteller.238",
+  "source": "User-supplied fortuntelle capture",
+  "bundle": "games/fortuneteller/fortuneteller_desktop.bundle.js",
+  "sourceSha256": "a4cbaf98926a91332915adca2e690bcd82ba8f2fc97bb57fb8db4f5c4e8ddf72",
+  "packagedSha256": "d627d11286f96e8698f2ec1741e3b62dbb243fe0e839f9c65b4d3d02b1de1a18",
+  "files": [
+    {
+      "path": "games/fortuneteller/fortuneteller_desktop.bundle.js",
+      "sourceSha256": "a4cbaf98926a91332915adca2e690bcd82ba8f2fc97bb57fb8db4f5c4e8ddf72",
+      "packagedSha256": "d627d11286f96e8698f2ec1741e3b62dbb243fe0e839f9c65b4d3d02b1de1a18"
+    },
+    {
+      "path": "resources/common/fonts/ARIAL_ROUNDED_BOLD.css",
+      "sourceSha256": "6caf308b1afce2e7156c5d739992fb8f0826b0f87fa4621760b16b49b426ef6b",
+      "packagedSha256": "6caf308b1afce2e7156c5d739992fb8f0826b0f87fa4621760b16b49b426ef6b"
+    },
+    {
+      "path": "resources/common/fonts/ARIAL_ROUNDED_BOLD.woff",
+      "sourceSha256": "3f945047845bd9f18484095bfcd179b4f991d271daef2ccbdc7883b4e8d9b609",
+      "packagedSha256": "3f945047845bd9f18484095bfcd179b4f991d271daef2ccbdc7883b4e8d9b609"
+    },
+    {
+      "path": "resources/common/fonts/MAGDA.css",
+      "sourceSha256": "790ad62a255d98a788248225140e663d0a3e87014f07220b231be3cbea9f8263",
+      "packagedSha256": "705b7be18b6c46a7ae0a42a20aa9ac637484a0d382baff6e0c17366bef17ff5f"
+    },
+    {
+      "path": "resources/common/fonts/MAGDA.woff",
+      "sourceSha256": "d1152667ffc45e94f485129152a98c94f5b999a66bc1b8d5bd3998ab378e47b0",
+      "packagedSha256": "d1152667ffc45e94f485129152a98c94f5b999a66bc1b8d5bd3998ab378e47b0"
+    },
+    {
+      "path": "resources/common/fonts/OSWALD-MEDIUM.woff",
+      "sourceSha256": "7f389249a3b0e860a8a0c9449215ebc69f6afe487448a9e251ee7f9de1e8ccc5",
+      "packagedSha256": "7f389249a3b0e860a8a0c9449215ebc69f6afe487448a9e251ee7f9de1e8ccc5"
+    },
+    {
+      "path": "resources/common/fonts/OSWALD-REGULAR.woff",
+      "sourceSha256": "06886c84e0e3c6e9e35a86eaa85fd3d3d6b966f9034f625af050ec625bf943fc",
+      "packagedSha256": "06886c84e0e3c6e9e35a86eaa85fd3d3d6b966f9034f625af050ec625bf943fc"
+    },
+    {
+      "path": "resources/common/fonts/POPPINS_REGULAR.css",
+      "sourceSha256": "cd8d63cb7c62dd370c57111a9e116acc7aad832022f14f1f1d0460ffddd47b09",
+      "packagedSha256": "cd8d63cb7c62dd370c57111a9e116acc7aad832022f14f1f1d0460ffddd47b09"
+    },
+    {
+      "path": "resources/common/fonts/POPPINS_REGULAR.woff",
+      "sourceSha256": "09aaed11e532e913ece3446f93fe0abf7f99a2727af4a1bb8436249929935a2b",
+      "packagedSha256": "09aaed11e532e913ece3446f93fe0abf7f99a2727af4a1bb8436249929935a2b"
+    },
+    {
+      "path": "resources/common/fonts/ROBOTO_CONDENSED_BOLD.css",
+      "sourceSha256": "9ecc50c226974dc2c28b27e342de6610403e1c6314e6f1bfe649a41418ea8df4",
+      "packagedSha256": "9ecc50c226974dc2c28b27e342de6610403e1c6314e6f1bfe649a41418ea8df4"
+    },
+    {
+      "path": "resources/common/fonts/ROBOTO_CONDENSED_BOLD.woff",
+      "sourceSha256": "74307967c6c61dac0da0e6c327663b13e7f4f835825c3a84eef1ed719e592252",
+      "packagedSha256": "74307967c6c61dac0da0e6c327663b13e7f4f835825c3a84eef1ed719e592252"
+    },
+    {
+      "path": "resources/common/fonts/ROBOTO_CONDENSED_REGULAR.css",
+      "sourceSha256": "c018ebfdb84d7f2d5bd527176c9abdc358f9a8153b0835e6886d87bfe2050c4f",
+      "packagedSha256": "c018ebfdb84d7f2d5bd527176c9abdc358f9a8153b0835e6886d87bfe2050c4f"
+    },
+    {
+      "path": "resources/common/fonts/ROBOTO_CONDENSED_REGULAR.woff",
+      "sourceSha256": "ff3bcfe7f249ed32094928fada1b4c6c2d3c519e158e49a193687cca9b88ce2b",
+      "packagedSha256": "ff3bcfe7f249ed32094928fada1b4c6c2d3c519e158e49a193687cca9b88ce2b"
+    },
+    {
+      "path": "resources/common/fonts/elan.css",
+      "sourceSha256": "ba301220cab14668327d66ca8f8b227b196b478a3f8267107368794c5df55f59",
+      "packagedSha256": "ba301220cab14668327d66ca8f8b227b196b478a3f8267107368794c5df55f59"
+    },
+    {
+      "path": "resources/common/fonts/elan.woff",
+      "sourceSha256": "67fadbc788813cf5b4e262dc6a38a8e4e89be37a82a48cd7117f59ca3d44e4b3",
+      "packagedSha256": "67fadbc788813cf5b4e262dc6a38a8e4e89be37a82a48cd7117f59ca3d44e4b3"
+    },
+    {
+      "path": "resources/common/fonts/oswald_medium.css",
+      "sourceSha256": "349fa7df41dde3f2e722454be4cf022726e1197e4ab3cf9200e5802fc5dadec5",
+      "packagedSha256": "349fa7df41dde3f2e722454be4cf022726e1197e4ab3cf9200e5802fc5dadec5"
+    },
+    {
+      "path": "resources/common/fonts/oswald_regular.css",
+      "sourceSha256": "16d0942ae6fa9b79a76dfa5c0aad6661040b85dd9009311403c9850375d28366",
+      "packagedSha256": "16d0942ae6fa9b79a76dfa5c0aad6661040b85dd9009311403c9850375d28366"
+    },
+    {
+      "path": "resources/common/sounds/common_sounds_desktop.json",
+      "sourceSha256": "4604c3faafda747dc5cc08afd4ecaba03c3f49b027b838f39b21fe2b05a3c3cd",
+      "packagedSha256": "4604c3faafda747dc5cc08afd4ecaba03c3f49b027b838f39b21fe2b05a3c3cd"
+    },
+    {
+      "path": "resources/common/sounds/common_sounds_desktop.mp3",
+      "sourceSha256": "b4447ee42b8dc43c88012ef67a22390937f86ee17dd6171bc8d1d976a9b2fb21",
+      "packagedSha256": "b4447ee42b8dc43c88012ef67a22390937f86ee17dd6171bc8d1d976a9b2fb21"
+    },
+    {
+      "path": "resources/common/ui/desktop/statusbar/statusbar_texture0_level1.png",
+      "sourceSha256": "686775f23c666587a7190ee9283c6ffd187fbd4e713a400c1117125f8addef02",
+      "packagedSha256": "686775f23c666587a7190ee9283c6ffd187fbd4e713a400c1117125f8addef02"
+    },
+    {
+      "path": "resources/gamelibs/videoslot/desktop/videoslot_popup/videoslot_popup_texture0_level1.png",
+      "sourceSha256": "2ece7444295bf05755811719f0742bae67e845d9db1b39a5b3420146aee32fdb",
+      "packagedSha256": "2ece7444295bf05755811719f0742bae67e845d9db1b39a5b3420146aee32fdb"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/background/background_texture0_level1.jpg",
+      "sourceSha256": "a94704b7cc2a2ca40f1ecbe6780b0c07a6cbe993b436b38cba5f8f1f87e51d7c",
+      "packagedSha256": "a94704b7cc2a2ca40f1ecbe6780b0c07a6cbe993b436b38cba5f8f1f87e51d7c"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/background/background_texture1_level1.png",
+      "sourceSha256": "385a3a3334dd1fa16134213ebe2d5c681acb94211a033f5b697d9645c75fd045",
+      "packagedSha256": "385a3a3334dd1fa16134213ebe2d5c681acb94211a033f5b697d9645c75fd045"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/bmpfonts/bmpfonts_texture0_level1.png",
+      "sourceSha256": "131dbda48f1a498fc9a1f41cc0695db1e345b462d8adec72ad85d12f39a4eee0",
+      "packagedSha256": "131dbda48f1a498fc9a1f41cc0695db1e345b462d8adec72ad85d12f39a4eee0"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/bonus/bonus_texture0_level1.jpg",
+      "sourceSha256": "99d476ab562aec11b4e4caf24737fe3ef48e5a548944aaa0b1344434f8f8a0d1",
+      "packagedSha256": "99d476ab562aec11b4e4caf24737fe3ef48e5a548944aaa0b1344434f8f8a0d1"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/bonus/bonus_texture1_level1.png",
+      "sourceSha256": "2c20de8776ad58b06b3416409d69640e28a26e2fed8c0d13e78ecacb373c31b9",
+      "packagedSha256": "2c20de8776ad58b06b3416409d69640e28a26e2fed8c0d13e78ecacb373c31b9"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/config_desktop.json",
+      "sourceSha256": "cae5e6abf315b08b111893c4999ceafb83f4ba9f434242e19784278770343481",
+      "packagedSha256": "cae5e6abf315b08b111893c4999ceafb83f4ba9f434242e19784278770343481"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/feature_preview/feature_preview_texture0_level1.png",
+      "sourceSha256": "4ce2aba9c6e9cf38170668b1caa9a308c229bed212b5efecc880419c9057b6b6",
+      "packagedSha256": "4ce2aba9c6e9cf38170668b1caa9a308c229bed212b5efecc880419c9057b6b6"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/featurepreview_bundle.json",
+      "sourceSha256": "b00613fe7b21712ee4d77d7dda61ee2a3e34b1b27be7df8e4b5a99cadcef142b",
+      "packagedSha256": "b00613fe7b21712ee4d77d7dda61ee2a3e34b1b27be7df8e4b5a99cadcef142b"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/game_bundle.json",
+      "sourceSha256": "7f5154462f397d56197ce8d56252350021f3e5a5c87e0cdcd9b368ab47236b4c",
+      "packagedSha256": "7f5154462f397d56197ce8d56252350021f3e5a5c87e0cdcd9b368ab47236b4c"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/logo/logo_texture0_level1.png",
+      "sourceSha256": "0cf5e28add24fc62a112a22a0c28a5e0e37dca11f2926227a561790646bb902e",
+      "packagedSha256": "0cf5e28add24fc62a112a22a0c28a5e0e37dca11f2926227a561790646bb902e"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/menu/menu_texture0_level1.png",
+      "sourceSha256": "7d7a839d0ccd11d1b2fdc7848b79721303aa858af2d57990800ac2e948ae8641",
+      "packagedSha256": "7d7a839d0ccd11d1b2fdc7848b79721303aa858af2d57990800ac2e948ae8641"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/menu/menu_texture1_level1.png",
+      "sourceSha256": "ad27d095463c7e0914092b29580628816b71003905d66deba4023d287ba1af0b",
+      "packagedSha256": "ad27d095463c7e0914092b29580628816b71003905d66deba4023d287ba1af0b"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/menu/menu_texture2_level1.png",
+      "sourceSha256": "2cb382897abe1df80ba134a460e5738f8e7a6f429b806e0e70b115c0d9cdac5e",
+      "packagedSha256": "2cb382897abe1df80ba134a460e5738f8e7a6f429b806e0e70b115c0d9cdac5e"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/skin/skin_texture0_level1.png",
+      "sourceSha256": "347599abe254a37b3618698753775669d6f57791920be5ca874f42ee3e1339b5",
+      "packagedSha256": "347599abe254a37b3618698753775669d6f57791920be5ca874f42ee3e1339b5"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/skin/skin_texture1_level1.png",
+      "sourceSha256": "d312a2ea0750e6caa804d2a5c6f7bc1288112e86cc531f8f2ed3ce5f003ca903",
+      "packagedSha256": "d312a2ea0750e6caa804d2a5c6f7bc1288112e86cc531f8f2ed3ce5f003ca903"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/skin/skin_texture2_level1.png",
+      "sourceSha256": "a46a74acb59479da2d0f15f87f6ae3b8b405a3d8870db70959eb598371b964c7",
+      "packagedSha256": "a46a74acb59479da2d0f15f87f6ae3b8b405a3d8870db70959eb598371b964c7"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/sounds/sounds_desktop.json",
+      "sourceSha256": "9d821b67dd56bdc46c0d7e206c8c2901022cb304bc908bcccd3e44d5ccd909b4",
+      "packagedSha256": "9d821b67dd56bdc46c0d7e206c8c2901022cb304bc908bcccd3e44d5ccd909b4"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/sounds/sounds_desktop.mp3",
+      "sourceSha256": "a16e74e8f6ff5314d4808e33c0fc13b886126b89ad86d6521c4f93138ce41977",
+      "packagedSha256": "a16e74e8f6ff5314d4808e33c0fc13b886126b89ad86d6521c4f93138ce41977"
+    },
+    {
+      "path": "resources/games/videoslot/fortuneteller/ui_desktop_bundle.json",
+      "sourceSha256": "ef93d9fb83cb51b67f7a64a1c2ada68f99b30bf574bdaa2f3a50a1b8531af9eb",
+      "packagedSha256": "ef93d9fb83cb51b67f7a64a1c2ada68f99b30bf574bdaa2f3a50a1b8531af9eb"
+    },
+    {
+      "path": "resources/lang/en_GB/locale.json",
+      "sourceSha256": "962fb8c9f72bd079855f7bb9dcad9c26fd94987c53fa225292b422cffb6787de",
+      "packagedSha256": "2c3f4c557b7a9e7ccb2615ce64e27457fe5d04b965a413df66631ba204bc9176"
+    }
+  ],
+  "changes": [
+    "Restore capture-damaged ?? and ?. operators",
+    "Expose existing wallet state, events and resize/redraw to the local adapter",
+    "Use the captured WOFF font without its absent TTF fallback",
+    "Label Tarot multipliers X LINE BET to match Slotopol awards"
+  ],
+  "originalRenderingAndControls": true
+}

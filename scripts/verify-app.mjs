@@ -1,6 +1,6 @@
 /**
  * Regression check for the player-facing app surface (auth, board, betslip, booking codes,
- * cash-out, settlement payout). Run against a live server that has prices:
+ * settlement payout, disabled cash-out). Run against a live server that has prices:
  *
  *   ODDS_SOCKET=true npm start         # or LOCAL_URL=... to point at a deployed instance
  *   npm run verify:app
@@ -161,20 +161,11 @@ if (graded?.status === 'WON') {
   check('a lost ticket keeps the stake (no refund on the balance)', (await balanceOf(token)) === before - 100);
 }
 
-// --- cash-out gives back part of an open ticket -----------------------------------
-const other = live.body.find((m) => m.id !== priced.id && m.markets.some((mk) => mk.outcomes.length));
-if (other) {
-  const beforeCash = await balanceOf(token);
-  const { res: second } = await placeAtLivePrice('/bets/place', token, 200, other.id);
-  check('a second bet is accepted', second.status === 200, JSON.stringify(second.body?.message));
-
-  const cash = await call(`/bets/cashout/${second.body.id}`, token, { method: 'POST' });
-  check('cash-out returns an amount', cash.status === 200 && Number(cash.body.amount) > 0, JSON.stringify(cash.body?.amount));
-  check('cash-out never exceeds the potential payout', Number(cash.body.amount) <= Number(second.body.potentialPayout));
-  check('the cash-out reached the balance', (await balanceOf(token)) === beforeCash - 200 + Number(cash.body.amount));
-  const again = await call(`/bets/cashout/${second.body.id}`, token, { method: 'POST' });
-  check('cashing out twice is refused', again.status === 400, again.body?.message);
-}
+// --- early payout is no longer offered; endpoint must not change balances ---
+const beforeDisabled = await balanceOf(token);
+const disabledCash = await call(`/bets/cashout/${placed.body.id}`, token, { method: 'POST' });
+check('early payout endpoint is removed', disabledCash.status === 404, JSON.stringify(disabledCash.body));
+check('disabled cash-out does not change balance', (await balanceOf(token)) === beforeDisabled);
 
 // --- cleanup ----------------------------------------------------------------------
 const removed = await call(`/admin/users/${created.body.id}`, adminToken, { method: 'DELETE' });

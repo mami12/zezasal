@@ -1,0 +1,1 @@
+export function eventMarketRequirement(market?: {name?:string;marketName?:string;market_name?:string},teams?:unknown): 'PLAYER_EVENT_DATA_REQUIRED'|'TIMED_EVENT_DATA_REQUIRED'|'EVENT_SEQUENCE_DATA_REQUIRED'|'GOAL_CONTRACT_DATA_REQUIRED'|null;

@@ -1,6 +1,11 @@
 import WebSocket from 'ws';
 import { config } from './config.mjs';
-import { saveOdds, logRawFrame } from './db.mjs';
+import {saveOdds,logRawFrame,query} from './db.mjs';
+import {isLedgerReady} from './ledger/store.mjs';
+import {createProviderOfferArchive} from './ledger/provider-offer-archive.mjs';
+
+const providerOfferArchive=createProviderOfferArchive({execute:query,ready:isLedgerReady});
+export const providerOfferArchiveHealth=()=>providerOfferArchive.status();
 import * as oddsStore from './odds-store.mjs';
 
 /**
@@ -255,9 +260,13 @@ export async function applyOddsRows(rows) {
   if (config.oddsStore === 'db') {
     const { changed } = await saveOdds(rows);
     oddsStore.applyRows(rows); // keep the in-memory board view warm too
+    // Archive native market names, IDs and quoted parameters independently
+    // of the board's memory/database mode. It never changes offered prices.
+    providerOfferArchive.observe(rows);
     return changed;
   }
   const { changed } = oddsStore.applyRows(rows);
+  providerOfferArchive.observe(rows);
   return changed;
 }
 

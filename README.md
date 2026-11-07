@@ -1,7 +1,16 @@
 # faqja — football board (live + prematch)
 
+Për server në Windows me `start.bat`, `stop.bat` dhe konfigurim lokal `.env`,
+shiko [WINDOWS-SERVER.md](WINDOWS-SERVER.md).
+
+Për databazën që ruhet në PC, kalimin me llogaritë ekzistuese dhe kopjet rezervë,
+shiko [LOCAL-DATABASE.md](LOCAL-DATABASE.md).
+
+Për combot automatike dhe biletat Sistem me minimum 100 Lek gjithsej,
+shiko [BETTING-COMBOS-SYSTEM.md](BETTING-COMBOS-SYSTEM.md).
+
 Minimal, dark, **real football only** board for the `bitgames6205.com` / `api-gateway.gw-lucky-bet.com`
-sports feed. Backend on **Railway**, frontend on **GitHub Pages**, storage on **Supabase Postgres**.
+sports feed. Node backend and frontend on the same PC/VPS, with external PostgreSQL or local database files.
 
 ```
                             ┌──► in-memory odds store ──► Socket.IO ──► browser (GitHub Pages)
@@ -28,7 +37,7 @@ database is down**, so a ledger outage cannot restart-loop the service.
 
 ## Betting app (React) — served at `/app`
 
-A betting/admin UI (login, sportsbook, betslip, my-bets, admin and manager panels, 4 languages)
+A betting/admin UI (login, sportsbook, betslip, my-bets, admin and manager panels, Shqip/English)
 is served by this same backend under **`/app`**, using the board's live matches and prices. It
 never talks to the database for the board: matches come from the in-memory store and prices from
 the in-memory odds store, so an outage of the ledger only disables the panels that need it.
@@ -70,7 +79,7 @@ suspend/price overrides that survive the next feed frame).
 | `POST /app/api/bets/place` | validates every selection against the **live feed**, then charges the stake, freezes the prices into `app_ticket_line` and records the movement — all in one transaction |
 | `POST /app/api/bets/book` | same validation, no stake/account: returns a shareable 6-char booking code |
 | `GET /app/api/bets/active` / `history` | My Bets: open tickets / the last 50 settled |
-| `POST /app/api/bets/cashout/:id` | pays **70%** of the potential payout early and closes the ticket as WON |
+| Early payout / Cash Out | Disabled. Tickets settle only according to the final result. |
 | `GET /app/api/tickets/search?q=` / `booking/:code` | find a ticket by code or id fragment (public) |
 
 Rules enforced (verified): minimum stake **100 LEK**, only `ACTIVE` accounts, balance checked under a row lock,
@@ -286,7 +295,7 @@ node scripts/probe-local-socket.mjs   # realtime end-to-end against the running 
 Offline (no server, no database - these pin the rules that are easy to break):
 
 ```bash
-npm run test:plan           # subscription tiers + idle mode (when the feed is paused/woken)
+npm run test:plan           # subscription tiers + continuous operation
 npm run test:matches        # the in-memory match store, incl. the prematch tiers
 npm run test:store          # the in-memory odds store, from captured frames
 npm run test:providers      # provider pinning (one book owns each selection)
@@ -297,18 +306,13 @@ accounts, so the seeded `demo` balance is never touched):
 
 ```bash
 ODDS_SOCKET=true npm start  # the server subscribes to the feed, so the board has real prices
-npm run verify:app          # auth, board, betslip, booking codes, cash-out, settlement payout  (33 checks)
+npm run verify:app          # auth, board, betslip, booking codes, disabled cash-out, settlement payout  (33 checks)
 npm run verify:admin        # users, money, account status, roles, ticket revert, match control  (48 checks)
 npm run verify:suspension   # a feed suspension reaches the board and the socket at once       (6 checks)
 ```
 
-Idle mode needs a short window to be observable, so it is checked on its own (it leaves the
-server awake when it is done):
-
-```bash
-IDLE_FEED=true IDLE_AFTER_MS=15000 IDLE_COLD_BOOT_MS=8000 ODDS_SOCKET=true npm start
-npm run verify:idle         # pauses with no visitor, wakes on one, refuses a bet while waking (24 checks)
-```
+The VPS server runs continuously, including without visitors. Run `npm run verify:idle`
+for a read-only check that automatic sleep is disabled.
 
 Set `LOCAL_URL=https://<service>.up.railway.app` to run them against a deployed instance instead
 (e.g. `LOCAL_URL=... npm run verify:app`).
@@ -341,36 +345,22 @@ Ports/paths: HTTP `:3000`, Socket.IO path `/socket.io`, static frontend from `do
 | `PREMATCH_REFRESH_MS` | `3600000` | How often every other prematch fixture is re-subscribed (1 h). **`0` restores the old behaviour**: prematch follows the live cadence. |
 | `PREMATCH_UNPRICED_MS` | `60000` | A prematch fixture the feed has not priced yet is asked for this often until it has a price (the board hides unpriced matches, so this is what makes a new fixture appear). |
 | `PREMATCH_STALE_MS` | `5400000` | Prematch prices older than this are refused (the hourly tier plus a margin). Live keeps its own 120s window. |
-| `IDLE_FEED` | `true` | Pause the feed when nobody is on the board: the upstream socket is closed and the collector, database probe and settlement stop, so no packet leaves the instance and the platform may sleep it. |
-| `IDLE_AFTER_MS` | `900000` | How long after the last visitor the feed pauses (15 min). |
-| `IDLE_COLD_BOOT_MS` | `120000` | Shorter window used when nobody has visited **since boot** (a deploy or a wake would otherwise warm the board for 15 minutes for nobody). |
-| `IDLE_STOP_DB_PROBE` | `true` | Also stop the 15s database probe while idle - it is outbound traffic, which is exactly what prevents the platform's sleep. |
+| `IDLE_FEED` | `false` | Retired. Automatic sleep is removed, even if an old environment sets true. |
+| `IDLE_AFTER_MS` | `0` | Retired; ignored. |
+| `IDLE_COLD_BOOT_MS` | `0` | Retired; ignored. |
+| `IDLE_STOP_DB_PROBE` | `false` | Retired; database checks keep running. |
 
-## Cost control: subscription tiers and idle mode
+## Continuous operation and subscription tiers
 
-Railway bills the container per minute (vCPU + RAM) and only sleeps a service when it sees no
-outbound packets for a few minutes. Both mechanisms below attack the same thing: the work this
-process does when nobody is reading the board.
+The collector, provider socket, database checks and settlement continue without visitors.
+Legacy IDLE settings cannot pause them. Pending ticket match IDs receive their own
+result-info subscriptions, independently of board limits. Already graded tickets whose
+payment was interrupted are retried under the original ticket lock without duplicate payouts.
+Missing final-score or market-statistics evidence remains visible in the admin settlement review.
 
-**Subscription tiers** (`server/subscribe-plan.mjs`). A re-subscribe is what makes the feed resend
-a match's prices - and its clock/score snapshot - so the cadence *is* the cost. Live keeps the
-~20s cadence, prematch is split by kickoff distance (soon = 5 min, later = 1 h) and a fixture the
-feed has not priced yet is asked for every minute until it has a price. Before this, 150 fixtures
-kicking off hours later cost as much as the whole live board.
+Prematch subscription tiers still reduce unnecessary traffic for far-future fixtures;
+they do not stop the server or settlement.
 
-**Idle mode** (`server/idle-mode.mjs`). Sockets and app API calls count as visitors; `/health` and
-the static bundle deliberately do not (an uptime monitor or a crawler must not keep the feed - and
-the invoice - running). With no visitor for `IDLE_AFTER_MS` the upstream socket is closed, the
-collector, the database probe and settlement stop: nothing goes out, so the platform may sleep the
-instance. The first request wakes it, the collector's first cycle rebuilds the board and a
-settlement pass catches up on what finished while it was asleep.
-
-Because the board is empty for the few seconds that takes, the server publishes its state
-(`hello`/`feed:state` over the socket, `feedMode`/`idle` in `/health`) and the board shows
-*"Kuotat po rifreskohen..."* instead of "no matches". A bet placed in that window is refused
-(`Kuotat po rifreskohen`) rather than sold a price from before the pause; prematch prices older
-than `PREMATCH_STALE_MS` are refused for the same reason. `IDLE_FEED=false` or
-`PREMATCH_REFRESH_MS=0` return to the previous behaviour without a deploy.
 | `ODDS_SUBSCRIBE_FRAMES` | – | Socket.IO frames to send after connect, separated by `||`. |
 | `LOG_RAW_FRAMES` | `true` | Store unparsed upstream frames (max 300/session). |
 | `FOOTBALL_SPORT_ID` | `18` | Verified football sport id in this feed. |

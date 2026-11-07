@@ -1,0 +1,27 @@
+{"main_1":"\/LuckyCloverX3\/croppedSyms\/sym_01.webp", "main_2":"\/LuckyCloverX3\/croppedSyms\/sym_02.webp", "main_3":"\/LuckyCloverX3\/croppedSyms\/sym_03.webp", "main_4":"\/LuckyCloverX3\/croppedSyms\/sym_04.webp", "main_5":"\/LuckyCloverX3\/croppedSyms\/sym_05.webp", "main_6":"\/LuckyCloverX3\/croppedSyms\/sym_06.webp", "main_7":"\/LuckyCloverX3\/croppedSyms\/sym_07.webp", "main_8":"\/LuckyCloverX3\/croppedSyms\/sym_08.webp", "main_9":"\/LuckyCloverX3\/croppedSyms\/sym_09.webp", "main_10":"\/LuckyCloverX3\/croppedSyms\/sym_10.webp", "main_11":"\/LuckyCloverX3\/croppedSyms\/sym_11.webp"}
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/top_name.webp")] public var class_asset_top_name:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_01.webp")] public var class_sym_main_1:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_02.webp")] public var class_sym_main_2:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_03.webp")] public var class_sym_main_3:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_04.webp")] public var class_sym_main_4:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_05.webp")] public var class_sym_main_5:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_06.webp")] public var class_sym_main_6:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_07.webp")] public var class_sym_main_7:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_08.webp")] public var class_sym_main_8:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_09.webp")] public var class_sym_main_9:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_10.webp")] public var class_sym_main_10:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sym_11.webp")] public var class_sym_main_11:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/sim_small.webp")] public var class_smallsym_main:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/background.webp")] public var class_asset_background_main:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/MainLuckyClover20_1024_background_1920.webp")] public var class_asset_background_online_1920:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/main/top_jp.webp")] public var class_asset_top_jackpot:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/main_attract.wav.mp3")] public var class_sound_main_attraction:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/SYMB_1_20_scatter.wav.mp3")]  public var class_sound_sym_main_1:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/SYMB_1_20_scatter.wav.mp3")]  public var class_sound_sym_main_10:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/WIN_1.mp3")]	public var class_sound_winX1:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/WIN_2.mp3")]	public var class_sound_winX2:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/WIN_3.mp3")]	public var class_sound_winX3:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/WIN_4.mp3")]	public var class_sound_winX4:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/main_autospin.wav.mp3")] public var class_sound_main_auto_spin:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/sym12_wlid_.wav.mp3")]public var class_sound_main_exwild:Class;
+[Embed(source="../../gamescontent/1024_COMMON/LuckyCloverX3/game/audio/sym_x3.mp3")] public var class_sound_x:Class;

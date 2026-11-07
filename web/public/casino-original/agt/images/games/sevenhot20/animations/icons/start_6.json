@@ -1,0 +1,268 @@
+{"frames": {
+
+"bellstart0000.png":
+{
+	"frame": {"x":523,"y":753,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0001.png":
+{
+	"frame": {"x":784,"y":1,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0002.png":
+{
+	"frame": {"x":1045,"y":1,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0003.png":
+{
+	"frame": {"x":1306,"y":1,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0004.png":
+{
+	"frame": {"x":1567,"y":1,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0005.png":
+{
+	"frame": {"x":784,"y":234,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0006.png":
+{
+	"frame": {"x":784,"y":467,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0007.png":
+{
+	"frame": {"x":784,"y":700,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0008.png":
+{
+	"frame": {"x":784,"y":933,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0009.png":
+{
+	"frame": {"x":1045,"y":234,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0010.png":
+{
+	"frame": {"x":1306,"y":234,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0011.png":
+{
+	"frame": {"x":1567,"y":234,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0012.png":
+{
+	"frame": {"x":1045,"y":467,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0013.png":
+{
+	"frame": {"x":1045,"y":700,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0014.png":
+{
+	"frame": {"x":1045,"y":933,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0015.png":
+{
+	"frame": {"x":1306,"y":467,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0016.png":
+{
+	"frame": {"x":1567,"y":467,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0017.png":
+{
+	"frame": {"x":1306,"y":700,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0018.png":
+{
+	"frame": {"x":1567,"y":700,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0019.png":
+{
+	"frame": {"x":1306,"y":933,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0020.png":
+{
+	"frame": {"x":1567,"y":933,"w":259,"h":231},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":28,"w":259,"h":231},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0021.png":
+{
+	"frame": {"x":523,"y":503,"w":259,"h":248},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":11,"w":259,"h":248},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0022.png":
+{
+	"frame": {"x":523,"y":1,"w":259,"h":249},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":10,"w":259,"h":249},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0023.png":
+{
+	"frame": {"x":1,"y":1,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0024.png":
+{
+	"frame": {"x":1,"y":262,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0025.png":
+{
+	"frame": {"x":523,"y":252,"w":259,"h":249},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":10,"w":259,"h":249},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0026.png":
+{
+	"frame": {"x":1,"y":523,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0027.png":
+{
+	"frame": {"x":1,"y":784,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0028.png":
+{
+	"frame": {"x":262,"y":1,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0029.png":
+{
+	"frame": {"x":262,"y":262,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0030.png":
+{
+	"frame": {"x":262,"y":523,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+},
+"bellstart0031.png":
+{
+	"frame": {"x":262,"y":784,"w":259,"h":259},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":259},
+	"sourceSize": {"w":259,"h":259}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "start_0.png",
+	"format": "RGBA8888",
+	"size": {"w":1827,"h":1165},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:a17e6a7429e106b3ea27fb20d88219c8:294a7cbc3ced94cefa7a58aac22f499b:7802a26c2f29866a4c1fd1df52b098c1$"
+}
+}

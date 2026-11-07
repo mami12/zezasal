@@ -1,0 +1,1810 @@
+@charset "utf-8";
+:root {
+  --wins-color: rgb(255,223,0); /*Golden yellow*/
+  --autoplayMenu-color: #48bcff/*rgb(72, 188, 255)*/; /*Sky blue*/
+  --buyFreeGamesLabel-color: #30c3f3;
+  --buyBetLabel-color: #1eff11;
+  --buyNoManyLabel-color: #ff9800;
+  /*--label-text-shadow: 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 15px #000, 0 0 15px #000, 0 0 20px #000, 0 0 20px #000;*/
+  --label-text-shadow: 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000, 0 0 10px #000;
+  /*--frameWinnerPaid-text-shadow: 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 30px var(--wins-color), 0px 0px 40px var(--wins-color);*/
+  --frameWinnerPaid-text-shadow: 0px 0px 10px #000,0px 0px 10px #000, 0px 0px 20px #000,0px 0px 20px #000, 0px 0px 30px var(--wins-color), 0px 0px 40px var(--wins-color),0px 0px 50px var(--wins-color);
+  --hotLuck-text-shadow: 0px 0px 10px #000, 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 30px #000, 0px 0px 40px var(--wins-color), 0px 0px 70px var(--wins-color), 0px 0px 80px var(--wins-color), 0px 0px 100px var(--wins-color), 0px 0px 150px var(--wins-color), 0px 0px 200px var(--wins-color);
+  /*--autoplayMenu-text-shadow: 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 30px #000, 0px 0px 40px var(--autoplayMenu-color), 0px 0px 70px var(--autoplayMenu-color), 0px 0px 80px var(--autoplayMenu-color), 0px 0px 100px var(--autoplayMenu-color), 0px 0px 150px var(--autoplayMenu-color);*/
+  --autoplayMenu-text-shadow: 0px 0px 10px #000, 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 20px #000, 0px 0px 30px var(--autoplayMenu-color), 0px 0px 30px var(--autoplayMenu-color);
+  --buyFreeGamesLabel-text-shadow: 0px 0px 10px #000, 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 20px #000, 0px 0px 30px var(--buyFreeGamesLabel-color), 0px 0px 30px var(--buyFreeGamesLabel-color);
+  --buyBetLabel-text-shadow: 0px 0px 10px #000, 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 20px #000, 0px 0px 30px var(--buyBetLabel-color), 0px 0px 30px var(--buyBetLabel-color);
+  --buyNoManyLabel-text-shadow: 0px 0px 10px #000, 0px 0px 10px #000, 0px 0px 20px #000, 0px 0px 20px #000, 0px 0px 30px var(--buyNoManyLabel-color), 0px 4px 30px var(--buyNoManyLabel-color);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: center / cover no-repeat var(--bg, none);
+  /* optional: prevent accidental interactions */
+  pointer-events: none;
+}
+body {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+html, body {
+    height: 100%;
+    width: 100%;
+    overscroll-behavior: none; /* Has no effect on iOS 15 but harmless */
+    -webkit-overflow-scrolling: touch;
+}
+.textUp{
+  font-size: 19px;
+  vertical-align: super;
+}
+#cifriContainer {
+  position: absolute;
+  z-index: 999;
+  width: max-content;
+  height: max-content;
+  left: 50%;
+  top: 422px;
+  font-size: 66px;
+  font-weight: bold;
+  text-align: center;
+  color: rgb(255,223,0); /*Golden yellow*/
+  -webkit-transform: translate(-50%, -50%) translateY(-80px) scale(0);
+}
+.cifri {
+	display: inline-block;
+	background-position: top left;
+  background-repeat: no-repeat;
+	/*margin-left: 3px;*/
+	vertical-align: bottom;
+}
+.darkenedBackground {
+  position: absolute;
+  width: 1024px;
+  height: 768px;
+  left: 0px;
+  top: 0px;
+  z-index: 3;
+  opacity: 0;
+  background: linear-gradient(transparent 5%, black 14%, black 77%, transparent 86%);
+  transition: opacity 0.5s linear 0s;
+}
+
+#gameContainer {
+	width:1160px;
+	height:768px;
+
+	position:fixed;
+	z-index:2;
+	left:50%;
+	top:50%;
+
+	-ms-transform: translateX(-50%) translateY(-50%) scale(1);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateX(-50%) translateY(-50%) scale(1);
+    -webkit-transform-origin: center center;
+    transform: translateX(-50%) translateY(-50%) scale(1);
+    transform-origin: center center;
+}
+
+/*ALEKSANDAR ACHEV (PIXI)*/
+#attraction_view {
+  display: none;
+  position: absolute;
+  z-index: 100;
+} /*var CTG_PIXI*/
+
+/*ALEKSANDAR ACHEV (Video)*/
+#videoContainer{
+    display: none;
+    position: absolute;
+    background-color: rgb(0,0,0,0);
+    width: 1920px;
+    height: 1080px;
+    left: 50%;
+    z-index: 999;
+}
+
+#lock{
+	width: 24px;
+	height: 30px;
+	left: 20px;
+	position: absolute;
+	top: 40px;
+	display:none;
+	transform:scale(2);
+	-ms-transform:scale(2);
+  -webkit-transform: scale(2);
+  -moz-transform: scale(2);
+  -o-transform: scale(2);
+}
+#gameLayer {
+	width:1024px;
+	height:768px;
+	background-size:1024px 768px;
+	position:absolute;
+	z-index:-1;
+	left:68px;
+	top:0px;
+}
+
+#Top {
+	width:100%;
+	position:absolute;
+	z-index:1;
+/*	left:0px;
+	top:0px;*/
+	background-repeat:no-repeat;
+	background-position:center center;
+}
+#jackpotDisplay {
+	width:100%;
+	height:100%;
+}
+#TopBackground_free {
+	width:100%;
+	position:absolute;
+	z-index:1;
+	left:0px;
+	top:0px;
+}
+
+#gameMenuInterface {
+	width:1160px;
+	height:150px;
+	position:absolute;
+	left:0px;
+	bottom:0px;
+	z-index:4;
+}
+#helpButtons {
+	width:1160px;
+/*	height:768px;*/
+/*	left:68px;*/
+/*	bottom:0px;*/
+	position:absolute;
+	-webkit-overflow-scrolling: touch; /* for Safary Iphone */
+	z-index:5;
+	display:none;
+}
+#helpButtonsExit {
+	display:none;
+	position: absolute;
+  width: 110px;
+  height: 110px;
+	top:0px;
+  background-repeat: no-repeat;
+  background-position: top left;
+	z-index:6;
+}
+
+#helpButtonsPr {
+	position:absolute;
+	left:-60px;
+	bottom:0px;
+	display:none
+}
+#helpButtonsNext {
+	position:absolute;
+	right:-60px;
+	bottom:0px;
+	display:none
+}
+
+
+#helpButtonsDown {
+	position:absolute;
+	right:120px;
+	top:210px;
+	display:none
+}
+#helpButtonsUp {
+	position:absolute;
+	right:20px;
+	top:210px;
+	display:none
+}
+#helpButtonsNextGame {
+	position:absolute;
+	right:20px;
+	top:380px;
+	display:none
+}
+#helpButtonsPrGame {
+	position:absolute;
+	right:120px;
+	top:380px;
+	display:none
+}
+
+
+
+#mess3 {
+	position:absolute;
+	width: 1110px;
+	left:25px;
+	top:85px;
+	text-align:center;
+	font-size:35px;
+	font-weight:bold;
+	color:white;
+	display:block;
+}
+#mess4, #mess2, #mess1 {
+	position:absolute;
+	width: 1110px;
+	left:25px;
+	text-align:center;
+	font-size:32px;
+  line-height: 40px;
+	font-weight:bold;
+	color:white;
+	display:block;
+}
+#congr_win {
+	display:none;
+	width:834px;
+	height:204px;
+	background-size:834px 204px;
+	left:155px;
+	top:242px;
+	padding:10px;
+	font-size:32px;
+	text-transform:uppercase;
+	font-weight:bold;
+	text-align:center;
+	line-height:28px;
+	position:absolute;
+	color:DodgerBlue;
+	background-repeat:no-repeat;
+	z-index:1;
+}
+#UE {
+	display:none;
+	width:834px;
+	height:306px;
+	background-size:834px 306px;
+	left:163px;
+	top:200px;
+	font-size:32px;
+	text-transform:uppercase;
+/*	padding:10px;
+*/
+	font-weight:bold;
+	text-align:center;
+	line-height:30px;
+	position:absolute;
+
+	background-repeat:no-repeat;
+	z-index:81;
+}
+#symbolHelp_frame{
+	display:none;
+	width:834px;
+	height:306px;
+	background-size:834px 306px;
+	left:155px;
+	top:191px;
+	font-size:32px;
+/*	text-transform:uppercase;
+	padding:10px;
+*/
+	font-weight:bold;
+	text-align:center;
+	line-height:30px;
+	position:absolute;
+
+	background-repeat:no-repeat;
+	z-index:1;
+}
+
+/*ALEKSANDAR ACHEV (New Demo Click Options)	>>>*/
+#demoModesContainer{
+	visibility: hidden;
+	position: absolute;
+	z-index: 3;
+	background-repeat: no-repeat;
+}
+#demoModesFrame{
+	position: absolute;
+	width: 60%; /*80%;*/
+	height: max-content; /*80%*/
+	/*translate: -50% -50%;*/
+	-ms-transform: translate(-50%, -50%);
+	-ms-transform-origin: center center;
+	-webkit-transform: translate(-50%, -50%);
+	-webkit-transform-origin: center center;
+	transform: translate(-50%, -50%);
+	transform-origin: center center;
+  left: 50%;
+  top: 50%;
+	font-size: 32px;
+	font-weight: bold;
+  line-height: 48px; /*30px*/
+	/*text-align: center;*/
+  text-transform: uppercase;
+}
+.demoButtons{
+	display: inline-block;
+	width: max-content;
+	height: max-content;
+	vertical-align: bottom;
+}
+/*END ^^^*/
+
+#gameDoubleInterface {
+	width:1024px;
+	height:768px;
+	position:absolute;
+	left:68px;
+	bottom:0px;
+	z-index:2;
+	display:none;
+	background: -moz-linear-gradient(top,  #001848 0%, #000000 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#001848), color-stop(100%,#000000));
+	background: -webkit-linear-gradient(top,  #001848 0%,#000000 100%);
+	background: -o-linear-gradient(top,  #001848 0%,#000000 100%);
+	background: -ms-linear-gradient(top,  #001848 0%,#000000 100%);
+	background: linear-gradient(to bottom,  #001848 0%,#000000 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#001848', endColorstr='#000000',GradientType=0 );
+
+	-webkit-box-shadow: inset 0px 0px 91px 1px rgba(0,0,0,0.75);
+	-moz-box-shadow: inset 0px 0px 91px 1px rgba(0,0,0,0.75);
+	box-shadow: inset 0px 0px 91px 1px rgba(0,0,0,0.75);
+/***
+  --mask: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 2%, rgba(0, 0, 0, 1) 96%, rgba(0, 0, 0, 0) 100%), linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 5%, rgba(0, 0, 0, 1) 95%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: var(--mask);
+  mask-image: var(--mask);
+  -webkit-mask-composite: destination-in;
+  mask-composite: intersect;***/
+}
+/*ar AUTOPLAY menu*/
+#title{
+	font-size: 40px;
+	font-weight:bold;
+	width: 1024px;
+	height: 40px;
+	text-align: center;
+	top: 10px;
+	position: absolute;
+}
+#autoNumArrowLeft,#autoNumArrowRight{
+	position: absolute;
+	display: none;
+	top: 82px;
+	width: 68px;
+	height: 68px;
+	background-size: 544px 68px;
+}
+#autoNumArrowRight{
+	left: 877px;
+}
+#autoNumArrowLeft{
+	left: 79px;
+}
+#autoNum1{
+	left: 177px;
+}
+#autoNum2{
+	left: 317px;
+}
+#autoNum3{
+	left: 457px;
+}
+#autoNum4{
+	left: 597px;
+}
+#autoNum5{
+	left: 737px;
+}
+.AutoCh{
+	position: absolute;
+	display: none;
+	top: 58px;
+	width: 110px;
+	height: 110px;
+	background-size: 880px 110px;
+}
+#title2{
+	font-size: 30px;
+	font-weight:bold;
+	width: 1024px;
+	height: 30px;
+	text-align: center;
+	top: 188px;
+	position: absolute;
+}
+#anyWin{
+	position: absolute;
+	top: 233px;
+	left: 67px;
+	width: 450px;
+	height: 40px;
+}
+.autoChechBox{
+	position: absolute;
+	width: 40px;
+	height: 40px;
+	background-size: 80px 40px;
+}
+
+/*ALEKSANDAR ACHEV*/
+.autoCheckText{
+	position: absolute;
+	width: max-content/*410px*/;/**/
+	height: 31px;
+	left: 50px;
+	top: 5px;
+	font-size: 30px;/**/
+	font-weight: bold;
+
+	line-height: 30px;/**/
+	/*text-align: center;*//**/
+}
+
+#freeSpins{
+	position: absolute;
+	top: 233px;
+	left: 537px;
+	width: 450px;
+	height: 40px;
+}
+#singleWin{
+	position: absolute;
+	top: 313px;
+	left: 67px;
+	width: 450px;
+	height: 40px;
+}
+#balanceIn{
+	position: absolute;
+	top: 393px;
+	left: 67px;
+	width: 450px;
+	height: 40px;
+}
+#balanceDec{
+	position: absolute;
+	top: 473px;
+	left: 67px;
+	width: 450px;
+	height: 40px;
+}
+#autoCheckArrows_left1,#autoCheckArrows_left2,#autoCheckArrows_left3{
+	width: 68px;
+	display: none;
+	position: absolute;
+	background-size: 544px 68px;
+	height: 68px;
+	left: 550px;
+	top: -14px;
+}
+.autoCheckNum{
+	position: absolute;
+	width: 202px;
+	height: 58px;
+	left: 628px;
+	top: -9px;
+	font-size: 40px;
+	font-weight: bold;
+	line-height: 60px;
+	text-align: center;
+}
+.autoIn{
+	display: none;
+}
+#autoCheckArrows_right1,#autoCheckArrows_right2,#autoCheckArrows_right3{
+	width: 68px;
+	display: none;
+	position: absolute;
+	background-size: 544px 68px;
+	height: 68px;
+	left: 840px;
+	top: -14px;
+}
+/*GAME MENU*/
+.MAX{
+	    color: yellow;
+	    font-size: 20px;
+	    left: 95px;
+	    width: 50px;
+	    /* z-index: 4; */
+	    position: absolute;
+	    top: 21px;
+}
+#menuWindow,#ar_AutoMenuWindow {
+	display:none;
+  background: linear-gradient(transparent 0%, rgba(0, 0, 0, .8) 2%, rgba(0, 0, 0, .8) 98%, transparent 100%);
+	width:1024px;
+	position:absolute;
+	left:0px;
+	z-index:4;
+
+}
+#menuLines {
+	position:absolute;
+	width:320px;
+	height:350px;
+	top:28px;
+	left:353px;
+	z-index:0;
+}
+#linesIcon {
+	position:absolute;
+	z-index:2;
+	left:40px;
+	top:10px;
+	background-size: 690px 260px;
+	height:130px;
+	width:230px;
+}
+#menuBet {
+	position:absolute;
+	width:320px;
+	height:350px;
+	top:28px;
+	left:24px;
+	z-index:0;
+}
+#betNumber, #linesNumber, #autoNumber {
+	position:absolute;
+	z-index:2;
+	left:15px;
+	top:140px;
+	height:88px;
+	width:290px;
+}
+#betIcon {
+	position:absolute;
+	z-index:2;
+	left:40px;
+	top:10px;
+	background-size: 690px 260px;
+	background-position:-230px 0;
+	height:130px;
+	width:230px;
+}
+#betArrowUp,#linesArrowUp,#autoArrowUp {
+	position:absolute;
+	z-index:2;
+	left:30px;
+	top:240px;
+	background-size: 896px 94px;
+	height:94px;
+	width:112px;
+}
+/*#TbArrowUp{
+	transform:scale(.4);
+	-ms-transform:scale(.4);
+  -webkit-transform: scale(.4);
+  -moz-transform: scale(.4);
+  -o-transform: scale(.4);
+	position:absolute;
+	z-index:2;
+	left:-25px;
+	bottom:-14px;
+	background-size: 896px 94px;
+	height:94px;
+	width:112px;
+	display:none;
+}*/
+#TbArrowUp{
+	transform:scale(1.3);
+	-ms-transform:scale(1.3);
+  -webkit-transform: scale(1.3);
+  -moz-transform: scale(1.3);
+  -o-transform: scale(1.3);
+	position:absolute;
+	z-index:2;
+	left:5px;
+	bottom:0px;
+	height:44px;
+	width:44px;
+	display:none;
+}
+#betArrowDown, #linesArrowDown, #autoArrowDown  {
+	position:absolute;
+	z-index:2;
+	left:175px;
+	top:240px;
+	background-size: 896px 94px;
+	height:94px;
+	width:112px;
+}
+#menuAuto {
+	position:absolute;
+	width:320px;
+	height:350px;
+	top:28px;
+	left:682px;
+	z-index:0;
+}
+#autoIcon {
+	position:absolute;
+	z-index:2;
+	left:40px;/*ALEKSANDAR ACHEV*/
+	top:10px;
+	background-size: 690px 260px;
+	background-position:-460px 0px;
+	height:130px;
+	width:230px;
+}
+
+/*ALEKSANDAR ACHEV*/
+#menuAutoExt {
+	position:absolute;
+	z-index:2;
+	right:25px;/*24px*/
+	top:35px;/*30px*/
+	overflow:hidden;
+
+	background-size:1120px 140px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+
+	-ms-transform:scale(0.7857035251581802);
+	-webkit-transform:scale(0.7857035251581802);
+	transform:scale(0.7857035251581802);
+
+	height:140px;
+	width:140px;
+}
+
+.menu_string1 {
+	position:relative;
+/*	padding:10px;*/
+	top:16px;
+	z-index:2;
+	line-height:60px;
+	font-size:60px;
+	font-weight:bold;
+	text-align:center;
+}
+.menu_string2 {
+	position:absolute;
+	z-index:2;
+	line-height:16px;
+	height:20px;
+	font-size:22px;
+	font-weight:bold;
+	border-color:black;
+	background-color:black;
+	text-transform:uppercase;
+/*	width:100%;*/
+	text-align:left;
+	left:10px;
+	top:-7px;
+
+	-ms-transform: translateY(50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateY(50%);
+    -webkit-transform-origin: center center;
+    transform: translateY(50%);
+    transform-origin: center center;
+}
+#buttonHistory,#buttonQ {
+	position: absolute;
+    width: 110px;
+    height: 110px;
+    left: 173px;
+    top: 398px;
+    background-repeat: no-repeat;
+    background-position: top right;
+	z-index:1;
+	display:none;
+}
+#btnMenuHelp {
+	position: absolute;
+    width: 110px;
+    height: 110px;
+    left: 0px;
+    bottom:658px;
+    background-repeat: no-repeat;
+    background-position: top left;
+		z-index: 1;
+}
+#buttonHome,#buttonSound,#buttonFullScreen {
+	position: absolute;
+    width: 110px;
+    height: 110px;
+    left: 741px;
+    top: 398px;
+    background-repeat: no-repeat;
+    background-position: top left;
+	z-index:1;
+}
+/*END OF GAME MENU*/
+
+.animatedBtn {
+	-ms-transform: translateZ(0%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateZ(0%);
+    -webkit-transform-origin: center center;
+    transform: translateZ(0%);
+    transform-origin: center center;
+}
+.interface114x117 {
+	width:114px;
+	height:117px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:684px 117px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface110x110 {
+	width:110px;
+	height:110px;
+	overflow:hidden;
+	background-size:880px 110px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interfaceInfo {
+	width:100px;
+	height:100px;
+	overflow:hidden;
+	background-size:800px 100px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interfaceAlpha {
+	width:140px;
+	height:140px;
+	overflow:hidden;
+	background-size:1120px 420px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interfaceSign{
+	width:140px;
+	height:140px;
+	overflow:hidden;
+	background-size:1120px 280px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface180x140 {
+	width:180px;
+	height:140px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:180px 140px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface120x40 {
+	width:140px;
+	height:50px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:1120px 50px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface85x64 {
+	width:85px;
+	height:64px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:510px 64px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface100x50 {
+	width:100px;
+	height:50px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:600px 50px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface50x50 {
+	width:50px;
+	height:50px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:300px 50px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface68x68 {
+	width:68px;
+	height:68px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:408px 68px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface155x64 {
+	width:155px;
+	height:64px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:930px 64px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+}
+.interface120x75 {
+	width:120px;
+	height:75px;
+	overflow:hidden;
+	border-radius:9px;
+	background-size:720px 75px;
+	background-position-y:0px;
+	background-position-x:0px;
+	background-repeat:no-repeat;
+	display:inline-block;
+}
+#frameMsgBar {
+	width:850px;
+	height:50px;
+	position:absolute;
+	z-index:2;
+	left:155px;
+	top:10px;
+}
+.msg_string {
+	position:relative;
+	font-size:18px;
+	text-transform:uppercase;
+	font-weight:bold;
+	text-align:center;
+	z-index:3;
+}
+.msg_string1 {
+	position:relative;
+	padding:10px;
+	font-size:28px;
+	text-transform:uppercase;
+	font-weight:bold;
+	text-align:center;
+	line-height:30px;
+	top:2px;
+	z-index:2;
+}
+#frameCredit {
+	position:absolute;
+	z-index:2;
+	left:655px;
+	bottom:0px;
+	height:88px;
+	width:340px;
+/*	cursor:pointer;	*/
+}
+#frameWinnerPaid {
+	position:absolute;
+	z-index:2;
+	left:160px;
+	bottom:0px;
+	height:88px;
+	width:285px;
+}
+#frameTotalBet {
+	position:absolute;
+	z-index:2;
+	left:450px;
+	bottom:0px;
+	height:88px;
+	width:200px;
+/*	cursor:pointer;	*/
+}
+#big_frame {
+	position:absolute;
+	z-index:0;
+	height:404px;
+	font-size:16px;
+	font-weight:bold;
+	text-transform:uppercase;
+	width:912px;
+	text-align:center;
+	left:50%;
+	top:192px;
+
+	background-size:912px 404px;
+
+	-ms-transform: translateX(-50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateX(-50%);
+    -webkit-transform-origin: center center;
+    transform: translateX(-50%);
+    transform-origin: center center;
+}
+#big_card {
+	position:absolute;
+	z-index:1;
+	height:300px;
+	width:190px;
+	left:48%;
+	top:50px;
+
+	background-size:570px 300px;
+
+	-ms-transform: translateX(-50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateX(-50%);
+    -webkit-transform-origin: center center;
+    transform: translateX(-50%);
+    transform-origin: center center;
+}
+#doubleCardsSmall{
+	position:absolute;
+	z-index:2;
+	height:42px;
+	width:47px;
+	left:20px;
+	top:71px;
+	background-size:188px 42px;
+	}
+#doubleCardsBig{
+	position:absolute;
+	z-index:2;
+	height:82px;
+	width:84px;
+	left:53px;
+	top:120px;
+	background-size:336px 82px;
+}
+#doubleCardNumber{
+	position:absolute;
+	z-index:2;
+	height:47px;
+	width:60px;
+	left:13px;
+	top:24px;
+	background-size:780px 47px;
+	}
+#winx2, #winx4 {
+	position:absolute;
+	z-index:2;
+	width:245px;
+	height:56px;
+	top:330px;
+}
+
+.double_string1 {
+	color: #8C8C8C;
+    position: absolute;
+    width: 320px;
+    text-align: center;
+    left: -70px;
+    bottom: -33px;
+    font-size: 28px;
+    font-weight: bold;
+}
+#winx2 {
+	left:590px;
+}
+#winx4 {
+	left:16px;
+}
+.gamble_string1 {
+	width:345px;
+	text-transform:uppercase;
+	font-weight:bold;
+	font-size:18px;
+	left:-30px;
+	position:absolute;
+}
+.gamble_string2 {
+	width:50px;
+	height:32px;
+	line-height:40px;
+	text-transform:lowercase;
+	font-weight:bold;
+	font-size:40px;
+	text-align:right;
+	bottom:0px;
+	position:absolute;
+}
+.gamble_string3 {
+	width:180px;
+	height:32px;
+	line-height:40px;
+	text-transform:uppercase;
+	font-weight:bold;
+	font-size:36px;
+	text-align:right;
+
+	position:absolute;
+	right:10px;
+	bottom:3px;
+	z-index:4;
+}
+.quad_fr {
+	position:absolute;
+	z-index:1;
+	width:105px;
+	height:110px;
+}
+.double_fr {
+	position:absolute;
+	z-index:1;
+	width:140px;
+	height:176px;
+	color:white;
+}
+.last_fr {
+	position:absolute;
+	z-index:1;
+	width:544px;
+	height:66px;
+	color:white;
+}
+#doubleLast_frame {
+	left:240px;
+	top:66px;
+}
+#doubleLast_singlecards {
+	position:absolute;
+	z-index:2;
+	width: 520px;
+	height: 45px;
+	left:9px;
+	top:10px;
+	font-size:0px;
+
+}
+#doubleLast_string {
+	position:absolute;
+	z-index:2;
+	width: 520px;
+	left:250px;
+	top:10px;
+	text-align:left;
+	color:#8C8C8C;
+	font-weight:bold;
+    font-size: 30px;
+}
+#doubleLast_string2 {
+	position:absolute;
+	z-index:2;
+	width: 1024px;
+	height: 45px;
+	left:0px;
+	top:129px;
+	text-align:center;
+	color:#8C8C8C;
+	font-weight:bold;
+    font-size: 40px;
+}
+.doubleLast_singlecard {
+	position:relative;
+	margin-left:4px;
+	width: 48px;
+	height: 45px;
+	display:inline-block;
+	background-position-x:-192px;
+	background-repeat:no-repeat;
+	background-size:240px 45px;
+}
+#doubleArrow {
+	position:absolute;
+	z-index:1;
+	width:12px;
+	height:16px;
+	left:272px;
+	top:	45px;
+}
+#quadPika_frame {
+	position:relative;
+	left:75px;
+	top:55px;
+}
+#quadKupa_frame {
+	position:relative;
+	left:190px;
+	top:55px;
+}
+#quadKaro_frame {
+	position:relative;
+	left:75px;
+	top:175px;
+}
+#quadSpatii_frame {
+	position:relative;
+	left:190px;
+	top:175px;
+}
+#doubleRed_frame {
+	position:relative;
+	left: 583px;
+	top:109px;
+}
+#doubleBlack_frame {
+	position:relative;
+	left: 734px;
+	top:109px;
+}
+#doubleButtons_red, #doubleButtons_black {
+	position:relative;
+	z-index:2;
+	left:14px;
+	top:30px;
+}
+#doubleButtons_heart, #doubleButtons_spade, #doubleButtons_clubs, #doubleButtons_diamond {
+	position:absolute;
+	z-index:2;
+	left:10px;
+	top:20px;
+	color:white;
+	width:85px;
+	height:64px;
+	background-size: 510px 64px;
+}
+.frame404l {
+	position:absolute;
+	height:404px;
+	width:16px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size:16px 404px;
+	z-index:1;
+}
+.frame404m {
+	position:absolute;
+	height:404px;
+	width: 880px;
+/*  width: -webit-calc(100% - 32px);
+  width: -moz-calc(100% - 32px);*/
+	top:0px;
+	left:16px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size:2px 404px;
+	z-index:1;
+}
+.frame404r {
+	position:absolute;
+	height:404px;
+	width:16px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size:16px 404px;
+	z-index:1;
+}
+
+.frame176l {
+	position:absolute;
+	height:176px;
+	width:16px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 176px;
+	z-index:1;
+}
+.frame176m {
+	position:absolute;
+	height:176px;
+	width: 108px;
+/*  width: -webit-calc(100% - 32px);
+  width: -moz-calc(100% - 32px);*/
+	top:0px;
+	left:16px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 176px;
+	z-index:1;
+}
+.frame176r {
+	position:absolute;
+	height:176px;
+	width:16px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 176px;
+	z-index:1;
+}
+
+.frame110l {
+	position:absolute;
+	height:110px;
+	width:16px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 110px;
+	z-index:1;
+}
+.frame110m {
+	position:absolute;
+	height:110px;
+	width: 73px;
+/*	width: -webit-calc(100% - 32px);
+	width: -moz-calc(100% - 32px);*/
+	top:0px;
+	left:16px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 110px;
+	z-index:1;
+}
+.frame110r {
+	position:absolute;
+	height:110px;
+	width:16px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 110px;
+	z-index:1;
+}
+
+.frame88l {
+	position:absolute;
+	height:88px;
+	width:30px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 30px 88px;
+	z-index:1;
+}
+.frame88m {
+	position:absolute;
+	height:88px;
+	width: calc(100% - 60px);
+  width: -webit-calc(100% - 60px);
+  width: -moz-calc(100% - 60px);
+	top:0px;
+	left:30px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 88px;
+	z-index:1;
+}
+.frame88r {
+	position:absolute;
+	height:88px;
+	width:30px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 30px 88px;
+	z-index:1;
+}
+
+.frame50l {
+	position:absolute;
+	height:50px;
+	width:48px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 48px 50px;
+	z-index:1;
+}
+.frame50m {
+	position:absolute;
+	height:50px;
+	width: 754px;
+/*  width: -webit-calc(100% - 96px);
+  width: -moz-calc(100% - 96px);*/
+	top:0px;
+	left:48px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 50px;
+	z-index:1;
+}
+.frame50r {
+	position:absolute;
+	height:50px;
+	width:48px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 48px 50px;
+	z-index:1;
+}
+
+.frame66l {
+	position:absolute;
+	height:66px;
+	width:16px;
+	top:0px;
+	left:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 66px;
+	z-index:1;
+}
+.frame66m {
+	position:absolute;
+	height:66px;
+	width: 520px;
+/*  width: -webit-calc(100% - 24px);
+  width: -moz-calc(100% - 24px);*/
+	top:0px;
+	left:12px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 66px;
+	z-index:1;
+}
+.frame66r {
+	position:absolute;
+	height:66px;
+	width:16px;
+	top:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 66px;
+	z-index:1;
+}
+
+.frame32l {
+	position:absolute;
+	height:32px;
+	width:16px;
+	bottom:0px;
+	left:55px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 32px;
+	z-index:1;
+}
+.frame32m {
+	position:absolute;
+	height:32px;
+	width: 158px;
+/*  width: -webit-calc(100% - 87px);
+  width: -moz-calc(100% - 87px);*/
+	bottom:0px;
+	left:71px;
+	background-repeat:repeat-x;
+	background-position:top left;
+	background-size: 2px 32px;
+	z-index:1;
+}
+.frame32r {
+	position:absolute;
+	height:32px;
+	width:16px;
+	bottom:0px;
+	right:0px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 16px 32px;
+	z-index:1;
+}
+
+.string1 {
+	position:absolute;
+	z-index:2;
+	line-height:50px;
+	font-size:50px;
+	font-weight:bold;
+	bottom:5px;
+	right:10px;
+/*	cursor:default;	*/
+}
+.string2 {
+	position:absolute;
+	z-index:2;
+	line-height:16px;
+	height:20px;
+	font-size:20px;
+	font-weight:bold;
+	border-color:black;
+	text-transform:uppercase;
+	width:100%;
+	text-align:left;
+	left:10px;
+
+	-ms-transform: translateY(50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateY(50%);
+    -webkit-transform-origin: center center;
+    transform: translateY(50%);
+    transform-origin: center center;
+}
+.string2_inactive {
+	color:gray!important;
+/*	cursor:default!important;*/
+}
+.paytableDigits1,.paytableDigits, .jackpot_digits, .tablo_jackpot_digits{
+	display:inline-block;
+    background-repeat: no-repeat;
+}
+
+.smallSym_main,  .smallSym_free,  .smallSym_free2, .choise_bonus{
+	display:inline-block;
+	background-position:top left;
+    background-repeat: no-repeat;
+	margin-left:3px;
+	vertical-align:middle;
+}
+
+#buttonStart, #buttonStartBlinck,#buttonStartBlinck1 {
+	position:absolute;
+	left:1010px;
+	bottom:0px;
+}
+#buttonGameMenu, #buttonGameMenuBlinck, #buttonGameMenuBlinck1 {
+	position:absolute;
+	left:20px;
+	bottom:0px;
+}
+#buttonDenom {
+	position: absolute;
+    width: 110px;
+    height: 110px;
+    left: 1050px;
+    bottom:658px;
+    background-repeat: no-repeat;
+}
+/*
+#frameDemoLabel {
+	position:absolute;
+	left: 113px;
+	top: -8px;
+	color:#ff6e00;
+	text-align:left;
+	font-size:16px;
+	font-weight:bold;
+	z-index:3;
+	display:none;
+}
+*/
+#frameDemoLabel {
+	position:absolute;
+	right: 0px;
+	top: -62px;
+  padding: 0px 5px;
+	color:#ff6e00;
+  /*background-color: #1b0101e8;*/
+  text-shadow: var(--label-text-shadow);
+	text-align:left;
+	font-size:16px;
+	font-weight:bold;
+	z-index:3;
+	display:none;
+}
+#frameBetLabel {
+	position:absolute;
+/*	width:150px;
+	height:20px;*/
+	font-size:16px;
+	text-transform:uppercase;
+	font-weight:bold;
+/*	top: 10px;*/
+	left: 123px;
+  padding: 0px 5px;
+/*	text-align:left;*/
+/*	color:lightgray;*/
+	z-index:3;
+	color:gray;
+	/*background-color: #1b0101e8;*/
+  text-shadow: var(--label-text-shadow);
+}
+#frameGameName {
+	position:absolute;
+	z-index:3;
+	/*background-color: #1b0101e8;*/
+  text-shadow: var(--label-text-shadow);
+	left:50%;
+  padding: 0px 5px;
+	-webkit-transform: translateX(-50%);
+	-moz-transform: translateX(-50%);
+	-ms-transform: translateX(-50%);
+	transform: translateX(-50%);
+}
+.btnTitleD {
+	width:100%;
+	text-align:center;
+	top:45px;
+	position:relative;
+	font-size:20px;
+	font-weight:bold;
+
+	-ms-transform:translateY(-50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateY(-50%);
+    -webkit-transform-origin: center center;
+    transform: translateY(-50%);
+    transform-origin: center center;
+}
+.btnTitleA {
+	width:100%;
+	text-align:center;
+	top:18px;
+	position:relative;
+	font-size:15px;
+	font-weight:bold;
+
+	-ms-transform:translateY(-50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateY(-50%);
+    -webkit-transform-origin: center center;
+    transform: translateY(-50%);
+    transform-origin: center center;
+}
+.btnTitle {
+	opacity:0.85;
+	text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+	width:100%;
+	text-align:center;
+	top:58px;
+	position:relative;
+	font-size:28px;
+    line-height: 25px;
+	font-weight:bold;
+
+	-ms-transform:translateY(-50%);
+    -ms-transform-origin: center center;
+    -webkit-transform: translateY(-50%);
+    -webkit-transform-origin: center center;
+    transform: translateY(-50%);
+    transform-origin: center center;
+}
+.signsGameMenu {
+	position:absolute;
+	height:144px;
+	width:144px;
+	top:0px;
+	left:20px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 720px 144px;
+	z-index:1;
+}
+.signsStart {
+	position:absolute;
+	height:144px;
+	width:144px;
+	top:0px;
+	left:35px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 720px 144px;
+	z-index:1;
+}
+#jackpot_name {
+	text-align:center;
+	left:332px;
+	width:360px;
+	height:20px;
+	position:absolute;
+	z-index:5;
+	display:none;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 360px 380px;
+}
+#jackpot_frame {
+	text-align:center;
+	width:1024px;
+	position:absolute;
+	z-index:5;
+	display:none;
+}
+#payLines{
+/*	left:-48px;*/
+	top:165px;
+	width:1160px;
+	height:510px;
+	position:absolute;
+	z-index:5;
+	display:none;
+}
+#topAditional_frame,#topAditional_frame2{
+	position:absolute;
+	z-index:5;
+	display:none;
+	background-repeat:no-repeat;
+}
+.topDigits{
+	display:inline-block;
+	background-position:top right;
+	background-repeat:no-repeat;
+	z-index:6;
+}
+.symNum {
+	position:absolute;
+	width: 50px;
+	top:55px;
+	text-align:left;
+	color:yellow;
+	font-size:50px;
+    line-height: 45px;
+	font-weight:bold;
+}
+.symAmmount {
+	position:absolute;
+	width: 200px;
+	left:450px;
+	top:55px;
+	text-align:right;
+	font-size:50px;
+    line-height: 45px;
+	font-weight:bold;
+}
+#showWins_frame{
+/*	opacity: 0;*/
+/*	background-color: black;*/
+	position:absolute;
+	z-index:3;
+}
+#topJackpot {
+    width: 1024px;
+    height: 768px;
+    position: relative;
+    left: 68px;
+    top: 0px;
+    z-index: 5;
+    display: none;
+}
+#tabloGold {
+    width: 1024px;
+    height: 223px;
+    background-size: 1024px 223px;
+    left: 0px;
+    top: 73px;
+    position: absolute;
+    text-align: center;
+    z-index: 5;
+    background-repeat: no-repeat;
+    background-position: 0% 0%;
+}
+#tabloSilver {
+    width: 1024px;
+    height: 223px;
+    background-size: 1024px 223px;
+    left: 0px;
+    top: 313px;
+    position: absolute;
+    text-align: center;
+    z-index: 5;
+    background-repeat: no-repeat;
+    background-position: 0% 0%;
+}
+#tabloBronze {
+    width: 520px;
+    height: 223px;
+    background-size: 512px 223px;
+    left: 512px;
+    top: 541px;
+    position: absolute;
+    text-align: center;
+    z-index: 5;
+    background-repeat: no-repeat;
+    background-position: 0% 0%;
+}
+#tabloLead {
+    width: 512px;
+    height: 223px;
+    background-size: 512px 223px;
+    left: 0px;
+    top: 541px;
+    position: absolute;
+    text-align: center;
+    z-index: 5;
+    background-repeat: no-repeat;
+    background-position: 0% 0%;
+}
+#jakpotHeader {
+	width:528px;
+	height:54px;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 528px 54px;
+	top:0px;
+	left:248px;
+	position:absolute;
+	z-index:5;
+	display:none;
+}
+.jackpotAmmount {
+    text-align: center;
+    width: 100%;
+    height: 146px;
+    position: absolute!important;
+    z-index: 5;
+    left: 0px;
+}
+.jpLabel {
+	height:46px;
+	width:828px;
+	text-align:center;
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size: 828px 782px;
+	display:none;
+}
+.linesN {
+	position:absolute;
+	width: 55px;
+	text-align:center;
+	font-size:20px;
+	font-weight:bold;
+	color:white;
+}
+.vericaltext{
+	position:absolute;
+	font-size:25px;
+    width:1px;
+    word-wrap: break-word;
+    font-family: monospace; /* this is just for good looks */
+	font-weight:bold;
+	top:160px;
+	left:56px;
+}
+.button {
+  border: none;
+	font-size: 22px;
+	font-weight: bold;
+	border-radius: 15px;
+	transition-duration: 0.4s;
+	margin: 24px 32px;
+	text-align: center;
+  text-decoration: none;
+  -webkit-transition-duration: 0.4s; /* Safari */
+  transition-duration: 0.4s;
+}
+.button:hover {background-color: #e7e7e7;}
+#noMany {
+  display: none;
+  position: absolute;
+  width: 740px;
+  height: 30px;
+  top: 60px;
+  line-height: 30px;
+  font-size: 30px;
+  font-weight: bold;
+  text-align: center;
+  color: var(--buyNoManyLabel-color);
+  -webkit-animation: 0.5s buyNoManyLabel-anim infinite ease-in-out;
+}
+#gameLayer, #topJackpot, #gameMenuInterface, #gameDoubleInterface, #buy_bonus_frame, #symbolHelp_frame, #congr_win, #menuWindow, #demoModesContainer,#tree_with_diamonds_frame,#DiamondTreeJP_html,#win500xPlateContainer,#historyFrame,.fastbet {-webkit-animation: showingAnim 0.3s 1 ease-in forwards;}
+@-webkit-keyframes showingAnim {
+  0% { opacity: 0.1; }
+  100% { opacity: 1; }
+}
+@-webkit-keyframes hidingAnim {
+  0% {opacity: 1;}
+  100% {opacity: 0;}
+}
+@-webkit-keyframes blinkingAnim {
+  0%, 50%, 100% {opacity: 1;}
+  25%, 75% {opacity: 0;}
+}
+@-webkit-keyframes buyNoManyLabel-anim {
+  0%, 100% {text-shadow: unset;}
+  50% {text-shadow: var(--buyNoManyLabel-text-shadow);}
+}@media only screen and (orientation: landscape) {
+	#doubleButtons_black2, #doubleButtons_red2 {
+			display: none!important;
+	}
+}

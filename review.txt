@@ -1,0 +1,674 @@
+
+FILE web/src/utils/marketExpiry.ts
+/**
+ * Logjika që detekton market-et e skaduara.
+ *
+ * Feed-i NUK i shënon market-et e skaduara si `suspended` ose `expired` — ai thjesht
+ * ndalon së dërguari ato. Pra `lockedMarkets` nuk merr kurrë `true` për ta, dhe frontend-i
+ * vazhdon t'i shfaqë. Ky file e zgjidh duke detektuar skadimin nga:
+ *
+ *   - emri i market-it    ("1st half. ...", "Halftime/Fulltime", ...)
+ *   - faza e ndeshjes      (period: 1H, 2H, HT, FT)
+ *   - minuta               (currentMinute > 45 → 1H mbaroi)
+ *   - statusi i ndeshjes   (ENDED / FINISHED)
+ *   - rezultati live       (për "first goal", "HT result", etj.)
+ */
+
+/** Normalizon emrin e market-it për krahasim */
+const norm = (s: any) => String(s ?? '').toLowerCase().trim();
+
+/** A i përket ky market pjesës së parë? */
+export const isFirstHalfMarket = (name: string): boolean =>
+  /1st half|first half|\b1h\b/i.test(name);
+
+/** A i përket ky market pjesës së dytë? */
+export const isSecondHalfMarket = (name: string): boolean =>
+  /2nd half|second half|\b2h\b/i.test(name);
+
+/** A është "Halftime/Fulltime" ose "HT/FT"? */
+export const isHTFTMarket = (name: string): boolean =>
+  /halftime\/?fulltime|ht\/?ft|half.?time\s*\/\s*full.?time/i.test(name);
+
+/** A është "1st half. Result" / "Half Time Result"? */
+export const isFirstHalfResultMarket = (name: string): boolean =>
+  /1st half.*result|first half.*result|half.?time\s*(result|winner|score)|ht\s*(result|winner|score)/i.test(name);
+
+/** A është "first goal" / "first corner" / "first card"? */
+export const isFirstEventMarket = (name: string): boolean =>
+  /\b(first|1st)\b.*\b(goal|corner|card|yellow|red|booking|point|set|score|scorer)\b/i.test(name);
+
+/** A ka mbaruar ndeshja? */
+const isMatchFinished = (m: any): boolean => {
+  const status = String(m?.status ?? '').toUpperCase();
+  const phase = String(m?.period ?? '').toUpperCase();
+  return (
+    status === 'ENDED' ||
+    status === 'FINISHED' ||
+    status === 'FT' ||
+    phase === 'FT' ||
+    phase === 'ENDED' ||
+    phase === 'FINISHED'
+  );
+};
+
+/** A jemi në pjesën e dytë ose më vonë? */
+const isSecondHalfOrLater = (m: any): boolean => {
+  const phase = String(m?.period ?? '').toUpperCase();
+  const minute = Number(m?.currentMinute ?? 0);
+  return phase === '2H' || phase === 'HT' || phase === 'FT' || minute > 45;
+};
+
+/**
+ * A ka skaduar ky market? Bazuar në emër + fazë + minutë + status + rezultat.
+ * Kjo është logjika kryesore që zëvendëson mungesën e shenjës nga feed-i.
+ */
+export function isMarketExpired(m: any, market: any): boolean {
+  if (!market) return false;
+  const name = norm(market.name);
+
+  // 0) Ndeshja mbaroi → çdo market skadon
+  if (isMatchFinished(m)) return true;
+
+  // 1) Market-et e pjesës së parë → skadojnë kur kaluam 45' ose jemi në 2H/HT
+  if (isFirstHalfMarket(name)) {
+    if (isSecondHalfOrLater(m)) return true;
+  }
+
+  // 2) "Halftime/Fulltime" → skadon kur pjesa e parë mbaroi
+  if (isHTFTMarket(name)) {
+    if (isSecondHalfOrLater(m)) return true;
+  }
+
+  // 3) "1st half. Result" / "Half Time Result" → skadon kur pjesa e parë mbaroi
+  if (isFirstHalfResultMarket(name)) {
+    if (isSecondHalfOrLater(m)) return true;
+  }
+
+  // 4) "First goal/corner/card" → skadon kur ngjarja e parë ka ndodhur
+  if (isFirstEventMarket(name)) {
+    const totalGoals = Number(m?.homeScore ?? 0) + Number(m?.awayScore ?? 0);
+    const totalCorners = Number(m?.corners?.home ?? 0) + Number(m?.corners?.away ?? 0);
+    const totalCards = Number(m?.cards?.home ?? 0) + Number(m?.cards?.away ?? 0);
+
+    if (/\bgoal|scorer\b/i.test(name) && totalGoals > 0) return true;
+    if (/\bcorner\b/i.test(name) && totalCorners > 0) return true;
+    if (/\b(card|yellow|red|booking)\b/i.test(name) && totalCards > 0) return true;
+  }
+
+  // 5) Market-et e pjesës së dytë → skadojnë vetëm kur ndeshja mbaroi
+  if (isSecondHalfMarket(name)) {
+    if (isMatchFinished(m)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * A është outcome-i i disponueshëm për bast?
+ * Kontrollon: ka odds valid, nuk është suspended.
+ */
+export const isOutcomeAvailable = (o: any): boolean =>
+  !!o &&
+  typeof o.odds === 'number' &&
+  o.odds > 0 &&
+  o.suspended !== true;
+
+/**
+ * A është market-i i suspenduar nga feed-i (përkohësisht)?
+ */
+export const isMarketSuspended = (market: any, lockedMarkets?: Record<string, boolean>): boolean => {
+  if (!market) return false;
+  if (market.suspended === true) return true;
+  if (String(market.status ?? '').toUpperCase() === 'SUSPENDED') return true;
+  if (lockedMarkets && lockedMarkets[market.id] === true) return true;
+  return false;
+};
+
+/**
+ * Filtri i plotë: a duhet shfaqur ky market?
+ */
+export function isMarketVisible(
+  m: any,
+  market: any,
+  lockedMarkets?: Record<string, boolean>,
+): boolean {
+  if (!market) return false;
+  if (!market.outcomes?.length) return false;
+  if (isMarketExpired(m, market)) return false;
+  if (isMarketSuspended(market, lockedMarkets)) return false;
+  if (!market.outcomes.some(isOutcomeAvailable)) return false;
+  return true;
+}
+
+/* ------------------------------------------------------------------ */
+/* Filtrat e total-eve (goals / corners / cards)                       */
+/* ------------------------------------------------------------------ */
+
+/** A është total market (goals/corners/cards)? */
+const isTotalMarket = (market: any) => {
+  const type = String(market?.marketType ?? '').toUpperCase();
+  if (type === 'OVER_UNDER' || type === 'TOTALS' || type === 'CORNERS' || type === 'CARDS') return true;
+  const n = String(market?.name ?? '').toLowerCase();
+  return /total|over\/?under|under\/?over|goal line/i.test(n) &&
+    !/handicap|half time|ht\/?ft|correct score|1x2|winner|first|next|last|both teams/i.test(n);
+};
+
+const parseLineNum = (line?: string) => {
+  if (!line) return null;
+  const m = String(line).match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : null;
+};
+
+const isOverOutcome = (o: any) =>
+  /^(over|o)$/i.test(String(o.name ?? '').trim()) || String(o.key ?? '').toLowerCase() === 'over';
+const isUnderOutcome = (o: any) =>
+  /^(under|u)$/i.test(String(o.name ?? '').trim()) || String(o.key ?? '').toLowerCase() === 'under';
+
+const counterFor = (market: any, match: any) => {
+  const n = String(market?.name ?? '').toLowerCase();
+  if (/corner/.test(n)) return (match.corners?.home ?? 0) + (match.corners?.away ?? 0);
+  if (/card|booking|yellow|red/.test(n)) return (match.cards?.home ?? 0) + (match.cards?.away ?? 0);
+  return (match.homeScore ?? 0) + (match.awayScore ?? 0);
+};
+
+/**
+ * Heq outcomes që tashmë janë vendosur nga rezultati live.
+ * Over vdes kur count > line, Under vdes kur count < line.
+ * Në linjë të plotë (integer) është push dhe të dyja mbeten.
+ * Handicap, correct score, BTTS, 1X2 nuk preken.
+ */
+export function filterDecidedOutcomes(outcomes: any[] = [], market: any = {}, match: any = {}) {
+  if (!outcomes.length) return outcomes;
+  if (!isTotalMarket(market)) return outcomes;
+  const lineNum = parseLineNum(market?.line);
+  if (lineNum == null) return outcomes;
+  const total = counterFor(market, match);
+  return outcomes.filter((o) => {
+    if (isOverOutcome(o)) return total <= lineNum;
+    if (isUnderOutcome(o)) return total >= lineNum;
+    return true;
+  });
+}
+
+FILE web/src/context/BetslipContext.tsx
+import { createContext, useContext, useState, useMemo } from 'react';
+import { BetSelection } from '../types';
+import { apiClient } from '../api/client';
+
+interface BetslipContextType {
+  selections: BetSelection[];
+  stake: string;
+  setStake: (s: string) => void;
+  ticketType: 'SINGLE' | 'COMBO' | 'SYSTEM';
+  setTicketType: (t: 'SINGLE' | 'COMBO' | 'SYSTEM') => void;
+  systemType: string;
+  setSystemType: (s: string) => void;
+  addSelection: (s: BetSelection) => void;
+  removeSelection: (outcomeId: string) => void;
+  clearAll: () => void;
+  updateOdds: (outcomeId: string, odds: number) => void;
+  totalOdds: number;
+  potentialPayout: number;
+  placeBet: (onSuccess?: () => void) => Promise<any>;
+  bookTicket: () => Promise<any>;
+}
+
+const BetslipContext = createContext<BetslipContextType>({} as BetslipContextType);
+
+export const BetslipProvider = ({ children }: { children: React.ReactNode }) => {
+  const [selections, setSelections] = useState<BetSelection[]>([]);
+  const [stake, setStake] = useState('0');
+  const [ticketType, setTicketType] = useState<'SINGLE' | 'COMBO' | 'SYSTEM'>('SINGLE');
+  const [systemType, setSystemType] = useState('');
+
+  const addSelection = (s: BetSelection) => {
+    setSelections(prev => {
+      // 1) Nëse outcome-i ekziston tashmë → toggle (hiqe)
+      const exists = prev.some(p => p.outcomeId === s.outcomeId);
+      if (exists) {
+        return prev.filter(p => p.outcomeId !== s.outcomeId);
+      }
+
+      // 2) Konflikt: market i njëjti nga e njëjta ndeshje → zëvendëso vetëm atë
+      //    (p.sh. "1" dhe "X" nga i njëjti 1X2, ose "Over 2.5" dhe "Under 2.5")
+      const conflict = prev.find(p =>
+        p.matchId === s.matchId && p.marketId === s.marketId
+      );
+      if (conflict) {
+        return [
+          ...prev.filter(p => !(p.matchId === s.matchId && p.marketId === s.marketId)),
+          s,
+        ];
+      }
+
+      // 3) Përndryshe → shto normalisht
+      //    Lejon market-e të ndryshme nga e njëjta ndeshje (GG + Over 2.5 + 1X2)
+      return [...prev, s];
+    });
+  };
+
+  const removeSelection = (outcomeId: string) => {
+    setSelections(prev => prev.filter(p => p.outcomeId !== outcomeId));
+  };
+
+  const clearAll = () => {
+    setSelections([]);
+    setStake('0');
+  };
+
+  const updateOdds = (outcomeId: string, newOdds: number) => {
+    setSelections(prev => prev.map(s => s.outcomeId === outcomeId ? { ...s, odds: newOdds } : s));
+  };
+
+  const totalOdds = useMemo(() => selections.reduce((acc, s) => acc * s.odds, 1), [selections]);
+  const potentialPayout = useMemo(() => (parseFloat(stake) || 0) * totalOdds, [stake, totalOdds]);
+
+  const placeBet = async (onSuccess?: () => void) => {
+    const stakeNum = parseFloat(stake) || 0;
+    if (stakeNum < 1) {
+      throw new Error('Shuma minimale është 1 Lëk');
+    }
+    
+    const res = await apiClient.post('/bets/place', {
+      ticketType,
+      type: ticketType,
+      systemType,
+      stake: stakeNum,
+      selections: selections.map(s => ({
+        outcomeId: s.outcomeId,
+        oddsAtPlacement: s.odds,
+        odds: s.odds
+      }))
+    });
+    
+    if (onSuccess) onSuccess();
+    return res.data;
+  };
+
+  const bookTicket = async () => {
+    const stakeNum = parseFloat(stake) || 0;
+    if (stakeNum < 1) {
+      throw new Error('Shuma minimale është 1 Lëk');
+    }
+    
+    const res = await apiClient.post('/bets/book', {
+      ticketType,
+      type: ticketType,
+      systemType,
+      stake: stakeNum,
+      selections: selections.map(s => ({
+        outcomeId: s.outcomeId,
+        oddsAtPlacement: s.odds,
+        odds: s.odds
+      }))
+    });
+    return res.data;
+  };
+
+  return (
+    <BetslipContext.Provider value={{
+      selections, stake, setStake, ticketType, setTicketType, systemType, setSystemType,
+      addSelection, removeSelection, clearAll, updateOdds,
+      totalOdds, potentialPayout, placeBet, bookTicket
+    }}>
+      {children}
+    </BetslipContext.Provider>
+  );
+};
+
+export const useBetslip = () => useContext(BetslipContext);
+
+
+FILE web/src/pages/SportsbookPage.tsx
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Header from '../components/Layout/Header';
+import SportsSidebar from '../components/Layout/SportsSidebar';
+import BetslipSidebar from '../components/Layout/BetslipSidebar';
+import MatchList from '../components/Sports/MatchList';
+import MatchDetail from '../components/Sports/MatchDetail';
+import { LiveFeedProvider } from '../api/liveFeed';
+import { useBetslip } from '../context/BetslipContext';
+import { useLanguage } from '../context/LanguageContext';
+import { ListOrdered, Ticket, X } from 'lucide-react';
+
+/**
+ * The board. Three columns on a desktop (leagues | matches | betslip); on a phone the two side
+ * columns become drawers over the matches, opened from the header and from the bottom bar.
+ * `100dvh` rather than `h-screen`, so the browser bars on a phone cannot push the bottom bar
+ * off the screen.
+ */
+export default function SportsbookPage() {
+  const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { selections, totalOdds } = useBetslip();
+  const [selectedTournament, setSelectedTournament] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSport, setSelectedSport] = useState<string>('');
+  const [matchMode, setMatchMode] = useState<'all' | 'live' | 'prematch'>('all');
+  const isLiveOnly = matchMode === 'live';
+  // small screens: the leagues drawer and the betslip sheet
+  const [navOpen, setNavOpen] = useState(false);
+  const [betslipOpen, setBetslipOpen] = useState(false);
+
+  // both are overlays: opening a match closes them
+  useEffect(() => {
+    setNavOpen(false);
+    setBetslipOpen(false);
+  }, [id]);
+
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setNavOpen(false); setBetslipOpen(false); } };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, []);
+
+  const handleSelectTournament = (tourId: string) => {
+    setSelectedTournament(tourId);
+    setSelectedCategory('');
+    setSelectedSport('');
+    setNavOpen(false);
+    // Navigate back to matches list if on match detail page
+    if (id) navigate('/');
+  };
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    setSelectedTournament('');
+    setSelectedSport('');
+    setNavOpen(false);
+    // Navigate back to matches list if on match detail page
+    if (id) navigate('/');
+  };
+
+  const handleSelectSport = (sportId: string) => {
+    setSelectedSport(sportId);
+    setSelectedTournament('');
+    setSelectedCategory('');
+    setNavOpen(false);
+    // Navigate back to matches list if on match detail page
+    if (id) navigate('/');
+  };
+
+  const handleSelectAll = () => {
+    setMatchMode('all');
+    setSelectedSport('');
+    setSelectedCategory('');
+    setSelectedTournament('');
+    setNavOpen(false);
+    // Navigate back to matches list if on match detail page
+    if (id) navigate('/');
+  };
+
+  const handleSelectLive = () => {
+    setSelectedSport('');
+    setSelectedCategory('');
+    setSelectedTournament('');
+    setMatchMode('live');
+    setNavOpen(false);
+    // Navigate back to matches list if on match detail page
+    if (id) navigate('/');
+  };
+
+  const sidebar = (
+    <SportsSidebar
+      selectedTournamentId={selectedTournament}
+      selectedSportId={selectedSport}
+      selectedCategoryId={selectedCategory}
+      matchMode={matchMode}
+      isLiveOnly={isLiveOnly}
+      onSelectTournament={handleSelectTournament}
+      onSelectSport={handleSelectSport}
+      onSelectCategory={handleSelectCategory}
+      onSelectAll={handleSelectAll}
+      onSelectLive={handleSelectLive}
+    />
+  );
+
+  return (
+    <LiveFeedProvider>
+      <div className="h-[100dvh] flex flex-col overflow-hidden bg-primary">
+        <Header onToggleNav={() => { setBetslipOpen(false); setNavOpen((v) => !v); }} />
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* leagues: always there from lg up, a drawer below that */}
+          <div className="hidden lg:flex">{sidebar}</div>
+
+          <main className="flex-1 min-w-0 overflow-y-auto bg-primary pb-[calc(5rem+env(safe-area-inset-bottom))] xl:pb-0">
+            {!id && <div className="max-w-6xl mx-auto px-3 pt-5 sm:px-6 space-y-4">
+              <div><h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('board.title')}</h1><p className="mt-1 text-sm text-text-secondary">{t('board.hint')}</p></div>
+              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-secondary border border-white/10 p-1.5" aria-label={t('board.title')}>
+                {(['all', 'live', 'prematch'] as const).map(mode => <button type="button" key={mode} aria-pressed={matchMode === mode} onClick={() => setMatchMode(mode)} className={`min-h-[48px] rounded-xl px-2 text-xs sm:text-sm font-semibold transition ${matchMode === mode ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-text-secondary hover:bg-white/5 hover:text-white'}`}>{mode === 'live' && <span className="inline-block w-1.5 h-1.5 rounded-full bg-current mr-2" />}{t(`board.${mode}`)}</button>)}
+              </div>
+              {(selectedSport || selectedCategory || selectedTournament) && <button className="filter-chip" onClick={() => { setSelectedSport(''); setSelectedCategory(''); setSelectedTournament(''); }}>{t('sections.all_competitions')}</button>}
+            </div>}
+            {id ? (
+              <MatchDetail />
+            ) : (
+              <MatchList
+                tournamentId={selectedTournament}
+                categoryId={selectedCategory}
+                sportId={selectedSport}
+                isLiveOnly={isLiveOnly}
+                matchMode={matchMode}
+              />
+            )}
+          </main>
+
+          {/* betslip: a rail from xl up, a bottom sheet below that */}
+          <div className="hidden xl:flex">
+            <BetslipSidebar />
+          </div>
+        </div>
+
+        {/* small screens: modern bottom navigation dock */}
+        <div className="xl:hidden fixed bottom-0 inset-x-0 z-30 bg-secondary/95 backdrop-blur-xl border-t border-tertiary/80 flex items-stretch text-xs font-bold shadow-2xl pb-[env(safe-area-inset-bottom)]">
+          <button
+            className={`lg:hidden flex-1 flex items-center justify-center gap-2 py-3.5 transition-all ${
+              navOpen ? 'text-accent-green bg-primary/40' : 'text-text-secondary active:bg-tertiary/60'
+            }`}
+            onClick={() => {
+              setBetslipOpen(false);
+              setNavOpen((v) => !v);
+            }}
+          >
+            <ListOrdered size={16} className={navOpen ? 'text-accent-green' : 'text-text-secondary'} />
+            <span className="tracking-wide">{t('nav.sports')}</span>
+          </button>
+          <button
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 transition-all ${
+              selections.length > 0
+                ? 'bg-gradient-to-r from-emerald-600 to-accent-green text-primary shadow-glow-green font-black'
+                : 'text-text-secondary bg-primary/50 active:bg-tertiary/60'
+            }`}
+            onClick={() => {
+              setNavOpen(false);
+              setBetslipOpen((v) => !v);
+            }}
+          >
+            <Ticket size={16} />
+            <span>{t('betslip.betslip')}</span>
+            {selections.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-primary text-accent-green border border-primary/20">
+                {selections.length}
+              </span>
+            )}
+            {selections.length > 0 && (
+              <span className="text-[10px] font-mono font-black bg-primary/20 rounded px-1.5 py-0.5">
+                @{totalOdds.toFixed(2)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* leagues drawer */}
+        {navOpen && (
+          <div className="lg:hidden fixed inset-0 z-40 flex bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setNavOpen(false)}>
+            <div className="relative h-full animate-in slide-in-from-left duration-250 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              {sidebar}
+              <button
+                className="absolute top-3 right-3 p-2 rounded-full bg-primary/80 hover:bg-primary border border-tertiary/80 text-white shadow-lg transition"
+                onClick={() => setNavOpen(false)}
+                aria-label={t('common.cancel')}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* betslip sheet */}
+        {betslipOpen && (
+          <div className="xl:hidden fixed inset-0 z-40 flex items-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setBetslipOpen(false)}>
+            <div className="w-full max-h-[85dvh] bg-secondary rounded-t-3xl border-t border-tertiary/90 overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-250" onClick={(e) => e.stopPropagation()}>
+              {/* Sheet handle bar */}
+              <button type="button" className="w-full min-h-[44px] px-4 flex items-center justify-between bg-secondary text-sm text-text-secondary" onClick={() => setBetslipOpen(false)}><span>{t('common.close')}</span><X size={18} /></button>
+              <BetslipSidebar className="w-full flex-1 overflow-hidden" />
+            </div>
+          </div>
+        )}
+      </div>
+    </LiveFeedProvider>
+  );
+}
+
+FILE web/src/components/Sports/OddsButton.tsx
+import { useLanguage } from '../../context/LanguageContext';
+import { outcomeLabel, marketLabel } from '../../utils/marketPresentation';
+import { useBetslip } from '../../context/BetslipContext';
+import { Match, Market, Outcome } from '../../types';
+import { useLiveFeed } from '../../api/liveFeed';
+import { useEffect, useState } from 'react';
+import { Lock } from 'lucide-react';
+
+interface Props { match: Match; market: Market; outcome: Outcome; }
+
+export default function OddsButton({ match, market, outcome }: Props) {
+  const { t } = useLanguage();
+  const label = outcomeLabel(t, outcome.name);
+  const { selections, addSelection, removeSelection } = useBetslip();
+  const { oddsDeltas, lockedOutcomes, lockedMarkets, lockedMatches } = useLiveFeed();
+  const [currentOdds, setCurrentOdds] = useState(outcome.odds);
+  const [flashClass, setFlashClass] = useState('');
+
+  const isSelected = selections.some(s => s.outcomeId === outcome.id);
+  // the feed locks prices around a goal or a dangerous attack (its own "status":2) and can close
+  // a whole match ("hasOpenOdds":false). Both arrive over the socket now, so the lock is on
+  // screen the moment it happens instead of up to 15s later with the REST board.
+  const isSuspended =
+    outcome.status !== 'ACTIVE' ||
+    market.status !== 'ACTIVE' ||
+    match.status === 'ENDED' || match.status === 'CANCELLED' ||
+    match.isSuspended ||
+    lockedOutcomes[outcome.id] === true ||
+    lockedMarkets[market.id] === true ||
+    lockedMatches[String(match.id)] === true ||
+    currentOdds === null || currentOdds === undefined || !Number.isFinite(currentOdds) || currentOdds <= 1;
+
+  useEffect(() => { setCurrentOdds(outcome.odds); }, [outcome.id, outcome.odds]);
+  const delta = oddsDeltas[outcome.id];
+  useEffect(() => {
+    if (delta) {
+      setCurrentOdds(delta.newOdds);
+      setFlashClass(delta.direction === 'up' ? 'animate-flash-green' : 'animate-flash-red');
+      const t = setTimeout(() => setFlashClass(''), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [delta, outcome.id]);
+
+  const toggle = () => {
+    if (isSuspended) return;
+    if (isSelected) {
+      removeSelection(outcome.id);
+    } else {
+      addSelection({
+        outcomeId: outcome.id,
+        matchId: match.id,
+        marketId: market.id,
+        outcomeName: outcome.name,
+        marketName: market.name,
+        matchName: `${match.homeTeam} vs ${match.awayTeam}`,
+        odds: currentOdds
+      });
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      aria-pressed={isSelected}
+      title={`${marketLabel(t, market.name)} · ${label}${isSuspended ? ` · ${t('sections.odds_locked')}` : ''}`}
+      onClick={toggle}
+      disabled={isSuspended}
+      className={`group min-w-0 min-h-[46px] relative flex justify-between items-center px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg border transition-all duration-150 select-none ${flashClass} ${
+        isSuspended
+          ? 'bg-primary/40 border-tertiary/40 opacity-50 cursor-not-allowed'
+          : isSelected
+          ? 'bg-accent-green/20 border-accent-green text-white shadow-glow-green scale-[1.01]'
+          : 'bg-primary/80 border-tertiary/80 hover:border-slate-500 hover:bg-tertiary/40 text-text-primary active:scale-[0.98]'
+      }`}
+    >
+      <span className={`text-[11px] sm:text-xs font-semibold truncate transition-colors ${
+        isSelected ? 'text-accent-green font-bold' : 'text-text-secondary group-hover:text-slate-200'
+      }`} title={label}>
+        {label}
+      </span>
+      <span className={`font-mono font-black text-xs sm:text-sm ml-1.5 tabular-nums shrink-0 ${
+        isSuspended ? 'text-text-secondary' : isSelected ? 'text-white' : 'text-accent-yellow sm:text-text-primary group-hover:text-accent-yellow'
+      }`}>
+        {isSuspended ? <Lock size={12} className="inline text-text-secondary" /> : currentOdds !== null && currentOdds !== undefined ? currentOdds.toFixed(2) : '-'}
+      </span>
+    </button>
+  );
+}
+
+
+FILE web/vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+/**
+ * Our backend serves this app under /app (API under /app/api, realtime on the same
+ * origin at /socket.io), so the build base and the output folder follow that layout.
+ */
+export default defineConfig({
+  plugins: [react()],
+  base: '/app/',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+    // dev only: forward to the running backend
+    proxy: {
+      '/app/api': { target: 'http://localhost:3000', changeOrigin: true },
+      '/socket.io': { target: 'http://localhost:3000', ws: true, changeOrigin: true },
+    },
+  },
+});
+
+
+FILE web/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,1178 @@
+{
+  "source": "https://demo.agtsoftware.org/games/agt/",
+  "locale": "en",
+  "root": ".",
+  "changes": "Original provider client; local demo API URL, local session defaults, English configuration. No custom game UI.",
+  "assets": [
+    {
+      "path": "audio/common/sfx/commonSounds.mp3",
+      "bytes": 1018465,
+      "sha256": "c9c486cda79cd2b1626472a8620e839db262a69662d51aae010cfba0f7384cb3"
+    },
+    {
+      "path": "audio/fruitqueen/background/bg.mp3",
+      "bytes": 710011,
+      "sha256": "2f56ab4875e987d9f64bad21699a14d5761e93ce1026a64581759902668d3e4a"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/gambleSounds.mp3",
+      "bytes": 161585,
+      "sha256": "0dcc2af702fc3ddd481444e5a0debe6caca6c81cc9fc82879e509f0c7d424605"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/lineChangeSounds.mp3",
+      "bytes": 87188,
+      "sha256": "1042381d4c21c23a67c041e542de4e72e68087d7f002b9c374d061150664dd93"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/mainSounds.mp3",
+      "bytes": 753908,
+      "sha256": "980cd13e24f063ff4388cfd1562df45a3adc1c8fa4b4471f257340f2c21bd17c"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/shortSounds.mp3",
+      "bytes": 108086,
+      "sha256": "cce7cf858b8948ff4c6848df29672534b98867349a41b9f73dca406f2d49efcf"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/shortSounds2.mp3",
+      "bytes": 236045,
+      "sha256": "0d328d4263c57c3370c466e56e01487c1e5002ff4a95b82f00a392075052c3c5"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/singleSounds.mp3",
+      "bytes": 47064,
+      "sha256": "92fd20217d01519339cbf16cde4a346da61c981116d32d2a0ede423b6ee49d1a"
+    },
+    {
+      "path": "audio/fruitqueen/sfx/winSounds.mp3",
+      "bytes": 572439,
+      "sha256": "d988a2b117b96efa5ac888e9ed539f8f92ce95ff77909b5caffba385becc30f3"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/gambleSounds.mp3",
+      "bytes": 161585,
+      "sha256": "0dcc2af702fc3ddd481444e5a0debe6caca6c81cc9fc82879e509f0c7d424605"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/lineChangeSounds.mp3",
+      "bytes": 87188,
+      "sha256": "1042381d4c21c23a67c041e542de4e72e68087d7f002b9c374d061150664dd93"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/mainSounds.mp3",
+      "bytes": 753908,
+      "sha256": "980cd13e24f063ff4388cfd1562df45a3adc1c8fa4b4471f257340f2c21bd17c"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/shortSounds.mp3",
+      "bytes": 52497,
+      "sha256": "815e397258cba358a65abc5517c99cf2425696b2d6c9170d40f834d36584e6a9"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/singleSounds.mp3",
+      "bytes": 24076,
+      "sha256": "0c71962a5dd789f685c21c6528c1e693fb8c5fe2d1fdd98b5025acf985bb3933"
+    },
+    {
+      "path": "audio/sevenhot20/sfx/winSounds.mp3",
+      "bytes": 648507,
+      "sha256": "625ee8871aff158a8aa7be552512618d4c3673ad0eee81d0e6c10c32e83df4c2"
+    },
+    {
+      "path": "css/BebasNeue-Regular.ttf",
+      "bytes": 57624,
+      "sha256": "8c6b9d4587002e47891b0d7dd66e37b5ecb6c61d0d571144d9e7dce03b6661f2"
+    },
+    {
+      "path": "css/changa/ChangaOne-Regular.ttf",
+      "bytes": 21364,
+      "sha256": "ba51131b36c7c254ad048ec6dae3e2c5f95bc2106e266d6cf8440fb505b7841a"
+    },
+    {
+      "path": "css/changa/font.css",
+      "bytes": 148,
+      "sha256": "c1787a17c9fad3d9ff3e6ce450ec9143a437721e95c5b22a3a51336d81c85dd1"
+    },
+    {
+      "path": "css/gold_nums_agt.json",
+      "bytes": 3698,
+      "sha256": "2001ab51af473b4e4d7ad49cb0caa5854cf2695c929406ce3e695451647864b3"
+    },
+    {
+      "path": "css/gold_nums_agt.png",
+      "bytes": 368686,
+      "sha256": "1a6b0937cc4a1d20fb78cbab263e242f9bb4451dfd97752186a024f21a7bfe96"
+    },
+    {
+      "path": "css/jpfont.css",
+      "bytes": 2923,
+      "sha256": "180bfa1ac2d752be91b4feba1f73fa8ba0850748b38a619ce8f65c1c8ec3034c"
+    },
+    {
+      "path": "css/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2",
+      "bytes": 30928,
+      "sha256": "ae919a7c9f25f0fd97fc18e398ae8e453fcaae487e4a4cb4f896e7fecde4a780"
+    },
+    {
+      "path": "css/KFOlCnqEu92Fr1MmWUlfBBc4.woff2",
+      "bytes": 15860,
+      "sha256": "f5aebdfea35d1e7656ef4acc5db1f243209755ae3300943ef8fc6280f363c860"
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu4mxK.woff2",
+      "bytes": 15736,
+      "sha256": "48c3fa6f86c54f1d9bb519220713d4b0a1f8cd1a589a3c03b9fa82e98ecb13e3"
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu4WxKOzY.woff2",
+      "bytes": 7296,
+      "sha256": "a223f1cb930ff49e86d7a550fb70d89526b89358f5649efbf5d0589aac159357"
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu5mxKOzY.woff2",
+      "bytes": 9900,
+      "sha256": "491158614c16e4a767df0f1ddbb82a8462b6ba308b8774c698b82e850a425291"
+    },
+    {
+      "path": "css/LYjNdG7kmE0gfaN9pQlEpVsHVQ.woff2",
+      "bytes": 14964,
+      "sha256": "4a0ce7a531a41b6fb56b8027541951ffe1ad67ab9e49a12ee4816247178d5bca"
+    },
+    {
+      "path": "css/promofont.css",
+      "bytes": 4845,
+      "sha256": "95a353149ddb325945353af4f9f28b50346771b41de88e93d2350ad72f874d8e"
+    },
+    {
+      "path": "css/style.css",
+      "bytes": 5117,
+      "sha256": "844130678c5cfd9988a30f608d0af17d78140969d08657eb0c3964868d0fecee"
+    },
+    {
+      "path": "css/u0400.woff",
+      "bytes": 177712,
+      "sha256": "fcb55c8449824aa58f2cfc5b4da1c0f40cff06132f000ad6a24683d42e479b5d"
+    },
+    {
+      "path": "css/u2000.woff",
+      "bytes": 161712,
+      "sha256": "5fdc3dc9d970a215cc5488b36d8cd6a8c4c2b4beceed49d7b0ba73b4aab53f2e"
+    },
+    {
+      "path": "fruitqueen.html",
+      "bytes": 8736,
+      "sha256": "4347826ad14c79d72e1f24d5d437b90a12da140552d904460c7712205b958a53"
+    },
+    {
+      "path": "images/common/loading/one.webp",
+      "bytes": 3056,
+      "sha256": "da8aec0310777fecacf2afc11ed0c3cc59728ca02d1b87d2e51c983ec4308033"
+    },
+    {
+      "path": "images/common/loading/preload_bg.webp",
+      "bytes": 1036320,
+      "sha256": "5cc9e365c0ac7d6808c999098a4b67dd395c66d82c558230a2ddf615b500bc49"
+    },
+    {
+      "path": "images/common/loading/preload_elipse.webp",
+      "bytes": 163906,
+      "sha256": "9b313ceaa4000c2668eabb2c137b1fc5a352393d79cfa35d7dd53522f3e8da41"
+    },
+    {
+      "path": "images/common/ui/card0.webp",
+      "bytes": 5868,
+      "sha256": "27ca32653a2450395b3eceb8cb943a8cef55558cf0538843df9520509fc30cbf"
+    },
+    {
+      "path": "images/common/ui/card1.webp",
+      "bytes": 5740,
+      "sha256": "a95cf4e285b1b494823224c1aaef661518a3ec16574e80e3881ff690ca03090c"
+    },
+    {
+      "path": "images/common/ui/card2.webp",
+      "bytes": 5624,
+      "sha256": "fc9e84b481344d477f6a0020b6f721fd5993bb2f9f9dae910598109d691ba668"
+    },
+    {
+      "path": "images/common/ui/card3.webp",
+      "bytes": 5572,
+      "sha256": "50cb4a108181c3268e90bd9e50b104fe8c051b91088f74055ff6cf7baefdf3d5"
+    },
+    {
+      "path": "images/common/ui/coin/Gold_Coin_24/coin.json",
+      "bytes": 5300,
+      "sha256": "4aff12b1604160127c57d309cb6b93dabada888c3b6c6df02fd5b0e34cf1542e"
+    },
+    {
+      "path": "images/common/ui/coin/Gold_Coin_24/coin.webp",
+      "bytes": 509360,
+      "sha256": "6562cde83637bddd4c0199a1151b6b629b4142be1a800040fa166456af0656b0"
+    },
+    {
+      "path": "images/common/ui/coin/Silver_Coin_24/coin.json",
+      "bytes": 5348,
+      "sha256": "67b7bcc1db81f16e371fc5e9ab44d9bf31fd39aa240292c040b2fc544a420fe4"
+    },
+    {
+      "path": "images/common/ui/coin/Silver_Coin_24/coin.webp",
+      "bytes": 539634,
+      "sha256": "226787eecd897a4009cffbcd7682cbcd996c2620ff0017357b520773ea5e2a50"
+    },
+    {
+      "path": "images/common/ui/coin.webp",
+      "bytes": 1124,
+      "sha256": "847bdf54ae41fa494714ced2dc0c6a4312515f5d2208ac30e6fb452940812f04"
+    },
+    {
+      "path": "images/common/ui/flags.json",
+      "bytes": 7353,
+      "sha256": "fbb414e5f2b4315380b8cc33588ff53c5a54e35062f81300b3d06ee4a2f33cd4"
+    },
+    {
+      "path": "images/common/ui/flags.webp",
+      "bytes": 113632,
+      "sha256": "b6d438bb44c166c5d7874c7264b9dc8130a72299191e60b6a1632fe840801de0"
+    },
+    {
+      "path": "images/common/ui/fscongrat1.jpg",
+      "bytes": 506708,
+      "sha256": "2889f6798aee06c793155193b435da5bbc0d1ef498723e874e1a938e3659923c"
+    },
+    {
+      "path": "images/common/ui/fscongrat2.jpg",
+      "bytes": 495392,
+      "sha256": "f8a8fa40f70cab47afd1aee31c4747f9623ff46b9b5777ff7d7b2c45a4c71047"
+    },
+    {
+      "path": "images/common/ui/fscongrat3.jpg",
+      "bytes": 367763,
+      "sha256": "7d88eca8b09da4f1ce973c9760100a8e3f5aa54418dbdf4522505adb175cd731"
+    },
+    {
+      "path": "images/common/ui/hand.json",
+      "bytes": 909,
+      "sha256": "7742f4027533cd40568189615a291e1386a7778b66e4257aa14a4119a96d5f47"
+    },
+    {
+      "path": "images/common/ui/hand.webp",
+      "bytes": 2264,
+      "sha256": "7b674e01bfc572c7eb5a458ce643193a1304361b5704334de86aab799956c367"
+    },
+    {
+      "path": "images/common/ui/icons/main.json",
+      "bytes": 3795,
+      "sha256": "679a00fe38523e7d61fdadb662cdd555cf3ad59a51a78c4361644010e96efb93"
+    },
+    {
+      "path": "images/common/ui/icons/main.webp",
+      "bytes": 12870,
+      "sha256": "111fb417c72be09ba1b959c642b52b9a369fee10f10c11065e97844ed0e2340e"
+    },
+    {
+      "path": "images/common/ui/logo.webp",
+      "bytes": 1716,
+      "sha256": "32aa2e29603a0c84f447a8c13bbace708c642badf5a8f1310b26f4c92a9d6f2e"
+    },
+    {
+      "path": "images/common/ui/logobig.webp",
+      "bytes": 5908,
+      "sha256": "a611c8e523dfac6e4b10aaf9d35ab5fe5e107f29dd07149550a761715d2ee74a"
+    },
+    {
+      "path": "images/common/ui/promobg.jpg",
+      "bytes": 131293,
+      "sha256": "4566a38ef53462e0ef870baf4ada613ad80e85e20bafa535825ddb0c17d71e30"
+    },
+    {
+      "path": "images/common/ui/shine.webp",
+      "bytes": 505272,
+      "sha256": "6f0d85304f99ca6932e6e7e533912c27c10972e37959f3f3dfd07f0050c9fe19"
+    },
+    {
+      "path": "images/common/ui/snow.webp",
+      "bytes": 1104,
+      "sha256": "3afdc65409a2a9dd2bd19ad900b50e48eb19853afe23283e5628e9ac7eb73534"
+    },
+    {
+      "path": "images/common/ui/suit0.webp",
+      "bytes": 1220,
+      "sha256": "082e611f1b6f5c5453ce4cf49b0a258f387abd20db6ee036f50fe547fa955cee"
+    },
+    {
+      "path": "images/common/ui/suit1.webp",
+      "bytes": 1020,
+      "sha256": "dee9a4da96a049212a0909b77884811dea9ce1cd65c73e1189d4f4bae56a18fd"
+    },
+    {
+      "path": "images/common/ui/suit2.webp",
+      "bytes": 786,
+      "sha256": "183aa13a7b74e7e3862b21e61d91028983357b7974c6235203749ea68a92a181"
+    },
+    {
+      "path": "images/common/ui/suit3.webp",
+      "bytes": 1006,
+      "sha256": "afeae8ff34356561e6cffb82f3fc89b95c11f09c5cb8fdbab1e4649c3b6ad174"
+    },
+    {
+      "path": "images/common/ui/syminfo.webp",
+      "bytes": 23602,
+      "sha256": "350fedc8188d512cf06aed6518df830ff02ceea2b75bf34fb1983a5036330abd"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_0.json",
+      "bytes": 6654,
+      "sha256": "90fee6e862d67979dee8d20a088a984fa762e1e00d8687d3ba1bf81e335f88c7"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_0.webp",
+      "bytes": 654650,
+      "sha256": "62123d79b820be8b6ce08570a392932d4e98b4bb05cb2f46f4c95569c1a55483"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_1.json",
+      "bytes": 6654,
+      "sha256": "42702e0a567e1aa8afb5044d4f821854e5923d738271d3521cc22e0db76fdcee"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_1.webp",
+      "bytes": 794280,
+      "sha256": "5c8892601f70ab8025096ec3709d6df274691b116960da10b802710a99b39494"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_2.json",
+      "bytes": 6654,
+      "sha256": "63b53b0c022bac6b39b8a74a4792062da9ffc18b5338d431a083d9f158eca722"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_2.webp",
+      "bytes": 707150,
+      "sha256": "1e31e1e8acdc68c58d17cedc5055a758036f0f29db6c847db97342329b5b4c1b"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_3.json",
+      "bytes": 6654,
+      "sha256": "d0b8adb6c617a34103557cddafb8d6d50c2676aa09fcba28345855a851520650"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_3.webp",
+      "bytes": 630012,
+      "sha256": "afe184e8f2407ef156834562289e1fb10ee8c03e673d2022bc36bf756af40114"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_4.json",
+      "bytes": 6654,
+      "sha256": "24534baddb9c9ecccbbdfc7d2453577834c11f2d6c4dc04123760b1f888cc97e"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_4.webp",
+      "bytes": 726270,
+      "sha256": "3109a7752c294d04fc8c2c6e77bd6c63eed284cba29930f65fa58fcba7c634a8"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_5.json",
+      "bytes": 6654,
+      "sha256": "36202a1f4051bba8ec4946ff05331928ae3b0487cabe575c7666d013d6b44144"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_5.webp",
+      "bytes": 698100,
+      "sha256": "8f61f8b551a765d19099b68d7302cf153563945d5410350e7b27ee0ca366a36a"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_6.json",
+      "bytes": 8399,
+      "sha256": "819d40b3143830806e08700b3b1ffa87da787fc025a7352eee6b595efabf4360"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_6.webp",
+      "bytes": 1166444,
+      "sha256": "d25c44361bdeda90abe5fa992611ba3a0584c8f5d8567dbe4c1abc58269dbbfb"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_7.json",
+      "bytes": 6654,
+      "sha256": "e1396ed9a97fc608da34e33ce685e31d7e4c90c9379da1a4b65f35539ab8f433"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/sprite_7.webp",
+      "bytes": 634024,
+      "sha256": "55c2b542b5213ddc933616ef06436e240e3fb7ce9a095c2700e92e272f409307"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_0.json",
+      "bytes": 10023,
+      "sha256": "7b77aad7ce0c0bf45a3c544a06d955d6df7cbc21856e775dd5e459375da30328"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_0.webp",
+      "bytes": 684106,
+      "sha256": "b822f60970c0b17046a203df5ab2ccb7013fd965ea67a26592b51f7f81c10c68"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_1.json",
+      "bytes": 10009,
+      "sha256": "ffbd17d5b55671125baa9eb4881140189e24dae9d2bfd60b43ba2e4236dc2aa5"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_1.webp",
+      "bytes": 764744,
+      "sha256": "ea4f78e539eba0349bb93c445d6273cddac25efbe444055cf6fb1e9761894173"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_2.json",
+      "bytes": 10008,
+      "sha256": "d5e3fc1c3ca15ad027382493e7d11399532654af648c95a28a2bf22568748bd6"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_2.webp",
+      "bytes": 747732,
+      "sha256": "8122d7ff4532c34480219c53020418fca3e3c256d98faa6526e7a7de0b8259e1"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_3.json",
+      "bytes": 10022,
+      "sha256": "cfc900fc9abd4a520de85133699b4e81d4ca760696c114872890a4407368ae54"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_3.webp",
+      "bytes": 628990,
+      "sha256": "b7ad7e3b8b52781b3903c1432e88653d68713e59ce1bd0ef36ac247522df120e"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_4.json",
+      "bytes": 10008,
+      "sha256": "060468e29de384c378a157e603fa1aa0686440099f8c26c33b97086c6b472a70"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_4.webp",
+      "bytes": 734836,
+      "sha256": "ba7bb82deaf2d3faf8b7a77c1670aa930be739f34463098ab67a1d0559eb1313"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_5.json",
+      "bytes": 10023,
+      "sha256": "c4c0018a2cd51659d07106a406afc70f44625e8eda2fe5621fd6a64a807016c5"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_5.webp",
+      "bytes": 715946,
+      "sha256": "0f7781ee84ec7f7d2032455ec8266799f15230b053dd7ec29262c6adf4cdeede"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_6.json",
+      "bytes": 8398,
+      "sha256": "a7941b322e0f3e9aead116fcdb4e30295ed207d6c72339227a1c74c17410c51b"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_6.webp",
+      "bytes": 1166444,
+      "sha256": "d25c44361bdeda90abe5fa992611ba3a0584c8f5d8567dbe4c1abc58269dbbfb"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_7.json",
+      "bytes": 10010,
+      "sha256": "07b2b62d6c22c01f3754aa60df8f948c9263fb05c91111c7d0ae743b8d548f76"
+    },
+    {
+      "path": "images/games/fruitqueen/animations/icons/start_7.webp",
+      "bytes": 686132,
+      "sha256": "c3948fa48696057c47bc8465dd1e103dd70b24f0eb0ee1ab393517e0d34c34b6"
+    },
+    {
+      "path": "images/games/fruitqueen/icons/icons.json",
+      "bytes": 3333,
+      "sha256": "ec907e91b97e10d4548915f6de081d69ddb7557bc505bdf1d5da28176c5eab9f"
+    },
+    {
+      "path": "images/games/fruitqueen/icons/icons.webp",
+      "bytes": 633156,
+      "sha256": "f6a770f444887e33fa5ae7a1f74effe2c7b36d6ff116d946748dec82b8ed6c38"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/emptyback.jpg",
+      "bytes": 231332,
+      "sha256": "0d03b8dfa6ff2baaf096a2008e622524d0522dc68f33304f2125ee4d957c0f5f"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/gamble_card_back.webp",
+      "bytes": 51946,
+      "sha256": "d7872e0e904d110069d1155badb1963339c39ec760a8c5320a1e69469cb138de"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/gamble_card_back2.webp",
+      "bytes": 50016,
+      "sha256": "edbc4319973c918c862c76e9ab30b0654a13fa379baf89c4ac413a2a70c825a7"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/loading_ui.json",
+      "bytes": 726,
+      "sha256": "d6b34f57bd3846ef92263a708d066e957894cd916cafbd68f7b6fbba7be04f3d"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/loading_ui.webp",
+      "bytes": 242414,
+      "sha256": "326613313f7839f26c575cf5ea17f0a07d8cf38ddce037e836e1137a2a2e3c30"
+    },
+    {
+      "path": "images/games/fruitqueen/ui/top.webp",
+      "bytes": 53728,
+      "sha256": "30ac9be20e00652f4b5e29c7a135be22e0c76a4f14de4d7a2b5e999b85717c2f"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_0.json",
+      "bytes": 6571,
+      "sha256": "f6774b175eff493cd643649c32e0a0e110dd8566d97394e9d10bba847a3e12bf"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_0.webp",
+      "bytes": 965752,
+      "sha256": "c153c77b5222f19a1a72bab3f9ddb9f41edea933ddc48a2fe531f8f3133913ce"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_1.json",
+      "bytes": 6315,
+      "sha256": "9c140eccff341ff219b0f12df8d0b7d0abcb3705501d0127576b3db554cfc3ce"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_1.webp",
+      "bytes": 755976,
+      "sha256": "84410edf67e1db5859165c42bc25b65109db9390eb6edd7a62c6336cea1930f7"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_2.json",
+      "bytes": 6315,
+      "sha256": "7e5e8e7293bced96d1cbf2c116770ca80bc01d61dde26ea8fa7757ccde478207"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_2.webp",
+      "bytes": 870168,
+      "sha256": "af2143d0d9029ba135aec8786821abf1852035ad7969487e1429ec6b28efc606"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_3.json",
+      "bytes": 6539,
+      "sha256": "5213e8ddeda0559aab449ac75fd0e8f8a6b3043e6f4a82bf1585ef7760b3853a"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_3.webp",
+      "bytes": 882684,
+      "sha256": "477890e5d2cb64922be52f4e431c6de07c71e4ad0043a414b133f6aac0961790"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_4.json",
+      "bytes": 6443,
+      "sha256": "3e2157c4fe3041b9336686503ad103383d454d65d91f3dc44077a0debdafa07f"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_4.webp",
+      "bytes": 838410,
+      "sha256": "72ffef80da2111be01b7ad2f3639b171a446ccb97afe3cfa093ce0e2f5f8698c"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_5.json",
+      "bytes": 6251,
+      "sha256": "42a72d990e42fdf9f074c1a4f8c89b186448ef2d2729fcb6d1e8684b895849a3"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_5.webp",
+      "bytes": 770632,
+      "sha256": "917f9cea275ee4f1ceabef9553f3c5364e2291d04dd2c9bd89769a536f42e6bd"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_6.json",
+      "bytes": 6507,
+      "sha256": "0992ba6d54f02c76f55cf36d9d91b22543305648c49ceca73266b70b3acb16af"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_6.webp",
+      "bytes": 913040,
+      "sha256": "bf80913c56168d993d5d4e3d4e9e630350c902aafa6aa12b1c9622062996ab81"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_7.json",
+      "bytes": 6539,
+      "sha256": "7977f30ec94177aac2655a9994ac7bc762a274ed72c8fa21b24ca2a45ecb43a8"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/sprite_7.webp",
+      "bytes": 919832,
+      "sha256": "713414632e71a3cbd41cf831ca119d68a872a766ab6dd4c0554fd4a0da344547"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_0.json",
+      "bytes": 6603,
+      "sha256": "4003f422e29521b618d1b515ff75289080a1e2e24b94c4fd80a11962874f88c9"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_0.webp",
+      "bytes": 505882,
+      "sha256": "fc32b910675f832dcb6a56b44c8f1271e22ade512970bb1221282f85f1b97c2e"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_1.json",
+      "bytes": 6310,
+      "sha256": "8f4050377c3f582cd9506aff2cd15e298dedbf70eb0c9f658886abe59a2e3e0e"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_1.webp",
+      "bytes": 371194,
+      "sha256": "d260d6c89c96a59793929e7970a26706e45335ebd3dd46130761789ea870dbd9"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_2.json",
+      "bytes": 6310,
+      "sha256": "4ad3e666e132a69240d79d52e036dbe4b8c812950fed4d372d762de69e2b187d"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_2.webp",
+      "bytes": 428652,
+      "sha256": "5d10e3c64e14932995b9b55f80a44fc4704ed5eb04a70ba9387aa6837d922735"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_3.json",
+      "bytes": 6571,
+      "sha256": "e016abe3bad62b9cb59b17fe401fc3735470e4ef3add22d1c63a0334c8f2dd6d"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_3.webp",
+      "bytes": 470106,
+      "sha256": "80f31807e574f86aaee10873365006e1ec872c4763eafc9cdb2833927c576846"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_4.json",
+      "bytes": 6443,
+      "sha256": "946a1827248b72f2ca9b3ca4a3488a1ad5732aeaf78c5e6ac4dc7356d7265e9a"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_4.webp",
+      "bytes": 429814,
+      "sha256": "637b159b7ba663d8d1c79e23b5bbb7df565f69d5efea9840127fa2c867630310"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_5.json",
+      "bytes": 6251,
+      "sha256": "255a9e1d2b1a98f06957f7966830328f10e9ce0fe5a51cd41bdb0f1ba6653646"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_5.webp",
+      "bytes": 384864,
+      "sha256": "f69bdafc41dd4e8d8f5972e7a1cd90c90889e94251164e63c314f9b35278e6ba"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_6.json",
+      "bytes": 6539,
+      "sha256": "b81e7b65bab35aef1c7a853d4ffd82190ef44c11c6dac004b68209b725c8cf46"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_6.webp",
+      "bytes": 496836,
+      "sha256": "52900a06ca0f2a8d3595a0cdbc68f1e1d175e998795d82a5d0693fdfdfcd070a"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_7.json",
+      "bytes": 6571,
+      "sha256": "16db163e7ab7b02427e11311d95abb1c1644cfc33601f895f7566798876dfa01"
+    },
+    {
+      "path": "images/games/sevenhot20/animations/icons/start_7.webp",
+      "bytes": 528454,
+      "sha256": "94fd232b858f8c0c176a5443eadc4071bac172d552ada3c0fa0b97921d10b64e"
+    },
+    {
+      "path": "images/games/sevenhot20/icons/icons.json",
+      "bytes": 3344,
+      "sha256": "8e83e9673992c539587812d3bd977880bfe897074987c45f4f330cab64b72e5c"
+    },
+    {
+      "path": "images/games/sevenhot20/icons/icons.webp",
+      "bytes": 322748,
+      "sha256": "d72de351007a63746fc27681d943572b7d12e787f978236f69ea00fe3e99ab3e"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/emptyback.jpg",
+      "bytes": 291891,
+      "sha256": "32486027a903da2bed6b86d0d52ef46485e9b81ada9a1a08e296765115c0c9f4"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/gamble.webp",
+      "bytes": 1461762,
+      "sha256": "7081ad18385c1d40db28283edd2b7c2bb77c0c951ba08c01fa5c4fc167b6a9a9"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/gamble_card_back.webp",
+      "bytes": 51946,
+      "sha256": "d7872e0e904d110069d1155badb1963339c39ec760a8c5320a1e69469cb138de"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/gamble_card_back2.webp",
+      "bytes": 50016,
+      "sha256": "edbc4319973c918c862c76e9ab30b0654a13fa379baf89c4ac413a2a70c825a7"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/page0.webp",
+      "bytes": 940138,
+      "sha256": "a7580b1c9ed5b5948566380a396ae7c6b684923a4ee0623e10640b193c869ae6"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/page1.webp",
+      "bytes": 1461902,
+      "sha256": "15925df3d3318e0aeb0d0f20bd05e920148b82102f73c0425acf67d8cacf96cf"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/page2.webp",
+      "bytes": 1324892,
+      "sha256": "0ab2ce913314b156239cc9cbd69037bd5965da5b708e340a0a8c94a1c201e940"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/reels.webp",
+      "bytes": 10332,
+      "sha256": "e6f6fdb4cf3cb05d4926eb2d652b53883c16e5715f4cecfeb36d2f0c8353a71b"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/top.webp",
+      "bytes": 28512,
+      "sha256": "bc7dbde32208e353d5df7fcd00a927324c8192a7234f78d5b8e1065a86bb1215"
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_big_btn.webp",
+      "bytes": 23906,
+      "sha256": "5a1098b4865cbcb9d668bc64d5fd8812903de4bafd1cdbb9d0bfd970131a7ead"
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_small_btn.webp",
+      "bytes": 10784,
+      "sha256": "be065ad63033898e6eaaed1991276dcb9ea50ed1b382158786489e419e472caf"
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_big_btn.webp",
+      "bytes": 21572,
+      "sha256": "7b0546e6273a33984af5c1106ffada7b302bea8573345fe2e1bfd8809073c20a"
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_small_btn.webp",
+      "bytes": 10364,
+      "sha256": "ce6625672bf34de6751b943892ad9cfcb159e4c9ed26b9c50fcdec8eabb5c59d"
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/suits.webp",
+      "bytes": 12752,
+      "sha256": "d303a6a5ef7a4348866194d703f5c5ca20251a671c797a6fcea5e1a2fcb4b391"
+    },
+    {
+      "path": "images/themes/blue/buttons/info/next.webp",
+      "bytes": 2300,
+      "sha256": "b4add77b6c26c5cf40efdc865b05f926159a4e55dbb95d0d440621912ee71302"
+    },
+    {
+      "path": "images/themes/blue/buttons/main/buttons.webp",
+      "bytes": 14798,
+      "sha256": "694270588ad53d8b9a8067aad819f632c4263d5216bdeb2aa78bf2d918a0f8a4"
+    },
+    {
+      "path": "images/themes/blue/buttons/v2/main.webp",
+      "bytes": 13896,
+      "sha256": "9dbfc33903a85f07afb785b368e50406ba3b69219895cf9b49adfa48b92f65ee"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/black_big_btn.json",
+      "bytes": 962,
+      "sha256": "e2894e6b2378d58437f5520c43de79833f6a32b72ad72d104f908a88bdf09a7a"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/black_big_btn.webp",
+      "bytes": 22578,
+      "sha256": "b9468ea7294bfeae9921747c183eda59f5750d777edcce80d7e8955230f74aa5"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/black_small_btn.json",
+      "bytes": 970,
+      "sha256": "647868f92fb0273b6ae7810ff589fe83df0b9b2aa51294d150b19b4d2a2bfb1a"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/black_small_btn.webp",
+      "bytes": 10784,
+      "sha256": "be065ad63033898e6eaaed1991276dcb9ea50ed1b382158786489e419e472caf"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/red_big_btn.json",
+      "bytes": 954,
+      "sha256": "f054b6ebddc3a6abb2a5abcbf4b943515b394bd6ab546bdef346ac2561d1c219"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/red_big_btn.webp",
+      "bytes": 20630,
+      "sha256": "3c0ce1eb53afc979ca3ead123b80afcff537794aec9474d8ce786574398de20f"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/red_small_btn.json",
+      "bytes": 962,
+      "sha256": "7285a38f3636dcd9211c41539ce1201efaedda29915ab190d503762e3d41c86d"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/red_small_btn.webp",
+      "bytes": 10364,
+      "sha256": "ce6625672bf34de6751b943892ad9cfcb159e4c9ed26b9c50fcdec8eabb5c59d"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/suits.json",
+      "bytes": 939,
+      "sha256": "1b5f658181572a139b0e3bdc82d210a895418cd6908d78ab845fe6aee01e92b4"
+    },
+    {
+      "path": "images/themes/blue2/buttons/gamble/suits.webp",
+      "bytes": 11698,
+      "sha256": "18b3a441f31f7866a5ee9b506bffbb83a585cbb989b81fe5bb04cadaa58854f1"
+    },
+    {
+      "path": "images/themes/blue2/buttons/info/next.webp",
+      "bytes": 2300,
+      "sha256": "b4add77b6c26c5cf40efdc865b05f926159a4e55dbb95d0d440621912ee71302"
+    },
+    {
+      "path": "images/themes/blue2/buttons/main/buttons.json",
+      "bytes": 1312,
+      "sha256": "e216ace04db68cfed2ce7bfe1d682b6291c03d27bfe682817b22bf346992ea76"
+    },
+    {
+      "path": "images/themes/blue2/buttons/main/buttons.webp",
+      "bytes": 14798,
+      "sha256": "694270588ad53d8b9a8067aad819f632c4263d5216bdeb2aa78bf2d918a0f8a4"
+    },
+    {
+      "path": "images/themes/blue2/buttons/main/panel.webp",
+      "bytes": 3810,
+      "sha256": "208ac186f97af2e75103abdff9ec76b19cbd66c97180be0262dd01e1c879bd17"
+    },
+    {
+      "path": "images/themes/blue2/buttons/v2/main.json",
+      "bytes": 727,
+      "sha256": "eee86d4133466fb2a2a8466e4a1020033b9713b47cb75e685ca43fb4926df234"
+    },
+    {
+      "path": "images/themes/blue2/buttons/v2/main.webp",
+      "bytes": 12100,
+      "sha256": "2cb4d36340a2cf1b9102efcec97da4619fd066b10ea1f588536b10dffe3405f1"
+    },
+    {
+      "path": "images/themes/blue2/ui/rect.webp",
+      "bytes": 4450,
+      "sha256": "46f926933dca82c262876718326df402a3a773f0d37a7bc6c1ff60a36c63360b"
+    },
+    {
+      "path": "images/themes/blue2/ui/selectlines.webp",
+      "bytes": 6420,
+      "sha256": "20c596754c06b3a852e6a4b240809f4afdbdf1361718c811d2aacfe7c562c83f"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/black_big_btn.json",
+      "bytes": 962,
+      "sha256": "e2894e6b2378d58437f5520c43de79833f6a32b72ad72d104f908a88bdf09a7a"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/black_big_btn.webp",
+      "bytes": 17970,
+      "sha256": "51f41420a4cc1f5fa9b375d75c7c605463c157aa6de6a75bc0a67aac54d2fd05"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/black_small_btn.json",
+      "bytes": 970,
+      "sha256": "647868f92fb0273b6ae7810ff589fe83df0b9b2aa51294d150b19b4d2a2bfb1a"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/black_small_btn.webp",
+      "bytes": 8604,
+      "sha256": "5a09755b3e7deb74a49f18c17c80661d69f1ef28d17f2e183bbb0340a40b7393"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/red_big_btn.json",
+      "bytes": 954,
+      "sha256": "f054b6ebddc3a6abb2a5abcbf4b943515b394bd6ab546bdef346ac2561d1c219"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/red_big_btn.webp",
+      "bytes": 17582,
+      "sha256": "9f41e51f705dd0e2400dab45b4aca74cb6bf3c5d69f0e9f974d61698036dee83"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/red_small_btn.json",
+      "bytes": 962,
+      "sha256": "7285a38f3636dcd9211c41539ce1201efaedda29915ab190d503762e3d41c86d"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/red_small_btn.webp",
+      "bytes": 8588,
+      "sha256": "d427e8d8ba1b9605dddda9a2ef31ef36d7aba71caace15943d31c58c9ab0d4bb"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/suits.json",
+      "bytes": 939,
+      "sha256": "1b5f658181572a139b0e3bdc82d210a895418cd6908d78ab845fe6aee01e92b4"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/gamble/suits.webp",
+      "bytes": 8296,
+      "sha256": "d4c601d284d005906037634cb036321f103885a171fe81a8e14a8587d59fac98"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/info/next.webp",
+      "bytes": 1748,
+      "sha256": "1bf1b9c6072df8c484cf4cdaf05a793b0f1239b9466e0aabb55171921acf63c2"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/main/buttons.json",
+      "bytes": 1312,
+      "sha256": "e216ace04db68cfed2ce7bfe1d682b6291c03d27bfe682817b22bf346992ea76"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/main/buttons.webp",
+      "bytes": 10584,
+      "sha256": "ea4dcf3034bd0c2e7e70cb38e776f47c736b29b45646c8a77de1801494c3353d"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/main/panel.webp",
+      "bytes": 3810,
+      "sha256": "208ac186f97af2e75103abdff9ec76b19cbd66c97180be0262dd01e1c879bd17"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/v2/main.json",
+      "bytes": 727,
+      "sha256": "eee86d4133466fb2a2a8466e4a1020033b9713b47cb75e685ca43fb4926df234"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/v2/main.webp",
+      "bytes": 9982,
+      "sha256": "d547f92a5416fb2842e5f7f223e5d9a6289ab63f0ff6c2e650db206ad9a08a9b"
+    },
+    {
+      "path": "images/themes/lightgreen2/ui/rect.webp",
+      "bytes": 4450,
+      "sha256": "46f926933dca82c262876718326df402a3a773f0d37a7bc6c1ff60a36c63360b"
+    },
+    {
+      "path": "images/themes/lightgreen2/ui/selectlines.webp",
+      "bytes": 6420,
+      "sha256": "20c596754c06b3a852e6a4b240809f4afdbdf1361718c811d2aacfe7c562c83f"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/black_big_btn.json",
+      "bytes": 926,
+      "sha256": "93b9920403d92590b6129ce6c069faeeb5d32e3c641573f1630f9a2027abf7e0"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/black_big_btn.webp",
+      "bytes": 6998,
+      "sha256": "0105b5e8bd0f3bc517e0acac5f9677f0eade7d840b7ff496489643cbbc2562f0"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/black_small_btn.json",
+      "bytes": 934,
+      "sha256": "55090c8af6be0fcb408818e203223bca11a9409cf75b16fa700d1a8645e32eb0"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/black_small_btn.webp",
+      "bytes": 5004,
+      "sha256": "346c751b8f133d70864c57eb32c1fb74e612816c773599f99394c28842b83f52"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/red_big_btn.json",
+      "bytes": 918,
+      "sha256": "5425484f8101ccefcc11c1a9438d83c995ada2c75b8876ce89deee7344795323"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/red_big_btn.webp",
+      "bytes": 7214,
+      "sha256": "e487d40cd198f1b46e3ea17f2529a2a2cae3a615e332bc75c3332546b3a57bc2"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/red_small_btn.json",
+      "bytes": 926,
+      "sha256": "b46408ab3f61e4ee79046a0027fae20d3d4f4870baacf167fb200f0ba1f06808"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/red_small_btn.webp",
+      "bytes": 4056,
+      "sha256": "a514020fbfa27827c75d6662c066daa744a007d72dc5ae43e0ad769e44a730ea"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/suits.json",
+      "bytes": 903,
+      "sha256": "b8a4cd5febd621753eef63316b577fd847a3e1a1e88b413c14b8fdb466dd3c09"
+    },
+    {
+      "path": "images/themes/maroon/buttons/gamble/suits.webp",
+      "bytes": 5002,
+      "sha256": "a27c4d93b8c12ec401b3ceac849c1de8d02911abe33ded5a6ac7bfda0b405262"
+    },
+    {
+      "path": "images/themes/maroon/buttons/info/next.webp",
+      "bytes": 2876,
+      "sha256": "e260219a703460b3e89e53fa3e8838a9d6ad23ef2022f56ca95b79ec61cca66d"
+    },
+    {
+      "path": "images/themes/maroon/buttons/main/buttons.json",
+      "bytes": 1261,
+      "sha256": "7ddc6c115a23f98dc7cabaa04e86384b8834ffe3e88ca0a0deb8dbfc8596ed1c"
+    },
+    {
+      "path": "images/themes/maroon/buttons/main/buttons.webp",
+      "bytes": 5092,
+      "sha256": "ecd4ba21b2f291538dcddda2a0ac8c5cd4c4f5fd7a4cb43257c25d5b9045a9a4"
+    },
+    {
+      "path": "images/themes/maroon/buttons/main/panel.webp",
+      "bytes": 3930,
+      "sha256": "2bfc855f45f4a4fecaca8708051b0561951c62c670ada2041f763483fd80330f"
+    },
+    {
+      "path": "images/themes/maroon/buttons/v2/main.json",
+      "bytes": 727,
+      "sha256": "65feebe7798bafab1f8961ab2403770c4ed91b74eedb38d569654012613d6ba9"
+    },
+    {
+      "path": "images/themes/maroon/buttons/v2/main.webp",
+      "bytes": 16722,
+      "sha256": "d14d5fa1628e012e0a6fa0a45c47a57132e5ed611c83e30323e84812b4dc17b4"
+    },
+    {
+      "path": "images/themes/maroon/ui/rect.webp",
+      "bytes": 4424,
+      "sha256": "9cf7e6c93f362190d8756c7bdaa1e068f7e2f3c5b946338610b5ac99b95f3101"
+    },
+    {
+      "path": "images/themes/maroon/ui/selectlines.webp",
+      "bytes": 6698,
+      "sha256": "41166d63b6a978e78799357c81b49deec0ee90b107d4ec206911e39a37b52f94"
+    },
+    {
+      "path": "js/agtunique.js",
+      "bytes": 9309,
+      "sha256": "8a9a90e6847ffccad149cc6717edd5404660b19a108add3d9f46698c0b5d7805"
+    },
+    {
+      "path": "js/effects/goldtext.js",
+      "bytes": 5348,
+      "sha256": "43a73b81005a8ea3a4e1693a478ece826ca691a3a3eb17367b9df7b48d190fc1"
+    },
+    {
+      "path": "js/effects/lightningbolt.js",
+      "bytes": 6680,
+      "sha256": "03937b286a3da4daaf99b56c4fbd8aec44464483e65760682b64cfe709132211"
+    },
+    {
+      "path": "js/effects/smoke.js",
+      "bytes": 2446,
+      "sha256": "703169d0b25e43a1fff382d80eeeda37880ede58e1401baff601c3192f3af4b6"
+    },
+    {
+      "path": "js/lib/phaser-nocache.min.js",
+      "bytes": 717,
+      "sha256": "6a8e02ce6ad9f1dbf7c272f954e95038990f20361f173a2c4c523d350ab1b0aa"
+    },
+    {
+      "path": "js/lib/phaser-spine3.8.js",
+      "bytes": 469808,
+      "sha256": "00107c8a9a8cb492c1ccc235b73a7c70c49fdfdecbd3cc77fb3b886030ebd29c"
+    },
+    {
+      "path": "js/lib/phaser2.20.min.js",
+      "bytes": 836474,
+      "sha256": "92579e84fb1aa3334ee3e9435a6d133980d04bbb60f81cecc10bc4e315fca651"
+    },
+    {
+      "path": "js/lib/webfont.js",
+      "bytes": 17698,
+      "sha256": "d142a29dfc233602672353f1bfaf7d8e72331ec6902d8dd12cb56e5eaf794fc2"
+    },
+    {
+      "path": "js/lib/zepto.min.js",
+      "bytes": 26387,
+      "sha256": "e300c5726f40bd4404c5579cea0f6971bf0c0ce5a30eee8ef4b54e694f7811fe"
+    },
+    {
+      "path": "jsmin/fruitqueen.js",
+      "bytes": 669020,
+      "sha256": "fa5694b14b5480262cf1a0bdccf3b31d972e7697bda9cd10691d3fef1f781086"
+    },
+    {
+      "path": "jsmin/sevenhot20.js",
+      "bytes": 666683,
+      "sha256": "613b2c99fcd648cf248a22fef5d5f2de3fb898fe3f2955c57a0d559002bd96d7"
+    },
+    {
+      "path": "sevenhot20.html",
+      "bytes": 8736,
+      "sha256": "d49230c367f9f52291d740f24598066baaa2993597c67a2a8d2240ae77dc5858"
+    },
+    {
+      "path": "css/13309.otf",
+      "bytes": 58640,
+      "sha256": "03f5cd5ba07436d7033ddd2991505870b4a4a48c40c9a2d37b0595b482bd814b"
+    },
+    {
+      "path": "css/digital-dismay.regular.otf",
+      "bytes": 13928,
+      "sha256": "fb92c986c5b184a23c7535969d816b03bd780573d4073cde95dc26dd7a22ee00"
+    },
+    {
+      "path": "images/common/ui/sound_big.webp",
+      "bytes": 1690,
+      "sha256": "a3f90fadc45ac214ac33ca93f287f6d73981026dd869d8e476b25cb5711bab59"
+    },
+    {
+      "path": "images/games/sevenhot20/ui/menubg.webp",
+      "bytes": 1461762,
+      "sha256": "7081ad18385c1d40db28283edd2b7c2bb77c0c951ba08c01fa5c4fc167b6a9a9"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/mobile/main_vert.json",
+      "bytes": 1311,
+      "sha256": "759f4d6f736b43de186323bc8a8dd82658f2ecfe7b466057388e6d8bbe283e89"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/mobile/main_vert.webp",
+      "bytes": 27610,
+      "sha256": "a234876acbd3697cffcf57e69d80d161c63d64078684bfb9264d1885e4ea0219"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/mobile/main.json",
+      "bytes": 1304,
+      "sha256": "14256545657f1cebef8922714fa4d5d2b432708d02751828ba37329faa57afde"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/mobile/main.webp",
+      "bytes": 10236,
+      "sha256": "dba5b843c621efdfead468d4b6dda601d4ee0092e4db89d1362ab2d74bf1f09c"
+    },
+    {
+      "path": "images/themes/lightgreen2/buttons/top/mobile.webp",
+      "bytes": 3948,
+      "sha256": "7ca1d032c5caf9f7388a6f82202f9b957299ec930004c1694d044326d0654149"
+    },
+    {
+      "path": "images/themes/maroon/buttons/mobile/main_vert.json",
+      "bytes": 1334,
+      "sha256": "3ab3e7681700c32d99bc4243fe89878faa546687b89c5131ab17b0afa88bd8f2"
+    },
+    {
+      "path": "images/themes/maroon/buttons/mobile/main_vert.webp",
+      "bytes": 128228,
+      "sha256": "46e899ef62d0e769fb581fcf0c1d02def09e6a504bc9440dff65177b0d240900"
+    },
+    {
+      "path": "images/themes/maroon/buttons/mobile/main.json",
+      "bytes": 1252,
+      "sha256": "bb85dad5d1ac92a3604f0e701e5073ccc130985467ce8e96ca520b0d14390cbc"
+    },
+    {
+      "path": "images/themes/maroon/buttons/mobile/main.webp",
+      "bytes": 30932,
+      "sha256": "488d65a7a5fece97654f48b45edffbc82bb268d18d8afa8fb894a5fe0f5d4795"
+    },
+    {
+      "path": "images/themes/maroon/buttons/top/mobile.webp",
+      "bytes": 3948,
+      "sha256": "7ca1d032c5caf9f7388a6f82202f9b957299ec930004c1694d044326d0654149"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import Betslip from '../Betslip/Betslip';
  */
 export default function BetslipSidebar({ className = '' }: { className?: string }) {
   return (
-    <div className={`bg-secondary flex flex-col ${className || 'w-80 border-l border-tertiary h-full'}`}>
+    <div className={`zshop-slip-frame bg-secondary flex flex-col ${className || 'w-80 border-l border-tertiary h-full'}`}>
       <Betslip />
     </div>
   );

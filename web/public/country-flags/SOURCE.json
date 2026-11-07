@@ -1,0 +1,505 @@
+{
+  "assets": [
+    {
+      "sha256": "f190e97e7bdc33a377dfa7e227339be1a90e2f68480210c190f444b45c5eddf8",
+      "file": "england.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/england.svg"
+    },
+    {
+      "sha256": "565e94b2666a4c86b26ae01bb416070e93b74ce2040f1ac9a81606a7b853b04d",
+      "file": "italy.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/italy.svg"
+    },
+    {
+      "sha256": "4784aa3f4cdd0c1efea1067ac71e4a494e1c6e0c81d1387fdd8f47d4ccfd17b8",
+      "file": "spain.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/spain.svg"
+    },
+    {
+      "sha256": "986552903856b995425777caa1ce31fdb11fb3f6a28027e79013abb5173500a5",
+      "file": "germany.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/germany.svg"
+    },
+    {
+      "sha256": "0aba738784a5eb15f02e1444c7d6c8337f782fbccf8cd12c63cc864e5702e7ce",
+      "file": "france.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/france.svg"
+    },
+    {
+      "sha256": "06d25f63ebc6840c2a733d79a5737727daaeac1ee374dd408e59deafbf84df15",
+      "file": "netherlands.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/netherlands.svg"
+    },
+    {
+      "sha256": "0d61656101ab61e6fc2773be82cb2cec1a7e305b50aca56f18911d23fc7eb38e",
+      "file": "portugal.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/portugal.svg"
+    },
+    {
+      "sha256": "755ea7e037b34c85dcbf357bae4bc1f25d27682d44183d60c919ce14d51b9fed",
+      "file": "scotland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/scotland.svg"
+    },
+    {
+      "sha256": "30f8ecedc1f4e10e8c1409c187faae47f25519b70addfea43d5da9c83365669c",
+      "file": "austria.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/austria.svg"
+    },
+    {
+      "sha256": "87a07f2be26e65c31ec87663e4d3ec002b2abfe21fa0b6fcca9620830427c6fd",
+      "file": "belgium.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/belgium.svg"
+    },
+    {
+      "sha256": "a131c08a37045bae031ccf64d737b40d8e3c3044678b7585c53e9cfa3a8bf87f",
+      "file": "switzerland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/switzerland.svg"
+    },
+    {
+      "sha256": "fe5f0c4c9bf2d207ca70042810fb84710ff279f08a6fc72a31b2992d8cb56362",
+      "file": "denmark.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/denmark.svg"
+    },
+    {
+      "sha256": "9a7863f60bf92719c460a1162308c5bd8b03709a6615b81628ca363aa2adbac9",
+      "file": "sweden.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/sweden.svg"
+    },
+    {
+      "sha256": "f5bb30e2b983d5c294b17417b62ccdbd525106b90df5a7e633e91bc4e80a909d",
+      "file": "norway.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/norway.svg"
+    },
+    {
+      "sha256": "01b30bde0a69300369dba928373e55f204486e5038e592c78dfff0c8c8ffe607",
+      "file": "finland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/finland.svg"
+    },
+    {
+      "sha256": "e7601077211543bd4c969e2886860bfc1fba309ac4a4ca04ecf10413685b6b98",
+      "file": "ireland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/ireland.svg"
+    },
+    {
+      "sha256": "869a2aaa0438eeb91661b0fda9ae15f06331b4e35aded23d552b0f280949e0f3",
+      "file": "iceland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/iceland.svg"
+    },
+    {
+      "sha256": "ebd99a905cfcecf68cb4cfb4a2077806274b99f9762d9fd8da622b74aa4d731d",
+      "file": "turkey.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/turkey.svg"
+    },
+    {
+      "sha256": "ac5cb8c7b5ea5f206cbc35fac2ba910250a59d0307781d2b6de4f0607de3249a",
+      "file": "russia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/russia.svg"
+    },
+    {
+      "sha256": "e654df6c192ed4f79b9a2d7ca3636abc5ef2798cc06b2ab06e9f8ce23a0dbba7",
+      "file": "republic-of-poland.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/republic-of-poland.svg"
+    },
+    {
+      "sha256": "16db2d44b2205467b01b76eb5ca7ba241c001ae555c9de48df4b1a99ff7d087f",
+      "file": "czech-republic.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/czech-republic.svg"
+    },
+    {
+      "sha256": "c8a87dda0bf2418dd02ef85624c2f622e409db5562ffdcfc617c776499286591",
+      "file": "romania.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/romania.svg"
+    },
+    {
+      "sha256": "de5cd1d3cd563fc50b7bff2974961ab73e83183cc709d00a6c824f72759f4acc",
+      "file": "greece.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/greece.svg"
+    },
+    {
+      "sha256": "69af3baccaac96a679d9ec42121420c853b95c44e95c76fbb014001001e0b1e0",
+      "file": "ukraine.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/ukraine.svg"
+    },
+    {
+      "sha256": "a85cde4905f8d58b5b295096a20aae69270129b3f63debecbaf82dbd7d544c43",
+      "file": "croatia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/croatia.svg"
+    },
+    {
+      "sha256": "4a3a77b3b6dfe9b44f6d0b5062f52520ec6e6cbc8ef61b26b510ff70a9207cb2",
+      "file": "hungary.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/hungary.svg"
+    },
+    {
+      "sha256": "04b8bc6a3214275ffe17b695a0f2e25283fe12382bce789baabefbc93e0ea22c",
+      "file": "slovakia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/slovakia.svg"
+    },
+    {
+      "sha256": "fa4fd20ff9750ea5dbaf743a09be5080082bbc712e5d3d37a61988372942b1d8",
+      "file": "slovenia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/slovenia.svg"
+    },
+    {
+      "sha256": "bdc7525109b5f0f15c04ab4dcef856822e4426adc2ffb7e3be452732dd2e9dca",
+      "file": "israel.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/israel.svg"
+    },
+    {
+      "sha256": "f6ec0e29a8355d4d227633078d9b79d4535e4268bf9e21ab7cca5e8ab930aea2",
+      "file": "bulgaria.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/bulgaria.svg"
+    },
+    {
+      "sha256": "0e0449be0094a786196c0cdd2fa48840233159eaa979782bbdbbf82bf49b2f41",
+      "file": "serbia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/serbia.svg"
+    },
+    {
+      "sha256": "5b2460d7922536542934b61daad1178751466b447b9d280279e3befc064cd0ad",
+      "file": "wales.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/wales.svg"
+    },
+    {
+      "sha256": "3c88fc223ca55d60bd1e74c6c38884feb9a172337ab91d9587ec3655b4644c60",
+      "file": "cyprus.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/cyprus.svg"
+    },
+    {
+      "sha256": "2c67564215972f5f59fc88ed0af9128f2da859f4f25c1496e0719512c97a63b6",
+      "file": "belarus.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/belarus.svg"
+    },
+    {
+      "sha256": "2236379ef575715b08837dc45c1878132e64cc198ef6aacd3e0888fc073a6e36",
+      "file": "estonia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/estonia.svg"
+    },
+    {
+      "sha256": "a597118490ae5b6bb7932948a23ddb7a380e0e95be6f199222abebd2e99e7f93",
+      "file": "latvia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/latvia.svg"
+    },
+    {
+      "sha256": "eca1cbda748af52c622348c271a5a2d5b5c8c434397db4d6b57efbf427adbbc5",
+      "file": "lithuania.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/lithuania.svg"
+    },
+    {
+      "sha256": "e8495665242d0e8adb46a2fe83a3e0e1dc32cab73027beada0ba712394f98a56",
+      "file": "moldova.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/moldova.svg"
+    },
+    {
+      "sha256": "8d389d721c22307fbd30905340d3830e9f648f56d557ccd879ec08cec20bcdc3",
+      "file": "georgia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/georgia.svg"
+    },
+    {
+      "sha256": "213c31e6d12912a6acd9cd215efa29bb4c723effed591263854982500e132edb",
+      "file": "azerbaijan.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/azerbaijan.svg"
+    },
+    {
+      "sha256": "af62951bd6726b32671fe235638dae6226bed9b73cb0736b3d36330851d201d1",
+      "file": "armenia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/armenia.svg"
+    },
+    {
+      "sha256": "458d11606a41fe5843596e17549651ea7925129d231f9b0a7133572ca8690e0e",
+      "file": "uzbekistn.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/uzbekistn.svg"
+    },
+    {
+      "sha256": "fd364522eb80a42afca74440a5b6f5224cb6297ed595b7ef842ea4726d83ed04",
+      "file": "kazakhstan.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/kazakhstan.svg"
+    },
+    {
+      "sha256": "f328ee8f5ad5d7e091d602eb83128eede5ac0993ac58c880aaa89dd5a8b31448",
+      "file": "bosnia-and-herzegovina.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/bosnia-and-herzegovina.svg"
+    },
+    {
+      "sha256": "395868e884dc79a0bb66a56c3f5911828ad18ecaab41b88dc60fe8b76e91ab54",
+      "file": "republic-of-macedonia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/republic-of-macedonia.svg"
+    },
+    {
+      "sha256": "342731d64545830e5b9cc9533c69e81dd2710e9ed7c445a2c187a6cb012a6d58",
+      "file": "malta.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/malta.svg"
+    },
+    {
+      "sha256": "59ffedbb671d301c319ee446dfe5b9ef4842fe2a0c7dd06b7b51e4223d6694c9",
+      "file": "luxembourg.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/luxembourg.svg"
+    },
+    {
+      "sha256": "ea785ed1117b414051c94a9e66cdc713b3a91171b3a97030a41b4222c4f10dd3",
+      "file": "san-marino.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/san-marino.svg"
+    },
+    {
+      "sha256": "36518e1e9b90d8dbc8012c63b1a7157ad7fe574772075646a063e097b12d88c8",
+      "file": "andorra.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/andorra.svg"
+    },
+    {
+      "sha256": "fec99f2b78f4cb04199a71591a99adc6a66a7c014a9fc6dadfcaa7d07fc2cbb2",
+      "file": "argentina.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/argentina.svg"
+    },
+    {
+      "sha256": "d8beae49f0e856080317be62dc5d112288159049fa1b35e4d3db26a8d9bffa67",
+      "file": "brazil.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/brazil.svg"
+    },
+    {
+      "sha256": "585e35089bf8f6c4de9dea4e67cb5f1d4518d89e3c4e58586fc15d4a02fa1277",
+      "file": "mexico.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/mexico.svg"
+    },
+    {
+      "sha256": "fbc5c62bf87b3783e2856f95d73531e04467fd60d1bdb2e44a27b1d09191e7b9",
+      "file": "united-states-of-america.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/united-states-of-america.svg"
+    },
+    {
+      "sha256": "fd52b9fddf20be87afe3a49f583c932a465221407b43e076d5b9bccde59d88b2",
+      "file": "chile.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/chile.svg"
+    },
+    {
+      "sha256": "429607312d963725bb5418d37665b29bcf3484115ea97534a3a9715c4eff8811",
+      "file": "colombia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/colombia.svg"
+    },
+    {
+      "sha256": "e589160467ee7ea7ff47b9df7ffcb09fdf74baf3d6490b161a0461ecca018b8b",
+      "file": "peru.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/peru.svg"
+    },
+    {
+      "sha256": "ad92ba3da8e2e83f7a293e04db63abd737c2862b579c37d24ded5e9a2bfdf0c5",
+      "file": "ecuador.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/ecuador.svg"
+    },
+    {
+      "sha256": "6f9bd154de268188023baa4cb59eb35039eb4cb78abdb02257f5aabd0b576b93",
+      "file": "uruguay.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/uruguay.svg"
+    },
+    {
+      "sha256": "3baf44bf7001eabc8ca1a38c06d2c38169e678b1f8c1560e34fdbafb1a0ae01b",
+      "file": "paraguay.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/paraguay.svg"
+    },
+    {
+      "sha256": "c28a8487db7b9ce9e4d1c6d7b8d87793cc576738ff740475edeca8232aa0a635",
+      "file": "venezuela.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/venezuela.svg"
+    },
+    {
+      "sha256": "a808c519365c636a542a7ea045bbfaae38d30506794e231f6cee79ebb2f111e0",
+      "file": "bolivia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/bolivia.svg"
+    },
+    {
+      "sha256": "0e7107347884a9449699dbafec22f1509bf097980120097a5f5b227998e0b56e",
+      "file": "costa-rica.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/costa-rica.svg"
+    },
+    {
+      "sha256": "3a90c217bbffa2441f9c0c7afd12912b95cc4bac65892af4a286e586053efbba",
+      "file": "canada.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/canada.svg"
+    },
+    {
+      "sha256": "d101f74b21159f9d8aeedd89c4ffd698f158fc703efc7e5f4cabbaac781d547b",
+      "file": "panama.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/panama.svg"
+    },
+    {
+      "sha256": "1eccb275fd0d8de2b3cc60407e6bac18b9458cce472189d4a9f3ff66bf0cc3e2",
+      "file": "salvador.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/salvador.svg"
+    },
+    {
+      "sha256": "c35231b902d934682bcfbcb96707ba4fd87bc5c89ec6fd23886d8d30cbd171c4",
+      "file": "guatemala.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/guatemala.svg"
+    },
+    {
+      "sha256": "d4890d089b3dbbf3339208bb10f7eb2704f8de3a23e06bcf31ce5f4def8338a9",
+      "file": "honduras.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/honduras.svg"
+    },
+    {
+      "sha256": "a03fac118f9129a069b48741907b495ae22df0be7d2434fa5b8b65e07323d71a",
+      "file": "australia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/australia.svg"
+    },
+    {
+      "sha256": "ef3de4c76e4b5c39253c4bf53434f9575a9e03c3e925e0e4a3039c0e3e7778a4",
+      "file": "japan.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/japan.svg"
+    },
+    {
+      "sha256": "e2db1879fb72205d11859f7af82027aeecf87aaa2f111f4403911a521e06a2b6",
+      "file": "south-korea.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/south-korea.svg"
+    },
+    {
+      "sha256": "4f529cb495e5d03a8b020c81d0746785b923c8943d37419410d3a7e36fb816f8",
+      "file": "china.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/china.svg"
+    },
+    {
+      "sha256": "f4ede5517046ad32a6a9b725b385c613d5e8c5c47584e0c049cd258ee79a4966",
+      "file": "saudi-arabia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/saudi-arabia.svg"
+    },
+    {
+      "sha256": "afd59fe3a3ba5c812d8e3610d11409e0d63315d9d94b2d3d3120acac36eb34f9",
+      "file": "thailand.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/thailand.svg"
+    },
+    {
+      "sha256": "f8d9d9eb49909fe84cd0530dbcfdc5a1e65dcc62c2f91e7e265bd64fbc3380e8",
+      "file": "singapore.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/singapore.svg"
+    },
+    {
+      "sha256": "d0dbbc7229e0686fdf3dbe9c02c01eacf97d939d84f8eb6d37cbd1648bad9e43",
+      "file": "india.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/india.svg"
+    },
+    {
+      "sha256": "6c2cc2c346d9992de6157d2e3cdfb007cabdc8afa750063bbdb0b2f37b89e4c4",
+      "file": "united-arab-emirates.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/united-arab-emirates.svg"
+    },
+    {
+      "sha256": "77496aebf8ca1057a66624006c820c35bfd891788de58a82d5b1af7b38fab0a8",
+      "file": "qatar.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/qatar.svg"
+    },
+    {
+      "sha256": "e9eadaf9ad6236bf7ac65f59cd8baf83180cd95ea6b67278adea306376685eed",
+      "file": "kuwait.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/kuwait.svg"
+    },
+    {
+      "sha256": "01ae623c9bd0c60bbb5a13f8fc14b56c21b596e28ef5e84ae9c58690bcf7bae5",
+      "file": "bahrain.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/bahrain.svg"
+    },
+    {
+      "sha256": "5288ea334631dd3a0f817bbb3e163fbf751bf4292b405a49040e416ac90a0f53",
+      "file": "oman.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/oman.svg"
+    },
+    {
+      "sha256": "888067721e1236fc3fd4175d4ed69d55fc3526ce24e5f25fc107c2ac144e4947",
+      "file": "indonesia.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/indonesia.svg"
+    },
+    {
+      "sha256": "8e704adbd9246e9f6ad92e181754a77c2c3620200619e29745685abb2727e12b",
+      "file": "vietnam.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/vietnam.svg"
+    },
+    {
+      "sha256": "3f66260f5d8a01cfb0ec4b61a1c94f52ed9786e8f22564c175aaeffd75a5b48e",
+      "file": "jordan.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/jordan.svg"
+    },
+    {
+      "sha256": "421974e0532f5e665f17179167793080b02c940148125855d13fb4c406a142e7",
+      "file": "hong-kong.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/hong-kong.svg"
+    },
+    {
+      "sha256": "9de902b19a0ad73266aa2d82e9592a90313364c85a14b8181d3473772c2c535a",
+      "file": "taiwan.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/taiwan.svg"
+    },
+    {
+      "sha256": "828a33592bfbae32fbbd33b9fa7b0055aece56f5b4f079bd94f15844207a191f",
+      "file": "new-zealand.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/new-zealand.svg"
+    },
+    {
+      "sha256": "a5d1f2f1cc530b57aa799d659c6347a6b12963f2c0f61319a3230dc6e092e29e",
+      "file": "south-africa.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/south-africa.svg"
+    },
+    {
+      "sha256": "f45f53a3248cb80a7997013f33797365673e9f128ca45b5746f4eb6f9967d21b",
+      "file": "algeria.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/algeria.svg"
+    },
+    {
+      "sha256": "f2539bccbe38404631e470f0feecfb13e44184c3bbf915a8c5e2cddefa4a846f",
+      "file": "morocco.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/morocco.svg"
+    },
+    {
+      "sha256": "cef84e038b35ed020019875a7cc63feeb88d081425bfbda7ea0debe2a2c3cdc9",
+      "file": "cameroon.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/cameroon.svg"
+    },
+    {
+      "sha256": "d90dd1ba7f1d0d913be2b47d3405115b20e6b52618f91e561be1807002c78439",
+      "file": "senegal.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/senegal.svg"
+    },
+    {
+      "sha256": "dc9a204c43708cd4b0b6c28073a60176d78fe2c938037cf4d2b943eb8979d257",
+      "file": "angola.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/angola.svg"
+    },
+    {
+      "sha256": "469bf845ec3b7ec947fdcb9b48c215ac49f72e8657f29707841997cd23cf8448",
+      "file": "uganda.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/uganda.svg"
+    },
+    {
+      "sha256": "224d5c04242b89af937de0165326a0e6aaf49589153cfe5968e61ffde690dfdd",
+      "file": "iraq.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/iraq.svg"
+    },
+    {
+      "sha256": "71eb0bbf32b8bcf0b4dc2e275ccd10a784b1dd59b80b8f048414c505518a5e48",
+      "file": "lebanon.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/lebanon.svg"
+    },
+    {
+      "sha256": "68eb09a0ccc854423a162b809021e4d5802cf998fb6672ba6a3e62b55b4ee46e",
+      "file": "myanmar.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/myanmar.svg"
+    },
+    {
+      "sha256": "80715c5e06770a1bcfe0bab6c568128004975bb62f5e0eed4e5154b38c176ace",
+      "file": "mauritania.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/mauritania.svg"
+    },
+    {
+      "sha256": "19337b4fa60b9fe1e70741ed63a92b3db6e6f69a358edf655ae971ed92d2b2ea",
+      "file": "malawi.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/malawi.svg"
+    },
+    {
+      "sha256": "0e65b8af074daf54ade639cd9e2f0174c76ebee590c884e7d3396caa18be7f0b",
+      "file": "dominican-republic.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/dominican-republic.svg"
+    },
+    {
+      "sha256": "af3345e7ae91b80dea48b551098112475032f2a41dbb63c8ba0dd22e11be2bf1",
+      "file": "burkina-faso.svg",
+      "source": "fito24.com/front/face/z53/current/images/flags/burkina-faso.svg"
+    }
+  ],
+  "source": "Fito24 local capture: fito24.com.zip"
+}

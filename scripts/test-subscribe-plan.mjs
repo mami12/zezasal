@@ -1,16 +1,4 @@
-/**
- * Offline test for the two cost rules that keep the bill down (no network, no database).
- *
- *   server/subscribe-plan.mjs  when to (re)subscribe to the push channel: the prematch tiers
- *                              and the "ask again until it has a price" group
- *   server/idle-mode.mjs       when the feed is paused (nobody is looking) and when a visitor
- *                              must wake it again
- *
- * Both are pure on purpose, so the behaviour can be pinned down here instead of by watching a
- * Railway invoice.
- *
- * Run: node scripts/test-subscribe-plan.mjs
- */
+/** Offline subscription-tier and always-on server policy regressions. */
 import {
   SUBSCRIBE_GROUPS,
   dueGroups,
@@ -131,89 +119,23 @@ check(
 );
 check('ids compare as strings, so number/string forms do not slip through', withoutDuplicates(['10'], [10]).length === 0);
 
-/* ---------------------------------------------- idle rule ----------------- */
-console.log('\n-- idle rule (shouldSleep / shouldWake) --');
+/* Always-on policy: inactivity and old Railway flags may never pause the feed. */
+console.log('\n-- always-on server --');
 setFeedMode(FEED_LIVE);
-const mins = (n) => n * MIN;
-check(
-  'a visitor present means never sleep',
-  shouldSleep({ clients: 1, visits: 3, lastActivityAt: 0, now: NOW, idleAfterMs: mins(15), coldBootIdleMs: mins(2) }) === false,
-);
-check(
-  'no visitor for 15 min (after visits happened) -> sleep',
-  shouldSleep({ clients: 0, visits: 3, lastActivityAt: NOW - mins(15), now: NOW, idleAfterMs: mins(15), coldBootIdleMs: mins(2) }) === true,
-);
-check(
-  'still inside the window -> stay awake',
-  shouldSleep({ clients: 0, visits: 3, lastActivityAt: NOW - mins(14), now: NOW, idleAfterMs: mins(15), coldBootIdleMs: mins(2) }) === false,
-);
-check(
-  'a process nobody ever visited uses the shorter cold-boot window',
-  shouldSleep({ clients: 0, visits: 0, lastActivityAt: NOW - mins(2), now: NOW, idleAfterMs: mins(15), coldBootIdleMs: mins(2) }) === true,
-);
-check(
-  'the cold-boot window is not applied to a process that has been visited',
-  shouldSleep({ clients: 0, visits: 1, lastActivityAt: NOW - mins(2), now: NOW, idleAfterMs: mins(15), coldBootIdleMs: mins(2) }) === false,
-);
-check(
-  'a zero wait disables sleeping entirely',
-  shouldSleep({ clients: 0, visits: 1, lastActivityAt: NOW - mins(999), now: NOW, idleAfterMs: 0, coldBootIdleMs: 0 }) === false,
-);
-check(
-  'an already idle feed is not "slept" twice',
-  shouldSleep({ mode: FEED_IDLE, clients: 0, visits: 1, lastActivityAt: 0, now: NOW, idleAfterMs: MIN }) === false,
-);
-check('only an idle feed wakes', shouldWake({ mode: FEED_IDLE, clients: 1 }) === true && shouldWake({ mode: FEED_LIVE, clients: 1 }) === false);
-check('a request wakes it even before the socket connects', shouldWake({ mode: FEED_IDLE, clients: 0, requested: true }) === true);
-
-
-/* ---------------------------------------------- the monitor ---------------- */
-console.log('\n-- the monitor --');
-setFeedMode(FEED_LIVE);
-const events = [];
-const quiet = { log() {}, error() {} };
-const monitor = createIdleMonitor({
-  enabled: true,
-  idleAfterMs: mins(15),
-  coldBootIdleMs: mins(2),
-  onIdle: () => events.push('slept'),
-  onWake: () => events.push('woke'),
-  onMode: (state) => events.push(`state:${state.mode}`),
-  log: quiet,
-});
-
-monitor.touch();
-check('a request does not pause a live feed', getFeedMode() === FEED_LIVE && events.length === 0, events.join('|'));
-monitor.clientOpen();
-check('a socket connection counts as a visit', monitor.state().clients === 1 && monitor.state().visits === 1, JSON.stringify(monitor.state()));
-monitor.clientClose();
-check('a visitor that just left does not sleep immediately', monitor.evaluate() === false && getFeedMode() === FEED_LIVE, getFeedMode());
-
-// the same rule with a 1ms window: any inactivity counts, which is what "15 min passed" means
-const impatient = createIdleMonitor({
-  enabled: true,
-  idleAfterMs: 1,
-  coldBootIdleMs: 1,
-  onIdle: () => events.push('slept'),
-  onWake: () => events.push('woke'),
-  log: quiet,
-});
-await new Promise((r) => setTimeout(r, 15)); // let the last-activity timestamp age past the window
-check('the inactivity rule can pause the feed', impatient.evaluate() === true && getFeedMode() === FEED_IDLE, getFeedMode());
-check('the pause was announced to the wiring (onIdle)', events.includes('slept'), events.join('|'));
-check('a visitor wakes the paused feed', impatient.clientOpen() === true && getFeedMode() === FEED_WAKING, getFeedMode());
-check('the wake was announced to the wiring (onWake)', events.includes('woke'), events.join('|'));
-check('waking is not re-triggered by every further request', impatient.touch() === false);
-check('markLive() returns the feed to live', impatient.markLive() === true && getFeedMode() === FEED_LIVE, getFeedMode());
-check('markLive() outside a wake does nothing', impatient.markLive() === false);
-check(
-  'a disabled monitor never sleeps',
-  createIdleMonitor({ enabled: false, idleAfterMs: 0, coldBootIdleMs: 0, log: quiet }).evaluate() === false,
-);
-
-// the mode is process-wide state the bet guard reads: leave it live
-setFeedMode(FEED_LIVE);
-
+check('no visitors for days never triggers sleep',shouldSleep({clients:0,visits:0,lastActivityAt:0,now:NOW,idleAfterMs:1,coldBootIdleMs:1})===false);
+const events=[];
+const monitor=createIdleMonitor({enabled:true,idleAfterMs:1,coldBootIdleMs:1,onIdle:()=>events.push('idle'),onWake:()=>events.push('wake')});
+check('legacy enabled flag cannot install sleep timers',monitor.start()===false&&monitor.state().enabled===false);
+monitor.clientOpen();monitor.clientClose();monitor.touch();
+await new Promise(resolve=>setTimeout(resolve,15));
+check('an empty board keeps running',monitor.evaluate()===false&&getFeedMode()===FEED_LIVE&&events.length===0);
+check('visitor metrics remain available',monitor.state().visits===1&&monitor.state().clients===0&&monitor.state().sleeps===0);
+setFeedMode(FEED_IDLE);
+check('legacy idle state cannot stop the server',getFeedMode()===FEED_LIVE&&shouldWake({mode:FEED_IDLE,requested:true})===false);
+setFeedMode(FEED_WAKING);
+check('explicit refresh safety guard is preserved',getFeedMode()===FEED_WAKING);
+check('a completed explicit refresh returns live',monitor.markLive()===true&&getFeedMode()===FEED_LIVE);
+monitor.stop();
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
 

@@ -32,12 +32,12 @@ const refOfOutcome = (matchId, marketKey, line, outcomeKey) => `${refOfMarket(ma
 export async function refresh(force = false) {
   if (!force && Date.now() - cache.at < TTL_MS) return cache;
   try {
-    const res = await query('select kind, ref, suspended, price from app_feed_override');
+    const res = await query('select kind, ref, suspended, price, hidden from app_feed_override');
     const match = new Map();
     const market = new Map();
     const outcome = new Map();
     for (const row of res.rows) {
-      const entry = { suspended: row.suspended === true, price: row.price === null ? null : Number(row.price) };
+      const entry = { hidden: row.hidden === true, suspended: row.suspended === true, price: row.price === null ? null : Number(row.price) };
       if (row.kind === 'match') match.set(row.ref, entry);
       else if (row.kind === 'market') market.set(row.ref, entry);
       else if (row.kind === 'outcome') outcome.set(row.ref, entry);
@@ -82,6 +82,22 @@ export async function upsert(kind, ref, { suspended = null, price = null } = {})
   return list();
 }
 
+export async function suspendMarkets(refs, suspended) {
+  if (typeof suspended !== 'boolean') throw Object.assign(new Error('suspended must be a boolean'), { status: 400 });
+  const unique = [...new Set((Array.isArray(refs) ? refs : []).map(String).filter(Boolean))];
+  if (unique.length > 50_000) throw Object.assign(new Error('Too many markets in one bulk operation'), { status: 413 });
+  if (!unique.length) return 0;
+  await query(
+    `insert into app_feed_override (kind, ref, suspended, price)
+     select 'market', x.ref, $2, null
+     from jsonb_to_recordset($1::jsonb) as x(ref text)
+     on conflict (kind, ref) do update set suspended = excluded.suspended, updated_at = now()`,
+    [JSON.stringify(unique.map(ref => ({ ref }))), suspended],
+  );
+  await refresh(true);
+  return unique.length;
+}
+
 export async function clear(kind, ref) {
   await query('delete from app_feed_override where kind = $1 and ref = $2', [kind, String(ref)]);
   await refresh(true);
@@ -97,4 +113,12 @@ export async function list() {
     price: r.price === null ? null : Number(r.price),
     updatedAt: r.updated_at,
   }));
+}
+const visibilityListeners=new Set();
+export const onVisibilityChange=fn=>{visibilityListeners.add(fn);return()=>visibilityListeners.delete(fn);};
+export async function setMatchHidden(id,hidden){
+ if(!/^\d{1,16}$/.test(String(id))||typeof hidden!=='boolean')throw Object.assign(new Error('Zgjidh ndeshjen dhe gjendjen e fshehjes.'),{status:400});
+ await query("insert into app_feed_override(kind,ref,hidden)values('match',$1,$2)on conflict(kind,ref)do update set hidden=excluded.hidden,updated_at=now()",[String(id),hidden]);
+ await refresh(true);for(const notify of visibilityListeners)notify({matchId:String(id),hidden});
+ return {success:true,hidden};
 }

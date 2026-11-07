@@ -1,0 +1,146 @@
+/* Colours and dimensions from the supplied zshop Angular component styles.
+   This sheet changes presentation only; odds and financial rules use our API. */
+:root{--zs-page:#0b0f17;--zs-card:#272d38;--zs-heading:#505b6b;--zs-border:#434c5a;--zs-text:#cbd1dc;--zs-odd:rgba(255,181,0,.9);--zs-selected:#30476f}
+.zshop-shell{font-family:Arial,Helvetica,sans-serif;background:var(--zs-page);color:var(--zs-text)}
+.zshop-header{background:linear-gradient(110deg,#251334,#3c1b56)!important;border-bottom:1px solid #62417d!important}
+.zshop-header>div:first-child{height:50px!important;padding:0 14px!important}
+.zshop-header button{color:#f0e7fa;border-radius:8px}
+.zshop-header button:hover{background:#ffffff0d;color:#e7d2ff}
+.zshop-header svg{color:#d5b5ff}
+.zshop-shell [data-sportsbook-scroll]{background:var(--zs-page)!important;border:0!important}
+.zshop-sports-strip{height:65px;min-height:65px;display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--zs-border);background:#0b0f17;overflow-x:auto;scrollbar-width:none}
+.zshop-sports-strip>button{min-width:85px;padding:5px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:2px solid transparent;color:#fff;font-size:11px;text-transform:uppercase;white-space:nowrap}
+.zshop-sports-strip>button[aria-pressed=true]{border-bottom-color:#d29500;background:#171e2a}
+.zshop-sports-strip>button{flex-shrink:0;max-width:120px}
+.zshop-sports-strip>button>span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.zshop-sports-strip>button:hover{background:#272d38}
+.zshop-sports-strip .zs-strip-extra{margin-left:auto;border-left:1px solid #434c5a;min-width:110px}
+.zshop-sidebar{width:220px!important;min-width:220px;background:var(--zs-page)!important;padding:5px!important;border:0!important}
+.zshop-sidebar>div:first-child{display:none}
+.zshop-sidebar>div:nth-child(2){background:#0b0f17!important;border:1px solid #556071!important;border-radius:3px;margin-bottom:8px;padding:5px!important}
+.zshop-sidebar>div:nth-child(2)>label{background:#556071;padding:4px 5px;margin:-5px -5px 5px;font-size:13px}
+.zshop-sidebar>div:nth-child(2)>div{border:1px solid #353d4c!important;background:#272d38!important}
+.zshop-sidebar>div:last-child{padding:0!important}
+.zshop-sidebar section{border-color:#434c5a!important;border-radius:3px;overflow:hidden}
+.zshop-board{width:100%;padding:5px 0;max-width:none!important}
+.zshop-board-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px;padding:2px 6px 5px;color:#cbd1dc;font-size:11px}
+.zshop-board-tools select{background:#556071;border-radius:3px;border:0;color:#eee;font-size:12px;padding:3px 8px}
+.zshop-section{margin-bottom:7px;border:1px solid #434c5a;border-radius:4px;overflow:clip}
+.zshop-section-title{height:34px;display:flex;align-items:center;gap:8px;padding:0 9px;background:#505b6b;font-size:14px;color:#cbd1dc}
+.zshop-section-title.is-live{background:#306530}
+.zshop-section-title span:last-child{margin-left:auto;font-size:12px}
+.zshop-league{padding:0 5px 5px}
+.zshop-league+.zshop-league{margin-top:5px}
+.zshop-league-heading{height:29px;display:flex;align-items:center;gap:6px;background:#3f4754;padding:0 5px;font-size:12px}
+.zshop-league-heading>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zshop-league-heading>small{margin-left:auto;font-size:11px}
+.zshop-market-heading,.zshop-match{display:grid;grid-template-columns:minmax(0,1fr) 30% 23% 23% 38px;gap:1px}
+.zshop-market-heading{height:26px;background:#3f4754;margin-top:1px;font-size:11px;text-align:center;align-items:center}
+.zshop-market-heading>span:first-child{text-align:left;padding-left:5px}
+.zshop-match{background:#0b0f17;margin-top:1px;min-height:58px}
+.zshop-match-info{display:grid;grid-template-columns:20px minmax(0,1fr);gap:4px;background:#272d38;padding:4px}
+.zshop-match-info>button:first-child{color:#505b6b;align-self:center}
+.zshop-match-info>button:first-child[aria-pressed=true]{color:#d29500}
+.zshop-match-teams{color:#cbd1dc}
+.zshop-match-teams{display:flex;flex-direction:column;justify-content:center;min-width:0;text-align:left;font-size:12px;gap:3px}
+.zshop-match-meta{font-size:10px;color:#9faaba;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zshop-team{display:flex;align-items:center;justify-content:space-between;gap:5px;line-height:17px}
+.zshop-team>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zshop-team>strong{color:#26ca26;min-width:12px;text-align:right}
+.zshop-board-odds{display:flex;flex-direction:column;background:#272d38;min-width:0}
+.zshop-board-odds>small{text-align:center;font-size:9px;color:#9ea8b9;line-height:17px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.zshop-board-odds>div{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:1px;background:#0b0f17;flex:1}
+.zshop-board-odds>div>div{min-width:0;background:#272d38}
+.zshop-board-odds button{width:100%;height:100%;min-height:40px;border-radius:0!important;background:#272d38!important;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;padding:3px 2px!important}
+.zshop-board-odds button span:first-child{font-size:9px!important;line-height:12px!important;color:#b4bdcc!important;overflow:hidden}
+.zshop-board-odds button span:last-child{font-size:15px!important;color:var(--zs-odd)!important;font-weight:400!important}
+.zshop-board-odds button[aria-pressed=true]{background:#30476f!important}
+.zshop-board-odds button[aria-pressed=true] span{color:#fff!important}
+.zshop-board-odds button:hover:not(:disabled){background:#3f495a!important}
+.zshop-quote-empty{height:100%;min-height:40px;display:flex;align-items:center;justify-content:center;color:#8a94a4}
+.zshop-total-line{display:flex;align-items:center;justify-content:center;color:#cbd1dc;font-size:12px}
+.zshop-extra{background:#272d38;color:#cbd1dc;font-size:12px;display:flex;align-items:center;justify-content:center;gap:1px}
+.zshop-extra:hover{background:#3f495a}
+.zshop-slip-frame{background:#0b0f17!important;padding:5px;width:310px;border:0!important}
+[data-betslip-sheet] .zshop-slip-frame{width:100%!important}
+.zshop-betslip{border:1px solid #556071;border-radius:3px;background:#0b0f17!important;color:#cfcfcf;container:betslip/size}
+.zshop-betslip .betslip-heading{background:#556071!important;border:0!important}
+.zshop-betslip .betslip-heading-row:first-child{min-height:30px;padding:4px 8px}
+.zshop-betslip .betslip-config{min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px;background:#272d38;border:5px solid #0b0f17;border-bottom-width:0;font-size:12px}
+.zshop-betslip .betslip-config select{appearance:none;background:#556071;color:#dcdcdc;border:0;border-radius:3px;padding:3px 20px 3px 5px;font-size:12px;opacity:1}
+.zshop-betslip .betslip-scroll{padding:5px;background:#0b0f17!important;scrollbar-gutter:auto}
+.zshop-betslip .betslip-match{background:#272d38;border-radius:3px;margin-bottom:5px;padding:4px 5px}
+.betslip-match-title{font-size:12px;line-height:20px;font-weight:bold;overflow-wrap:anywhere}
+.betslip-match-bet{display:flex;justify-content:space-between;gap:5px;font-size:11px;line-height:21px}
+.betslip-match-bet>span{min-width:0;overflow-wrap:anywhere}
+.betslip-match-bet>div{display:flex;align-items:start;gap:5px;flex-shrink:0}
+.betslip-match-bet strong{color:rgba(255,181,0,.9);font-size:13px}
+.betslip-match-bet button{color:#7790b8;padding:2px;min-height:24px;min-width:24px}
+.zshop-betslip .betslip-footer{background:#272d38!important;border:5px solid #0b0f17;border-top-width:0}
+.zshop-betslip .betslip-footer-fields{padding:5px!important}
+.zs-stake-row{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:34px;font-size:12px}
+.zs-stake-row>label{min-width:0}
+.zs-stake-control{width:130px;max-width:52%;display:flex;align-items:center;gap:5px}
+.zs-stake-control input{width:100%;min-width:0;height:32px;border:1px solid #3a4965;background:#272d38;border-radius:3px;color:#f0f0f0;padding:0 5px;text-align:right;font-size:16px;outline:none}
+.zs-stake-control input:focus{border-color:#8b9fc4}
+.zs-stake-control>span{white-space:nowrap;font-size:11px}
+.zshop-betslip .betslip-quick-stakes button{background:#556071!important;color:#f0f0f0!important;border:0;font-size:11px;min-height:27px;border-radius:2px}
+.zs-return-row{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;line-height:18px}
+.zs-return-row strong{color:var(--zs-odd);font-size:13px;white-space:nowrap}
+.zshop-betslip .betslip-actions{background:#272d38;padding:0 5px 5px;gap:4px}
+.zshop-betslip [data-betslip-place]{background:#e8af1e;color:#12071f;border:1px solid #e6b73f;border-radius:3px;min-height:36px;padding:6px;font-size:15px;font-weight:400}
+.zshop-betslip .betslip-book{background:#556071;border-radius:3px;padding:6px;font-size:12px}
+.zshop-betslip .betslip-book:disabled{opacity:.45;cursor:not-allowed}
+.zshop-detail{padding:5px 0!important;max-width:none!important}
+.zshop-scoreboard{border:1px solid #434c5a;border-radius:3px;overflow:hidden}
+.zshop-scoreboard-title{min-height:35px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#434c5a;padding:0 10px;font-size:13px}
+.zshop-scoreboard-title>button:first-child{min-width:0;display:flex;align-items:center;gap:6px;text-align:left}
+.zshop-scoreboard-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zshop-scoreboard-picture{min-height:155px;padding:12px;background:#243f32 center 15%/cover no-repeat;display:flex;align-items:center;justify-content:center}
+.zshop-score-table{width:min(100%,520px);background:rgba(0,0,0,.45);border-radius:4px;padding:5px;color:#fff;font-size:12px}
+.zshop-score-table>div{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,42px);min-height:26px;align-items:center;gap:5px}
+.zshop-score-table>div:first-child{border-bottom:1px solid #ffffff25;font-size:11px}
+.zshop-score-table strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zshop-score-table span{text-align:center}
+.zshop-score-table .zs-score{font-size:16px;color:#ffda45;font-weight:bold}
+.zshop-detail-info{display:flex;align-items:center;justify-content:center;gap:8px;min-height:30px;background:#3f4754;font-size:12px}
+.zshop-detail-info.is-live{background:#426f4b}
+.zshop-detail .zs-market-search input{background:#272d38;border-color:#434c5a;border-radius:3px}
+.zshop-detail .zs-market-tabs{background:#0b0f17;border-bottom:1px solid #9c6f00;padding-bottom:5px;position:sticky;top:0;z-index:5}
+.zshop-detail .zs-market-filters{position:sticky;top:0;z-index:7;background:#0b0f17;padding-top:5px}
+.zshop-detail .zs-market-filters .zs-market-tabs{position:static}
+.zshop-detail .zs-market-tabs button{background:#34435a;border:0!important;border-radius:0!important;padding:6px 10px!important}
+.zshop-detail .zs-market-tabs button[aria-pressed=true]{background:#8d6502;color:#fff}
+.zshop-market-list{columns:1;column-gap:6px}
+.zshop-market-list>.zs-market-group{display:inline-block;width:100%;break-inside:avoid;margin-bottom:6px}
+.zshop-market-list .zs-market-category{display:none}
+.zshop-market-list section{border-color:#434c5a!important;border-radius:3px}
+.zshop-market-list .zs-market-toggle{background:#505b6b!important;padding:6px 8px!important;min-height:30px}
+.zshop-market-list .zs-market-outcomes{background:#0b0f17!important}
+.zshop-market-list .zs-market-outcomes>div{background:#272d38!important}
+.zshop-market-list .zs-market-outcomes button{background:#272d38!important;border-radius:0!important}
+.zshop-market-list .zs-market-outcomes button[aria-pressed=true]{background:#30476f!important}
+.zshop-market-list .zs-market-outcomes button>span:last-child{color:var(--zs-odd)!important}
+.zshop-tracker{border:1px solid #434c5a;border-radius:3px;background:#272d38;font-size:12px;overflow:hidden}
+.zshop-tracker>button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:32px;padding:5px 8px;background:#505b6b}
+.zshop-tracker-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#0b0f17}
+.zshop-tracker-stat{background:#272d38;padding:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px}
+.zshop-tracker-stat strong{white-space:nowrap;color:#ffda45;font-size:12px}
+.zshop-tracker-events{border-top:1px solid #434c5a;padding:5px 8px;color:#cbd1dc}
+.zshop-tracker-events>div{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #434c5a40}
+.zshop-tracker-events time{min-width:28px;color:#ffda45}
+@media(min-width:1280px){.zshop-shell [data-betslip-rail]{width:25%;min-width:285px;max-width:370px}.zshop-shell .zshop-slip-frame{width:100%}}
+@media(min-width:768px){.zshop-sports-strip>button.md\:hidden{display:none}}
+@media(max-width:767px){.zshop-market-heading,.zshop-match{grid-template-columns:minmax(105px,1fr) 47% 32px}.zshop-totals,.zshop-nextgoal,.zshop-nextgoal-h{display:none}.zshop-match{min-height:65px}.zshop-team{font-size:11px}.zshop-match-info{grid-template-columns:15px minmax(0,1fr);gap:2px;padding:3px}.zshop-board-odds button span:last-child{font-size:15px!important}.zshop-league{padding:0 2px 3px}.zshop-section{border-radius:0}.zshop-section-title{height:32px;font-size:12px}.zshop-market-list{columns:1}.zshop-detail{padding:0!important}.zshop-sports-strip{height:62px;min-height:62px}.zshop-sports-strip>button{min-width:70px;padding:5px 10px}.zshop-sports-strip .zs-strip-extra{min-width:70px}.zshop-slip-frame{padding:4px}.zshop-betslip [data-betslip-place]{min-height:44px}.zshop-tracker-stats{grid-template-columns:1fr 1fr}.zshop-sidebar{width:min(280px,calc(100vw - 48px))!important;min-width:0}.zshop-scoreboard-picture{min-height:150px;padding:8px}.zshop-score-table>div{grid-template-columns:minmax(0,1fr) repeat(3,34px)}.zshop-board{padding-top:0}}
+@container betslip (max-height:450px){.zshop-betslip .betslip-quick-stakes{display:none}.zshop-betslip .zs-stake-row{min-height:27px}.zshop-betslip .betslip-actions{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}.zshop-betslip .betslip-actions button{min-height:40px;padding:5px;font-size:12px}}
+@container betslip (max-height:350px){.zshop-betslip .zs-currency{display:none}.zshop-betslip .betslip-heading-row:first-child{min-height:26px;padding-top:2px;padding-bottom:2px}.zshop-betslip .betslip-config{padding-top:3px;padding-bottom:3px}.zshop-betslip .zs-return-row{line-height:16px;font-size:10px}.zshop-betslip .betslip-footer-fields{padding-top:2px!important;padding-bottom:2px!important}}
+@media(prefers-reduced-motion:reduce){.zshop-shell *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+/* Price direction overrides the fixed yellow theme for three seconds. Locks
+   remain grey; selected quotes also return to yellow after the indication. */
+button[data-outcome-id]:not(:disabled) span[data-odds-value]{color:var(--zs-odd)!important}
+button[data-outcome-id][data-odds-direction="up"]:not(:disabled) span[data-odds-value]{color:#30d158!important}
+button[data-outcome-id][data-odds-direction="down"]:not(:disabled) span[data-odds-value]{color:#ff453a!important}
+/* When a league has no next-goal market at all, the heading and the rows drop
+   that column instead of leaving an empty gap. The column only exists while the
+   provider really sends the market with usable odds. */
+.zshop-market-heading.zshop-market-heading-no-next,.zshop-match.zshop-match-no-next{grid-template-columns:minmax(0,1fr) 30% 23% 38px}

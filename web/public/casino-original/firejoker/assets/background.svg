@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="fire" cx="50%" cy="70%" r="70%"><stop offset="0%" stop-color="#552200"/><stop offset="50%" stop-color="#1a0800"/><stop offset="100%" stop-color="#050100"/></radialGradient>
+    <radialGradient id="flame" cx="50%" cy="100%" r="80%"><stop offset="0%" stop-color="#ffaa00" stop-opacity="0.5"/><stop offset="50%" stop-color="#ff4400" stop-opacity="0.2"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="vign" cx="50%" cy="50%" r="75%"><stop offset="60%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.7"/></radialGradient>
+  </defs>
+  <rect width="1000" height="700" fill="url(#fire)"/>
+  <rect width="1000" height="700" fill="url(#flame)"/>
+  <g fill="#ffaa33" opacity="0.6">
+    <circle cx="120" cy="620" r="3"/><circle cx="340" cy="580" r="4"/><circle cx="560" cy="640" r="3"/><circle cx="780" cy="600" r="4"/>
+    <circle cx="220" cy="550" r="2"/><circle cx="450" cy="620" r="2"/><circle cx="680" cy="570" r="3"/><circle cx="880" cy="630" r="2"/>
+  </g>
+  <rect width="1000" height="700" fill="url(#vign)"/>
+</svg>

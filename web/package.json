@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node ../scripts/sync-ice-fruits-assets.mjs && node ../scripts/sync-fortune-pyramid-assets.mjs && node ../scripts/verify-new-original-assets.mjs && node ../scripts/sync-fortune-teller-assets.mjs && node ../scripts/sync-original-sizzling.mjs && node ../scripts/sync-original-bookofra.mjs && (node ../scripts/sync-original-firejoker.mjs || echo [firejoker-sync] skipped) && vite",
+    "build": "node ../scripts/sync-ice-fruits-assets.mjs && node ../scripts/sync-fortune-pyramid-assets.mjs && node ../scripts/verify-new-original-assets.mjs && node ../scripts/sync-fortune-teller-assets.mjs && node ../scripts/sync-original-sizzling.mjs && node ../scripts/sync-original-bookofra.mjs && (node ../scripts/sync-original-firejoker.mjs || echo [firejoker-sync] skipped) && vite build && node ../scripts/verify-original-sizzling.mjs && (node ../scripts/verify-original-firejoker.mjs || echo [firejoker-verify] skipped)",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
@@ -14,7 +14,8 @@
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0"
+    "react-router-dom": "^6.20.0",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",

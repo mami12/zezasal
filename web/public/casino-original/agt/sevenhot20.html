@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="user-scalable=0, initial-scale=1,minimum-scale=1, maximum-scale=1, width=device-width, minimal-ui=1, viewport-fit=cover" name="viewport">
+        <link href="css/style.css" rel="stylesheet" type="text/css"/>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="google" content="notranslate" />
+                <link rel="shortcut icon" href="images/common/ui/logobig.webp">
+                <title>
+            AGTsoftware demo game        </title>
+        <script>
+            document.oncontextmenu = function(){return false;};
+            document.onkeydown = function(e) {
+                if (e.ctrlKey &&
+                    (e.keyCode === 67 ||
+                     e.keyCode === 86 ||
+                     e.keyCode === 85 ||
+                     e.keyCode === 117)) {
+                    return false;
+                } else {
+                    return true;
+                }
+            };
+
+            window.gametype = 'slots';
+
+
+            try {
+                LS15 = localStorage;
+            }
+            catch(e) {
+                LS15 = {};
+            }
+
+                            LS15 = {};
+            
+            LS15.KpZevaOVbk = 'demo';
+            LS15.WKqhbUlTze = Date.now()+24*60*60*1000;
+                            LS15.WKqhbUlTze = Date.now()+20*60*1000;
+                        LS15.syMtvvgLJj = 'local-demo';
+            window.gamename = 'sevenhot20';
+            window.ver = '180926';
+
+
+            window.cachesRun=false;
+
+            function startCacheAGT() {
+
+                LS15.zujsOt = window.ver;
+
+                caches.open('rTdgRLMkiz').then(function(cache) {
+                    window.cachesReady = cache;
+                    window.cachesRun=true;
+                });
+            }
+
+            if('caches' in window) {
+
+                if(!LS15.zujsOt || LS15.zujsOt!=window.ver) {
+                    caches.delete('rTdgRLMkiz').then(function() {
+                        startCacheAGT();
+                    });
+                }
+                else {
+                    startCacheAGT();
+                }
+            }
+
+            var lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                var now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+                jackpotPopupName='popup';
+                
+                
+            window.office_id=456;
+            window.jptime=120;
+            window.jp_wss_url = 'wss://konnys.xyz:2096/';
+			window.history_domain = 'https://history.konnys.xyz';
+
+           demo_mode = true;
+
+           window.forceMobile=false;
+           window.noCloseGame=false;
+                      
+           
+           window.fsback_enable=false;
+           
+			window.AGThistory_enable=false;
+            
+            window.promopanel_enable=false;
+            
+            window.showversion=false;
+            			window.showfakeversion=window.showversion;
+
+            window.strict_go_another_game=false;
+                        window.strict_go_another_game=true;
+            			
+			window.reload_on_error=false;
+            			
+			window.clientAGTcountry=false;
+
+                        window.clientAGTcountry='al';
+            
+        </script>
+                <!--            <script src="js/lib/phaser.min.js?v=180926">
+            </script>-->
+            <script src="js/lib/phaser2.20.min.js?v=180926">
+            </script>
+			<script src="js/lib/phaser-spine3.8.js?v=180926">
+            </script>
+            <script src="js/lib/phaser-nocache.min.js?v=180926">
+            </script>
+            <script src="js/lib/zepto.min.js?v=180926">
+            </script>
+            <script src="jsmin/sevenhot20.js?v=180926">
+            </script>
+                <script src="js/agtunique.js?v=180926">
+        </script>
+        <style>
+            #bottomBg,#topButtons,#spin-btn,#spin-btn-label,#gamble-btn {display: none;}
+                        #iOSFullscreenAnimation,#iOSFullscreen {
+                display: none;
+            }
+        </style>
+    </head>
+    <body style="overflow:hidden;">
+        <div style="font-family:Roboto; visibility: hidden; height: 0;">Font загруженζ单</div>
+        <div id="topButtons">
+<!--            <div class="left">
+                <span class="openMenu" onclick="eventDispatcher.dispatch && eventDispatcher.dispatch(G.OPEN_MENU);">&nbsp;</span>
+                <span class="infoPage" onclick="eventDispatcher.dispatch && eventDispatcher.dispatch(G.INFO_PAGE);">&nbsp;</span>
+                <span class="toggleSound" onclick="eventDispatcher.dispatch && eventDispatcher.dispatch(G.TOGGLE_SOUND);">&nbsp;</span>
+                <span class="autoPlay" onclick="javascript:autoSpin()">&nbsp;</span>
+            </div>
+            <div class="right">
+                <span class="closeGame" onclick="eventDispatcher.dispatch && eventDispatcher.dispatch(G.CLOSE_GAME);">&nbsp;</span>
+            </div>
+            <img ontouchend="window.open('https://agtsoftware.com','_blank');" src="/games/agt/images/common/ui/logo.png" class="agtlogo" id="go-top-agt" />-->
+        </div>
+        <div id="wrongWayLandscape">
+        </div>
+        <div id="wrongWayPortrait">
+        </div>
+                <script>
+
+            window.canUseWebp = function() {
+                var elem = document.createElement('canvas');
+                if (!!(elem.getContext && elem.getContext('2d'))) {
+                    return elem.toDataURL('image/webp').indexOf('data:image/webp') == 0;
+                }
+                return false;
+            }();
+        </script>
+        <!--<div id="lgg" style="color: white; background: black; position: fixed; z-index: 9000;"></div>-->
+        <script>
+                
+                var start_press=0;
+                var canRelease=true;
+
+                var yesSound = function () {
+                    StateLoad.playSounds.onReleased({key:'yes'});
+                    document.getElementById('play-sounds-vert').remove();
+                }
+
+                var noSound = function () {
+                    StateLoad.playSounds.onReleased({key:'no'});
+                    document.getElementById('play-sounds-vert').remove();
+                }
+
+                var yesFS = function () {
+                    StateLoad.fsPopup.onChildInputDown.dispatch({'act':'accept'});
+                    StateLoad.playSounds.onReleased({key:'yes'});
+                    document.getElementById('fs-popup').remove();
+                }
+
+                var noFS = function () {
+                    StateLoad.fsPopup.onChildInputDown.dispatch({'act':'decline'});
+                    StateLoad.playSounds.onReleased({key:'yes'});
+                    document.getElementById('fs-popup').remove();
+                }
+
+                var autoSpin = function () {
+                    model.infobar.btns[model.infobar.btns.length-1].onReleased();
+                };
+                var startGamble = function() {
+                    model.infobar.btns[3].onReleased();
+                };
+                var startGO = function(e) {
+                    start_press=game.time.now;
+                    e.preventDefault()
+                };
+                var spinGO = function(e) {
+                    canRelease && model.infobar.btns[model.infobar.btns.length-2].onReleased();
+                    canRelease=true;
+                    start_press=0;
+                    e.preventDefault()
+                };
+                var checkGO = function() {
+                    if(typeof model!='undefined') {
+                        if(!model.auto_spin && model.flags.can_start_auto_spin && start_press>0 && ((game.time.now-start_press)>500)) {
+                            eventDispatcher.dispatch(G.START_AUTO_SPIN,model.bets[model.bet_index]*model.k_list[model.k]);
+                            canRelease=false;
+                        }
+                    }
+                    setTimeout(checkGO,100);
+
+
+                    $('#lgg').html($('canvas').attr('style'));
+                }
+//                checkGO();
+
+                $('img').bind('contextmenu', function(e){
+                    return false;
+                });
+
+                
+                
+        </script>
+    
+</body>
+</html>

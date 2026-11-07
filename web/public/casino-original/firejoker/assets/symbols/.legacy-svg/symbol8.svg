@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bg8" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#3a0a3a"/><stop offset="100%" stop-color="#0a0108"/></radialGradient>
+    <linearGradient id="hat8" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff55ff"/><stop offset="100%" stop-color="#6600aa"/></linearGradient>
+    <linearGradient id="face8" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffeedd"/><stop offset="100%" stop-color="#ddbbaa"/></linearGradient>
+    <filter id="glow8"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="url(#bg8)" stroke="#ff55ff" stroke-width="2"/>
+  <path d="M50 85 L65 40 L85 60 L100 30 L115 60 L135 40 L150 85 Z" fill="url(#hat8)" stroke="#ffdd00" stroke-width="1.5"/>
+  <circle cx="65" cy="42" r="6" fill="#ffdd00"/>
+  <circle cx="100" cy="32" r="6" fill="#ffdd00"/>
+  <circle cx="135" cy="42" r="6" fill="#ffdd00"/>
+  <ellipse cx="100" cy="120" rx="45" ry="55" fill="url(#face8)" stroke="#994400" stroke-width="2"/>
+  <circle cx="82" cy="110" r="7" fill="#111"/>
+  <circle cx="118" cy="110" r="7" fill="#111"/>
+  <circle cx="84" cy="108" r="2" fill="#fff"/>
+  <circle cx="120" cy="108" r="2" fill="#fff"/>
+  <path d="M75 140 Q100 165 125 140" stroke="#cc2200" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M78 142 L122 142" stroke="#fff" stroke-width="3"/>
+  <text x="100" y="186" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#ffdd00" filter="url(#glow8)">WILD</text>
+</svg>

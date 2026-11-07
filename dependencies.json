@@ -1,0 +1,8 @@
+{
+  "typescript": "missing",
+  "vite": "missing",
+  "react": "missing",
+  "socket.io-client": "missing",
+  "@playwright/test": "missing",
+  "playwright": "missing"
+}

@@ -1,0 +1,371 @@
+* {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,
+body {
+    width:100%;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -webkit-flex-flow: column;
+    flex-flow: column;
+}
+
+body.noOverflow {
+    /*overflow: hidden*/
+    touch-action: none;
+}
+#preloader {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    display: -webkit-box;
+}
+.contentBackground {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;background-position: center center;
+    background-size: cover;
+}
+main {
+    flex: 1;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);height: 100vh;width: 100vw;;background-size: 100% auto;background-position: center center;-webkit-box-shadow: inset 0px 0px 15px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: inset 0px 0px 15px 0px rgba(0,0,0,0.75);
+    box-shadow: inset 0px 0px 15px 0px rgba(0,0,0,0.75);
+}
+@media (orientation: landscape) {
+    .contentBackground {
+        /*background-size: 100% auto;*/
+    }
+    body.iOS:not(.tablet) > main {
+/*        margin-top: 150px;*/
+        min-height: 5000px;
+    }
+}
+@media (orientation: portrait) {
+    .contentBackground {
+        /*background-size: auto 100%;*/
+    }
+}
+.swipeup {
+    position: fixed;
+    left: -20%;
+    top: -20%;
+    width: 140%;
+    height: 140%;
+
+    z-index: 9999;
+    display: none;background: -moz-linear-gradient(#121d3d 1%,#000 100%);
+background: -webkit-linear-gradient(#121d3d 1%,#000 100%);
+background: -webkit-gradient(linear,0 100%,0 0,color-stop(.01,#121d3d),to(#000));
+background: -o-linear-gradient(#121d3d 1%,#000 100%);
+background: linear-gradient(#121d3d 1%,#000 100%);
+}
+.swipeup.on {
+    display: block;
+}
+.swipeup > * {
+    display: none;
+    position: absolute;
+}
+.swipeup.on > * {
+    display: block;
+}
+
+
+@keyframes hand-keyframes {
+    0% {
+	transform: translate3d(-30%, 50%,0) scale(1);
+        opacity: 0.9;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    15% {
+	transform: translate3d(-30%, 20%,0) scale(1);
+        opacity: 0.9;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    20% {
+	transform: translate3d(-30%, 20%,0) scale(0.86);
+        opacity: 1;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    25% {
+	transform: translate3d(-30%, 20%,0) scale(0.9);
+        opacity: 1;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    80% {
+	transform: translate3d(-30%, -60%,0) scale(0.9);
+        opacity: 1;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    85% {
+	transform: translate3d(-30%, -70%,0) scale(0.9);
+	opacity: 1;
+	animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    100% {
+	transform: translate3d(-30%,-100%,0) scale(1);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+}
+.swipeup > img[name="hand"] {
+	left: 50%;
+    top: 50%;
+    width: 150px;
+    height: 150px;
+    z-index: 2;
+    -webkit-transform: translate3d(-30%, -50%, 0) scale(1);
+    -moz-transform: translate3d(-30%, -50%, 0) scale(1);
+    -o-transform: translate3d(-30%, -50%, 0) scale(1);
+    transform: translate3d(-30%, -50%, 0) scale(1);
+
+    animation: 1s linear 0s 1 normal forwards hand-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards hand-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards hand-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+	}
+ @keyframes hand-click-keyframes {
+    0% {
+        transform: translate3d(-30%, 50%,0) scale(1);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    15% {
+        transform: translate3d(-30%, 20%,0) scale(1);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    20% {
+        transform: translate3d(-30%, 20%,0) scale(0.86);
+        opacity: 1;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    25% {
+        transform: translate3d(-30%, 20%,0) scale(0.9);
+        opacity: 0.8;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    80% {
+        transform: translate3d(-30%, -60%,0) scale(0.9);
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    85% {
+        transform: translate3d(-30%, -70%,0) scale(0.9);
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    100% {
+        transform: translate3d(-30%,-100%,0) scale(1);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+}
+.swipeup > img[name="hand-click"] {
+            left: 50%;
+    top: 50%;
+    width: 150px;
+    height: 150px;
+    z-index: 2;
+    -webkit-transform: translate3d(-30%, -50%, 0) scale(1);
+    -moz-transform: translate3d(-30%, -50%, 0) scale(1);
+    -o-transform: translate3d(-30%, -50%, 0) scale(1);
+    transform: translate3d(-30%, -50%, 0) scale(1);
+
+    animation: 1s linear 0s 1 normal forwards hand-click-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards hand-click-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards hand-click-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}
+.swipeup > .arrowUp {
+    width: 60px;
+    height: 45px;
+    background-image: url(../interface/1024/swipe-arrow.svg);
+    opacity: 0.5;
+    position: absolute;
+    z-index: 0;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+}
+@keyframes arrow-4-keyframes {
+    0% {
+        transform: translate3d(-50%, 170%,0) scale(0.5);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+
+    15% {
+        transform: translate3d(-50%, 150%,0) scale(0.5);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+
+    20% {
+        transform: translate3d(-50%, 85%,0) scale(0.3);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    25% {
+        transform: translate3d(-50%, 85%,0) scale(1);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    75% {
+        transform: translate3d(-50%, -135%,0) scale(1);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    100% {
+        transform: translate3d(-50%,-200%,0) scale(0.5);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+}
+@keyframes arrow-5-keyframes {
+    0% {
+        transform: translate3d(-50%, 170%,0) scale(0.5);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+
+    15% {
+        transform: translate3d(-50%, 150%,0) scale(0.5);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+
+    20% {
+        transform: translate3d(-50%, 135%,0) scale(0.3);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    25% {
+        transform: translate3d(-50%, 135%,0) scale(1);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    75% {
+        transform: translate3d(-50%, -185%,0) scale(1);
+        opacity: 0.5;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+    100% {
+        transform: translate3d(-50%,-250%,0) scale(0.5);
+        opacity: 0;
+        animation-timing-function: linear;
+        -webkit-animation-timing-function: linear;
+        -moz-animation-timing-function: linear;
+    }
+}
+.swipeup div:nth-child(1) {
+    transform: translate(-50%,-50%);
+    animation: 1s linear 0s 1 normal forwards arrow-1-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards arrow-1-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards arrow-1-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}
+.swipeup div:nth-child(2) {
+    transform: translate(-50%,-150%);
+    animation: 1s linear 0s 1 normal forwards arrow-2-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards arrow-2-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards arrow-2-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}
+.swipeup div:nth-child(3) {
+    transform: translate(-50%,-250%);
+    animation: 1s linear 0s 1 normal forwards arrow-3-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards arrow-3-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards arrow-3-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}
+.swipeup div:nth-child(4) {
+    transform: translate(-50%,50%);
+    animation: 1s linear 0s 1 normal forwards arrow-4-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards arrow-4-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards arrow-4-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}
+.swipeup div:nth-child(5) {
+    transform: translate(-50%,150%);
+    animation: 1s linear 0s 1 normal forwards arrow-5-keyframes;
+    -webkit-animation: 1s linear 0s 1 normal forwards arrow-5-keyframes;
+    -moz-animation: 1s linear 0s 1 normal forwards arrow-5-keyframes;
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+}

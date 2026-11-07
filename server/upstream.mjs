@@ -1,5 +1,7 @@
 import { config } from './config.mjs';
 import { liveClock } from './minute.mjs';
+import { fetchMatchPages } from './match-pages.mjs';
+import { buildCompetitionPolicy, competitionDecision } from './football-competitions.mjs';
 
 const BASE = config.gateway;
 const QS = () => `l=${encodeURIComponent(config.lang)}&p=${encodeURIComponent(config.partnerId)}`;
@@ -48,11 +50,6 @@ const BLOCKED_CATEGORY_SLUGS = new Set([
 const BLOCKED_CATEGORY_RE = /^(cyber|e-?replays?$|virtual|crypto|computer|vsport|express|special[-_]?\d)/i;
 const BLOCKED_TOURNAMENT_RE =
   /(\(2x4 min\)|esportsbattle|h2h gg|ehighlights|penalty shootout|highlights|long-term bets|outrights|singles only|simulat|virtual|cyber|short football|fantasy|bet ?by|instant|micro ?league)/i;
-// Minor tournaments that are filtered out — intentionally using individual patterns so that
-// major competitions (UEFA Nations League, World Cup Qualifiers, Euro Qualifiers, League Cup,
-// Super Cup, continental cups) are NOT blocked.
-const BLOCKED_MINOR_TOURNAMENT_RE =
-  /(U19|U20|U21|U23|Reserve League|Youth League|Cup U19|Cup U20|Club Friendly|Friendly|Women's International|Women's Cup|International Champions Cup|Premier League Asia Trophy)/i;
 const SYNTHETIC_TEAM_RE = /\((v|replays?|franchise|highlights|sim|virtual)\)$/i;
 // "(w)" / "(women)" are real women's teams, so they are excluded from this check
 const NICKNAME_TEAM_RE = /\s\((?!w\)|women\))[a-z0-9_]{2,14}\)$/i;
@@ -87,6 +84,8 @@ export async function loadCatalog(maxAgeMs = 600000) {
         t.tournament.id,
         {
           id: t.tournament.id,
+          categoryId: t.tournament.categoryId ?? t.tournament.category?.id,
+          isEsport: t.tournament.isEsport === true,
           name: t.tournament.name,
           slug: t.tournament.slug,
           sportId: t.tournament.sportId,
@@ -96,6 +95,7 @@ export async function loadCatalog(maxAgeMs = 600000) {
     ),
   };
 
+  value.competitionPolicy = buildCompetitionPolicy(value.tournaments, value.categories);
   catalogCache = { at: Date.now(), value };
   return value;
 }
@@ -114,7 +114,11 @@ export function isRealFootball(match, catalog) {
   if (BLOCKED_SPORT_TYPES.has(sportType)) return false;
   if (BLOCKED_CATEGORY_SLUGS.has(categorySlug) || BLOCKED_CATEGORY_RE.test(categorySlug)) return false;
   if (BLOCKED_TOURNAMENT_RE.test(tournament.name ?? '')) return false;
-  if (BLOCKED_MINOR_TOURNAMENT_RE.test(tournament.name ?? '')) return false;
+  if (process.env.FOOTBALL_TOP_TIERS_ONLY !== 'false') {
+    const decision = catalog.competitionPolicy?.get(match.tournamentId)
+      ?? competitionDecision(match.tournament ?? tournament, category);
+    if (!decision.allowed) return false;
+  }
 
   const competitors = match.competitors ?? [];
   const home = match.homeTeam?.name ?? competitors[0]?.name;
@@ -164,11 +168,9 @@ function toRow(match, catalog) {
 /** Every real football match from the public feed (live + prematch). */
 export async function fetchRealFootball() {
   const catalog = await loadCatalog();
-  const { items } = await apiPost('matches/get-many', {
-    sportIds: [config.footballSportId],
-    limit: config.matchPageLimit,
-    offset: 0,
-  });
+  const { items, received, complete } = await fetchMatchPages(page => apiPost('matches/get-many', {
+    sportIds: [config.footballSportId], ...page,
+  }), { pageSize: config.matchPageLimit });
 
   const rows = [];
   let skipped = 0;
@@ -176,6 +178,6 @@ export async function fetchRealFootball() {
     if (isRealFootball(m, catalog)) rows.push(toRow(m, catalog));
     else skipped++;
   }
-  return { rows, received: items.length, skipped };
+  return { rows, received, skipped, complete };
 }
 

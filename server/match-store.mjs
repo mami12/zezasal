@@ -13,6 +13,7 @@
  * helper, so the subscription tiers are defined in exactly one place.
  */
 import { splitByKickoff, DEFAULT_SOON_MS } from './subscribe-plan.mjs';
+import {mergeTeamStats} from './match-statistics.mjs';
 
 const MATCH_COLUMNS = [
   'match_id', 'sport_id', 'sport_tag', 'category_id', 'category_slug', 'category_name',
@@ -31,6 +32,7 @@ const FEED_COLUMNS = {
   clock_at: null,
   score_at: null,
   feed_status: null,
+  feed_status_at: null,
   has_open_odds: null,
   provider_id: null,
   broadcast_url: null,
@@ -39,6 +41,8 @@ const FEED_COLUMNS = {
 const byId = new Map(); // match_id -> row (snake_case, same shape the board serializer reads)
 let lastUpdatedAt = null;
 let upserts = 0;
+const competitionOrder = new Map();
+const competitionKey = row => `${row.sport_id ?? ''}|${row.tournament_id ?? row.category_slug ?? ''}`;
 
 const time = (v) => (v instanceof Date ? v.getTime() : v ? new Date(v).getTime() : 0);
 
@@ -63,6 +67,12 @@ export function upsert(rows) {
     }
 
     for (const col of MATCH_COLUMNS) match[col] = row[col] ?? null;
+    if (match.service === 'LIVE' && !match.live_first_seen_at) match.live_first_seen_at = at;
+    if (match.service === 'PREMATCH' && !match.prematch_first_seen_at) match.prematch_first_seen_at = at;
+    const phaseKey = `${match.service}|${competitionKey(match)}`;
+    if (!competitionOrder.has(phaseKey)) competitionOrder.set(phaseKey, at);
+    match.competition_first_seen_at = competitionOrder.get(phaseKey);
+    match.listing_stale = false;
     match.raw = row.raw ?? {};
     match.active = true;
     match.last_seen_at = at;
@@ -75,16 +85,21 @@ export function upsert(rows) {
   return written;
 }
 
-/** Marks matches that vanished from the feed as finished/inactive. */
+/** Missing one poll page is not a final result. Keep fresh pushed matches and
+ * retain temporarily missing fixtures as suspended instead of declaring FT. */
 export function expireStale(graceSeconds = 150, at = Date.now()) {
   const cutoff = at - graceSeconds * 1000;
   const expired = [];
 
   for (const match of byId.values()) {
     if (!match.active) continue;
-    if (time(match.last_seen_at) >= cutoff) continue;
+    const freshAt = Math.max(time(match.last_seen_at), time(match.updated_at), time(match.score_at), time(match.clock_at), time(match.feed_status_at));
+    if (freshAt >= cutoff) continue;
+    match.listing_stale = true;
+    const confirmedEnd = match.status === 'ended' || /^(?:finished|ended|ft|full time)$/i.test(String(match.feed_status ?? ''));
+    if (!confirmedEnd && freshAt >= at - 6 * 60 * 60 * 1000) continue;
     match.active = false;
-    if (match.status === 'live' || match.status === 'scheduled') match.status = 'ended';
+    if (confirmedEnd) match.status = 'ended';
     match.updated_at = new Date(at);
     expired.push(match.match_id);
   }
@@ -92,8 +107,8 @@ export function expireStale(graceSeconds = 150, at = Date.now()) {
   return expired;
 }
 
-/** same filters/order as the old SQL: active, service/league/q, live first, then kickoff */
-export function getMatches({ service = null, league = null, q = null, limit = 500, offset = 0, includeEnded = false } = {}) {
+/** Server-owned order is immutable while a fixture stays in its section. */
+export function getMatches({ service = null, league = null, tournamentId = null, sportId = null, q = null, limit = 500, offset = 0, includeEnded = false,catalog=false } = {}) {
   const wantService = service ? String(service).toUpperCase() : null;
   const needle = q ? String(q).toLowerCase() : null;
   const out = [];
@@ -102,6 +117,8 @@ export function getMatches({ service = null, league = null, q = null, limit = 50
     if (!match.active) continue;
     if (wantService && match.service !== wantService) continue;
     if (league && match.category_slug !== league) continue;
+    if (tournamentId != null && String(match.tournament_id) !== String(tournamentId)) continue;
+    if (sportId != null && String(match.sport_id) !== String(sportId)) continue;
     if (!includeEnded && match.status === 'ended') continue;
     if (needle) {
       const hay = `${match.home ?? ''} ${match.away ?? ''} ${match.category_name ?? ''} ${match.tournament_name ?? ''}`.toLowerCase();
@@ -113,11 +130,13 @@ export function getMatches({ service = null, league = null, q = null, limit = 50
   out.sort(
     (a, b) =>
       (b.service === 'LIVE' ? 1 : 0) - (a.service === 'LIVE' ? 1 : 0) ||
-      time(a.start_at) - time(b.start_at),
+      time(a.competition_first_seen_at ?? a.first_seen_at) - time(b.competition_first_seen_at ?? b.first_seen_at) ||
+      Number(a.tournament_id ?? a.category_id ?? 0) - Number(b.tournament_id ?? b.category_id ?? 0) ||
+      time(a.service === 'LIVE' ? a.live_first_seen_at : a.prematch_first_seen_at ?? a.first_seen_at) - time(b.service === 'LIVE' ? b.live_first_seen_at : b.prematch_first_seen_at ?? b.first_seen_at) || Number(a.match_id) - Number(b.match_id),
   );
 
   const from = Math.max(0, Number(offset) || 0);
-  return out.slice(from, from + Math.min(Number(limit) || 500, 2000));
+  return catalog?out:out.slice(from, from + Math.min(Number(limit) || 500, 2000));
 }
 
 export function getById(matchId) {
@@ -170,8 +189,8 @@ export function getCounts() {
  * so the pusher can refresh the fixtures that are about to start far more often than the rest.
  */
 export function getSubscriptionIds({
-  liveLimit = 250,
-  prematchLimit = 150,
+  liveLimit = 0,
+  prematchLimit = 0,
   feedEvidenceMs = 900000,
   soonMs = DEFAULT_SOON_MS,
 } = {}) {
@@ -187,7 +206,7 @@ export function getSubscriptionIds({
         return time(m.clock_at) >= cutoff;
       })
       .sort((a, b) => time(a.start_at) - time(b.start_at))
-      .slice(0, Math.max(0, Number(limit) || 0));
+      .slice(0, Number(limit)>0?Math.floor(Number(limit)):undefined);
 
   const liveRows = pick('LIVE', liveLimit);
   const prematchRows = pick('PREMATCH', prematchLimit);
@@ -252,6 +271,7 @@ export function applyInfo(info) {
   const at = new Date();
   const hasClock = Number.isFinite(info.matchTimeMs);
   const hasScore = Number.isFinite(info.homeScore) && Number.isFinite(info.awayScore);
+  if (hasClock || hasScore || info.feedStatus != null) { match.listing_stale = false; match.active = true; }
 
   if (hasScore) {
     match.home_score = info.homeScore;
@@ -260,12 +280,15 @@ export function applyInfo(info) {
   }
   if (Array.isArray(info.periodsScore) && info.periodsScore.length) match.periods_score = info.periodsScore;
   if (Number.isFinite(info.enabledOddsCount)) match.odds_count = info.enabledOddsCount;
-  if (info.stats && Object.keys(info.stats).length) match.stats = { ...(match.stats ?? {}), ...info.stats };
+  if (info.stats && Object.keys(info.stats).length) match.stats = mergeTeamStats(match.stats,info.stats,{observedAt:at});
   if (hasClock) {
     match.match_time_ms = info.matchTimeMs;
-    match.clock_at = at;
+    match.clock_at = info.providerClockAt && Number.isFinite(Date.parse(info.providerClockAt)) ? new Date(info.providerClockAt) : at;
   }
-  if (typeof info.feedStatus === 'string') match.feed_status = info.feedStatus;
+  if (typeof info.feedStatus === 'string') {
+    match.feed_status = info.feedStatus;
+    match.feed_status_at = at;
+  }
   if (typeof info.hasOpenOdds === 'boolean') match.has_open_odds = info.hasOpenOdds;
   // the book the site itself sells this match from (match-info.providerId)
   if (info.providerId !== null && info.providerId !== undefined && Number.isFinite(Number(info.providerId))) {
@@ -316,4 +339,5 @@ export function clear() {
   byId.clear();
   lastUpdatedAt = null;
   upserts = 0;
+  competitionOrder.clear();
 }

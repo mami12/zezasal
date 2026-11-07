@@ -1,0 +1,15 @@
+{
+  "source": "User-provided zshop.live capture",
+  "path": "D:/cassino/lojra/lojrafaqja/zshop.live/s1.zshop.live/front/sp/sport/current",
+  "uses": [
+    "match background",
+    "sports illustrations",
+    "match-field icon"
+  ],
+  "excluded": [
+    "provider JavaScript",
+    "user snapshots",
+    "authentication",
+    "remote API calls"
+  ]
+}

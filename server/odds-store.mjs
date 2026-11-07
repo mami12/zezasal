@@ -272,11 +272,11 @@ export function applyRows(rows) {
 }
 
 /** board-shaped odds (snake_case) for the given match ids, ordered like the old query */
-export function getOddsForMatches(matchIds = []) {
+export function getOddsForMatches(matchIds = [], accept, inspect) {
   const out = [];
   for (const id of matchIds) {
     const bucket = byMatch.get(Number(id));
-    if (bucket) out.push(...bucket.values());
+    if (bucket) for(const row of bucket.values()){inspect?.(row);if(!accept||accept(row))out.push(row);}
   }
 
   out.sort(

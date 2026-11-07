@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bg3" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#1a0a2a"/><stop offset="100%" stop-color="#030005"/></radialGradient>
+    <radialGradient id="plum3" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#aa66cc"/><stop offset="100%" stop-color="#330055"/></radialGradient>
+    <filter id="glow3"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="url(#bg3)" stroke="#aa44cc" stroke-width="2"/>
+  <ellipse cx="100" cy="118" rx="55" ry="60" fill="url(#plum3)" filter="url(#glow3)"/>
+  <ellipse cx="80" cy="95" rx="15" ry="20" fill="#ffffff" opacity="0.3"/>
+  <path d="M100 60 Q120 45 135 55 Q130 70 115 72 Q108 68 100 60 Z" fill="#66cc44" stroke="#226600" stroke-width="1"/>
+  <path d="M100 58 L100 45" stroke="#553300" stroke-width="3" stroke-linecap="round"/>
+</svg>

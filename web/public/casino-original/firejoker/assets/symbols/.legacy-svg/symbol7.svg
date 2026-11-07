@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bg7" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#4a1000"/><stop offset="100%" stop-color="#0a0200"/></radialGradient>
+    <linearGradient id="flame7" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ff1100"/><stop offset="40%" stop-color="#ff6600"/><stop offset="70%" stop-color="#ffbb00"/><stop offset="100%" stop-color="#ffff66"/></linearGradient>
+    <filter id="glow7"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="url(#bg7)" stroke="#ff8800" stroke-width="2"/>
+  <path d="M100 25 C80 60 55 80 55 120 C55 155 80 178 100 182 C120 178 145 155 145 120 C145 80 120 60 100 25 Z" fill="url(#flame7)" filter="url(#glow7)"/>
+  <path d="M100 70 C90 95 82 110 82 132 C82 152 90 165 100 168 C110 165 118 152 118 132 C118 110 110 95 100 70 Z" fill="#fff8cc"/>
+  <text x="100" y="112" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="#cc1100">SCATTER</text>
+</svg>

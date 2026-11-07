@@ -1,0 +1,59 @@
+/* The list and SYSTEM explanations share the available scroll area. The stake
+   and submit controls never inherit the height of those variable-length rows. */
+.betslip {
+  container: betslip / size;
+}
+
+.betslip-scroll {
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+}
+
+.betslip-notices:empty {
+  display: none;
+}
+
+.betslip-footer {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* A short desktop window, phone landscape, or an open on-screen keyboard still
+   leaves room for the editable amount and the submit button. */
+@container betslip (max-height: 450px) {
+  .betslip .betslip-quick-stakes {
+    display: none;
+  }
+
+  .betslip .betslip-actions {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+
+  .betslip .betslip-actions button {
+    min-height: 44px;
+    padding: 8px 4px;
+  }
+
+  .betslip .betslip-notices {
+    max-height: 36px;
+  }
+}
+
+@container betslip (max-height: 350px) {
+  .betslip .betslip-heading-row {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .betslip .betslip-footer-fields {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .betslip .betslip-footer-fields > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 4px;
+  }
+
+  .betslip .betslip-notices {
+    max-height: 24px;
+  }
+}

@@ -1,0 +1,15 @@
+export function marketFamily(m?:unknown):{key:string;name:string}|null;
+export function marketCategories(name:string):string[];
+export function observeMarket(m:unknown):unknown;
+export function marketIsEnabled(m:unknown,match?:unknown):boolean;
+export function setCatalogRows(rows:unknown[]):void;
+export function catalogRows():{key:string;name:string;categories:string[];enabled:boolean;manualEnabled:boolean;blockedBy:string[];sortOrder:number;position:number}[];
+export const MARKET_CATEGORY_IDS:string[];
+export function setCategoryPolicies(rows:{category:string;enabled:boolean}[]):void;
+export function categoryPolicies():{category:string;enabled:boolean}[];
+export function marketRank(m:unknown):number;
+export function disabledMarkets():string[];
+export function setDisabledMarkets(keys:string[]):void;
+export type MarketScopeBlock={country:string;league:string;categories:string[];families:string[]};
+export function setScopeBlocks(rows:unknown[]):void;
+export function scopeBlockRows():MarketScopeBlock[];

@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync} from 'node:fs';
+
+const require=createRequire(import.meta.url),ts=require('typescript');
+const compiled=ts.transpileModule(readFileSync(new URL('../web/src/utils/userError.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+const module={exports:{}};
+new Function('exports','require','module',compiled)(module.exports,require,module);
+const {userError}=module.exports;
+
+assert.equal(userError('RTP must be a number from 0 to 100 with at most two decimal places'),'RTP duhet të jetë nga 0 deri në 100, me deri në dy shifra pas presjes.');
+assert.equal(userError('Hit frequency must be a number from 0 to 100 with at most two decimal places'),'Shpeshtësia e fitimit duhet të jetë nga 0 deri në 100, me deri në dy shifra pas presjes.');
+assert.equal(userError('RTP must be a number from 0 to 1000 with at most two decimal places'),'RTP duhet të jetë nga 0 deri në 1000, me deri në dy shifra pas presjes.');
+assert.equal(userError('Incompatible RTP and hit frequency. RTP / hit frequency must be between 0.4 and 2000 for every supported stake and line count'),'RTP dhe shpeshtësia e fitimit nuk përputhen. Raporti mes tyre duhet të jetë nga 0.4 deri në 2000 për çdo bast dhe numër linjash të mbështetur.');
+for(const message of ['Casino stake must be between 20 and 5000.00','Casino stake must be between 20 and 5000 ALL'])assert.equal(userError(message),'Basti i kazinosë duhet të jetë nga 20 deri në 5000 lekë.');
+const original=new Error('Casino settings changed. Reopen the game and review RTP and hit frequency before a new paid spin.');
+const snapshot=original.message;
+assert.match(userError(original),/^Cilësimet e kazinosë ndryshuan/);
+assert.equal(original.message,snapshot,'Display localization must preserve original diagnostic data');
+assert.equal(userError('Unsupported reel profile for vikings-fun'),'Profili i zgjedhur nuk mbështetet për këtë lojë.');
+assert.equal(userError('Një zgjedhje nuk është më aktive.'),'Një zgjedhje nuk është më aktive.');
+assert.equal(userError('ID e pavlefshme.'),'ID e pavlefshme.');
+assert.equal(userError('timeout of 15000ms exceeded'),'Serveri nuk u përgjigj në kohë. Provo përsëri.');
+assert.equal(userError('Unexpected upstream failure','Nuk u ruajt ndryshimi.'),'Nuk u ruajt ndryshimi.');
+assert.equal(userError(null,'Nuk u ngarkua loja.'),'Nuk u ngarkua loja.');
+const labelsCompiled=ts.transpileModule(readFileSync(new URL('../web/src/utils/accountLabels.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+const labelsModule={exports:{}};
+new Function('exports','require','module',labelsCompiled)(labelsModule.exports,require,labelsModule);
+const {transactionDescription,transactionLabel,auditActionLabel,auditTargetLabel}=labelsModule.exports;
+assert.equal(transactionLabel('CASINO_MANAGER_NET'),'Diferencë kazinoje e menaxherit');
+assert.equal(transactionLabel('UNRECOGNIZED_CODE'),'Lëvizje financiare');
+assert.equal(transactionDescription('Sizzling Hot Deluxe · payout player_stake','CASINO_WIN'),'Sizzling Hot Deluxe · pagesë fitimi player_stake');
+assert.equal(transactionDescription('Casino stake · stake_username','CASINO_MANAGER_NET'),'Bast kazinoje · stake_username');
+assert.equal(transactionDescription('Viking\'s Fun · spin','CASINO_SPIN'),"Viking's Fun · rrotullim");
+assert.equal(transactionDescription('Fonde nga spin_username','DEPOSIT'),'Fonde nga spin_username','Do not alter freeform descriptions or usernames');
+assert.equal(auditActionLabel('PATCH /admin/outcomes/ABC|1/odds'),'Ndryshim koeficienti');
+assert.equal(auditActionLabel('POST /manager/tickets/UUID/revert'),'Anulim bilete');
+assert.equal(auditActionLabel('UPDATE LIVE_RISK'),'Ndryshim i rregullave të rrezikut');
+assert.equal(auditTargetLabel('outcome'),'Zgjedhje');
+console.log('PASS Albanian display errors: accurate validation ranges, configuration changes, unavailable services, original diagnostics and unknown-message fallback');
+

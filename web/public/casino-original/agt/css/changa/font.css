@@ -1,0 +1,7 @@
+/* latin */
+@font-face {
+  font-family: 'ChangaOne';
+  font-style: normal;
+  font-weight: 400;
+  src: url(ChangaOne-Regular.ttf) format('woff2');
+}

@@ -100,11 +100,12 @@ const seed = (matchId, price) =>
     }),
   });
 const target = live[0];
+if (!target?.id) throw new Error('Admin verification requires at least one live match');
 await seed(target.id, 2);
 
 /** the home line of a match, read straight off the board (prices move, so read then send) */
 async function liveHomeLine(matchId, { anyStatus = false } = {}) {
-  const board = (await call('/matches?status=LIVE', playerToken)).body;
+  const board = (await call('/matches?status=LIVE', token)).body;
   const market = board.find((m) => m.id === String(matchId))?.markets?.find((k) => k.marketType === '1X2');
   const outcomes = market?.outcomes ?? [];
   const outcome = anyStatus ? outcomes.find((o) => o.name === '1') ?? outcomes[0] : outcomes.find((o) => o.name === '1' && o.status === 'ACTIVE');
@@ -112,11 +113,11 @@ async function liveHomeLine(matchId, { anyStatus = false } = {}) {
 }
 
 /** places at the price the board is showing right now; the feed moves, so retry on drift */
-async function placeAtLivePrice(stake, matchId) {
+async function placeAtLivePrice(stake, matchId, token = playerToken) {
   for (let attempt = 0; attempt < 15; attempt++) {
     const line = await liveHomeLine(matchId);
     if (!line) continue;
-    const res = await call('/bets/place', playerToken, {
+    const res = await call('/bets/place', token, {
       method: 'POST',
       body: JSON.stringify({ stake, selections: [{ outcomeId: line.outcomeId, oddsAtPlacement: line.odds }] }),
     });
@@ -226,6 +227,12 @@ const managerToken = await login(managerName, 'pass1234');
 check('the manager can log in', !!managerToken);
 const asManager = (p, i) => call(p, managerToken, i);
 
+const managerFunding = await asAdmin(`/admin/users/${manager.body.id}/deposit`, {
+  method: 'POST',
+  body: JSON.stringify({ amount: 400 }),
+});
+check('admin can fund the manager wallet', managerFunding.status === 200 && Number(managerFunding.body.balance) === 400);
+
 const mStats = await asManager('/manager/stats');
 check('GET /manager/stats works for a manager', mStats.status === 200, JSON.stringify(mStats.body));
 
@@ -237,9 +244,87 @@ const mPlayer = await asManager('/manager/users', {
 check('a manager creates their own player', mPlayer.status === 200 && Number(mPlayer.body.balance) === 300);
 check('the player is owned by the manager', mPlayer.body.managerId === manager.body.id);
 check('the manager cannot choose the role', mPlayer.body.role === 'PLAYER');
+const managerAfterCreate = await asManager('/auth/me');
+check('creating a player debits the manager wallet', Number(managerAfterCreate.body.balance) === 100, `${managerAfterCreate.body.balance}`);
 
 const mList = await asManager('/manager/users');
 check('the manager only sees their own players', mList.body.length === 1 && mList.body[0].username === mPlayerName, `${mList.body.length} users`);
+
+const mDeposit = await asManager(`/manager/users/${mPlayer.body.id}/deposit`, {
+  method: 'POST',
+  body: JSON.stringify({ amount: 100 }),
+});
+check('manager deposit credits the player and debits the manager', mDeposit.status === 200 && Number(mDeposit.body.balance) === 400);
+const managerAfterDeposit = await asManager('/auth/me');
+check('manager balance reflects the transfer', Number(managerAfterDeposit.body.balance) === 0);
+const overfund = await asManager(`/manager/users/${mPlayer.body.id}/deposit`, {
+  method: 'POST',
+  body: JSON.stringify({ amount: 1 }),
+});
+check('manager cannot fund a player beyond available funds', overfund.status === 400);
+const mStatsAfterFunding = await asManager('/manager/stats');
+check(
+  'manager stats include financial totals and player rows',
+  mStatsAfterFunding.status === 200 &&
+    Number(mStatsAfterFunding.body.financials?.manager?.playerBalance) === 400 &&
+    mStatsAfterFunding.body.financials?.players?.some((p) => p.id === mPlayer.body.id),
+);
+
+const managerWalletTopUp = await asAdmin(`/admin/users/${manager.body.id}/deposit`, {
+  method: 'POST',
+  body: JSON.stringify({ amount: 50 }),
+});
+check('admin can top up a manager wallet', managerWalletTopUp.status === 200 && Number(managerWalletTopUp.body.balance) === 50);
+
+const mPlayerToken = await login(mPlayerName, 'pass1234');
+check('a manager player can log in', !!mPlayerToken);
+const managerPlayerBet = await placeAtLivePrice(100, target.id, mPlayerToken);
+check('a managed player can place a bet', managerPlayerBet.status === 200, managerPlayerBet.body?.message);
+if (managerPlayerBet.status === 200) {
+  const managerStatsAfterBet = await asManager('/manager/stats');
+  const managerPlayerFinance = managerStatsAfterBet.body.financials?.players?.find((p) => p.id === mPlayer.body.id);
+  check(
+    'the single-bet commission and all tier rates are reported immediately',
+    managerPlayerFinance?.commission === 3 &&
+      managerPlayerFinance?.commissionByTier?.single === 3 &&
+      managerPlayerFinance?.commissionRates?.single === 3 &&
+      managerPlayerFinance?.commissionRates?.double === 5 &&
+      managerPlayerFinance?.commissionRates?.multi === 7 &&
+      Number(managerStatsAfterBet.body.financials?.manager?.balance) === 47,
+    JSON.stringify({ commission: managerPlayerFinance?.commission, balance: managerStatsAfterBet.body.financials?.manager?.balance }),
+  );
+  const adminStatsAfterBet = await asAdmin('/admin/stats');
+  const adminManagerFinance = adminStatsAfterBet.body.managers?.find((entry) => entry.id === manager.body.id);
+  check(
+    'admin stats show the updated manager wallet and commission',
+    Number(adminManagerFinance?.balance) === 47 && Number(adminManagerFinance?.commission) === 3,
+    JSON.stringify({ balance: adminManagerFinance?.balance, commission: adminManagerFinance?.commission }),
+  );
+  const managerRevert = await asManager(`/manager/tickets/${managerPlayerBet.body.id}/revert`, { method: 'POST' });
+  check('reverting a managed ticket refunds its stake', managerRevert.status === 200 && managerRevert.body.refunded === 100);
+  const managerStatsAfterRevert = await asManager('/manager/stats');
+  const managerPlayerFinanceAfterRevert = managerStatsAfterRevert.body.financials?.players?.find((p) => p.id === mPlayer.body.id);
+  check(
+    'reverting the bet refunds its commission to the manager',
+    managerPlayerFinanceAfterRevert?.commission === 0 &&
+      Number(managerStatsAfterRevert.body.financials?.manager?.balance) === 50,
+    JSON.stringify({ commission: managerPlayerFinanceAfterRevert?.commission, balance: managerStatsAfterRevert.body.financials?.manager?.balance }),
+  );
+} else {
+  check('the 3% single commission is charged as soon as the bet is placed', false, 'no ticket was created');
+  check('admin stats show the updated manager wallet and commission', false, 'no ticket was created');
+  check('reverting a managed ticket refunds its stake', false, 'no ticket was created');
+  check('reverting the bet refunds its commission to the manager', false, 'no ticket was created');
+}
+
+const managerWithdrawal = await asManager(`/manager/users/${mPlayer.body.id}/withdraw`, {
+  method: 'POST',
+  body: JSON.stringify({ amount: 40 }),
+});
+const managerStatsAfterWithdrawal = await asManager('/manager/stats');
+check('withdrawing from a player transfers funds back to the manager', managerWithdrawal.status === 200 &&
+  Number(managerWithdrawal.body.balance) === 360 &&
+  Number(managerStatsAfterWithdrawal.body.financials?.manager?.balance) === 90);
 
 const crossRoute = await asManager(`/admin/users/${created.body.id}/deposit`, { method: 'POST', body: JSON.stringify({ amount: 20 }) });
 check('a manager cannot use the admin routes', crossRoute.status === 403, crossRoute.body?.message);

@@ -1,0 +1,283 @@
+<style>
+html,body {margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+#slotCanvas {touch-action:none}
+</style><div id="container">
+
+    <div class="app-container">
+        <div class="canvas-box">
+            <canvas class="canvas" id="slotCanvas"></canvas>
+        </div>
+
+        <div class="ui-box">
+            <div class="ui" id="ui"></div>
+        </div>
+    </div>
+
+    <div id="gamble"></div>
+
+</div>
+<div class="preloader" id="preloaderContainer">
+    <style>
+        html {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .preloader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /*background: #1d212f;*/
+            background: #000;
+            z-index: 100000;
+
+            font-size: 20px;
+        }
+
+        .preloader__container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            text-align: center;
+            transform: translate(-50%, -25%);
+            -webkit-transform: translate(-50%, -50%);
+            width: 80%;
+            height: 5px;
+            /*background: #f00;*/
+        }
+
+        .preloader__image {
+            width: 100%;
+            height: 10em;
+            bottom: 100%;
+            left: 50%;
+            position: absolute;
+            transform: translate(-50%,0);
+            -webkit-transform: translate(-50%,0);
+            /*background: #f00;*/
+        }
+
+        .preloader__image img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            border: 0;
+            opacity: 0;
+            transition: .5s;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%,0);
+            -webkit-transform: translate(-50%,0);
+        }
+
+        .preloader__text {
+            z-index: 10;
+            font-size: 1em;
+            font-family: sans-serif;
+            color: #9c9cb6;
+            font-weight: 500;
+            /*margin-bottom: 1em;*/
+            position: absolute;
+            top: 100%;
+            left: 0;
+            height: 1em;
+            line-height: 1em;
+            width: 100%;
+            margin-top: 1em;
+        }
+
+        .preloader__progress {
+            box-sizing: border-box;
+            width: 50%;
+            /*width: 50em;*/
+            /*max-width: 90%;*/
+            background: #19181c;
+            box-shadow: 0 1px 1px 0 #393845, inset 0 3px 3px 0 rgba(0, 0, 0, .7);
+            padding: .2%;
+            /*position: relative;*/
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-top: 3em;
+            height: .5em;
+            border-radius: 1em;
+            transform: translate(-50%, 0);
+            -webkit-transform: translate(-50%, 0);
+        }
+
+        .preloader__progress-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            width: 0;
+            height: 100%;
+            /*transition: .6s;*/
+            border-radius: 50px;
+            box-shadow: inset 0 1px 1px 0 #80ceff;
+            background: linear-gradient(to right, #0052a5 0%, #00c6ff 100%);
+        }
+
+        @keyframes preloader-exit {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .preloader-exit {
+            opacity: 0;
+            animation: 1s preloader-exit;
+        }
+    </style>
+    <div class="preloader__container">
+        <div class="preloader__image">
+            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" id="preloaderLogo" alt="">
+        </div>
+        <div class="preloader__text" id="preloaderText">Loading...</div>
+        <div class="preloader__progress">
+            <div class="preloader__progress-track" id="preloaderProgress"></div>
+        </div>
+    </div>
+</div>
+<script>
+    ;(function (window) {
+        const RANDOM_DELTA            = 10000;
+        const DISPLAYING_TIME         = 1000;
+        const LOADER_UPDATE_INTERVAL  = 0.005;
+        const BEFORE_MIDDLEWARE_DELTA = 30;
+        const AFTER_MIDDLEWARE_DELTA  = 70;
+
+        if (window.clientConfig && window.clientConfig.debug) console.groupCollapsed('Preloader:');
+
+        document.getElementById('preloaderText').innerHTML =
+            {
+                'en': 'Loading game...',
+                'uk': 'Завантаження гри...',
+                'ru'  : 'Загрузка игры...',
+            }[window.clientConfig.language || 'en'];
+
+
+        const container = document.getElementById('preloaderContainer');
+        const progress  = document.getElementById('preloaderProgress');
+        const txt       = document.getElementById('preloaderText');
+
+        let subjectivePercentage    = 0;
+        let objectivePercentage     = 0;
+        let delta                   = 0;
+        let percentPreloaderContent = 0;
+        let preloaderContentCount   = 2;
+        let timerName;
+
+        function onProgressHandler(e) {
+            if (e.detail.stage === 'preloader') {
+                objectivePercentage++;
+                percentPreloaderContent++;
+                delta = objectivePercentage - subjectivePercentage;
+                return;
+            }
+            if (e.detail.stage === 'script') {
+                objectivePercentage = percentPreloaderContent + e.detail.percent * (BEFORE_MIDDLEWARE_DELTA - preloaderContentCount);
+                delta               = objectivePercentage - subjectivePercentage;
+                return;
+            }
+            if (e.detail.stage === 'image') {
+                objectivePercentage = percentPreloaderContent + (BEFORE_MIDDLEWARE_DELTA - preloaderContentCount) + e.detail.percent * AFTER_MIDDLEWARE_DELTA;
+                delta               = objectivePercentage - subjectivePercentage;
+            }
+        }
+
+        function onFinishHandler(e) {
+            window.clearInterval(timerName);
+            txt.innerHTML        = '100%';
+            progress.style.width = '100%';
+
+            if (window.clientConfig && window.clientConfig.debug) console.groupEnd();
+
+            container.classList.add('preloader-exit');
+            window.setTimeout(function () {
+                container.parentNode.removeChild(container);
+            }, DISPLAYING_TIME);
+        }
+
+        let updateLastDate = Date.now();
+
+        function preloaderUpdate() {
+            const now      = Date.now();
+            const dt       = (now - updateLastDate) * LOADER_UPDATE_INTERVAL;
+            updateLastDate = now;
+
+            if (subjectivePercentage < objectivePercentage) {
+                subjectivePercentage += delta * dt * 2;
+                if (subjectivePercentage > objectivePercentage) {
+                    subjectivePercentage = objectivePercentage;
+                }
+
+                subjectivePercentage = Math.min(100, subjectivePercentage);
+                txt.innerHTML        = Math.round(subjectivePercentage) + '%';
+                progress.style.width = subjectivePercentage + '%';
+            }
+        }
+
+        timerName = window.setInterval(preloaderUpdate, 0);
+        window.assembler.loadJSON('{$game_path}manifest.json?=' + (Math.random() * RANDOM_DELTA | 0), function (json) {
+            const manifestFile = JSON.parse(json);
+            const isDesktop    = document.querySelector('html')
+                .className
+                .indexOf('desktop') >= 0;
+            let logoURL        = manifestFile['images/logo' + '.png'] || manifestFile['images/logo' + '.jpg'];
+            if (!logoURL && clientConfig && clientConfig.language) {
+                const logoBaseURL = (isDesktop) ? 'images/logo_' + clientConfig.language + '-hd' :
+                    'images/logo_' + clientConfig.language;
+                logoURL = manifestFile[`${logoBaseURL}.png`] || manifestFile[`${logoBaseURL}.jpg`];
+            }
+            if (logoURL) {
+                const logoSelector = document.querySelector('#preloaderLogo');
+                logoSelector.src   = '{$game_path}' + logoURL;
+                logoSelector.addEventListener('error', function () {
+                    this.src = logoSelector.src;
+                });
+                logoSelector.addEventListener('load', function () {
+                    this.style.opacity = 1;
+                    document.dispatchEvent(new CustomEvent('LOADER.stepped', {
+                        detail: {
+                            stage: 'preloader',
+                            url  : logoSelector.src,
+                        },
+                    }));
+                });
+            }
+
+            if (window.devTools) {
+                window.devTools.updateFavicon();
+            }
+        });
+
+        document.addEventListener('LOADER.stepped', onProgressHandler);
+        document.addEventListener('LOADER.done', onFinishHandler);
+        container.addEventListener('touchend', preventEventDefault, false);
+        container.addEventListener('touchstart', preventEventDefault, false);
+        container.addEventListener('touchmove', preventEventDefault, false);
+
+        function preventEventDefault(e) {
+            const event = e.originalEvent || e;
+            event.preventDefault();
+        }
+
+    })(window);
+</script>

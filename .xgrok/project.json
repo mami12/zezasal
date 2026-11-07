@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "setup": "integrated",
+  "languages": [
+    "JavaScript/TypeScript",
+    "TypeScript"
+  ],
+  "stacks": [
+    "Node.js",
+    "React/Next",
+    "HTTP API"
+  ],
+  "markers": [
+    "package.json"
+  ],
+  "packageName": "faqja",
+  "suggestedRun": "npm start",
+  "createdAt": "2026-10-31T00:01:05.575Z",
+  "tool": "xgrok"
+}

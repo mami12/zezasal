@@ -28,6 +28,11 @@ create table if not exists matches (
 create index if not exists matches_service_start_idx on matches (service, start_at);
 create index if not exists matches_category_idx      on matches (category_slug);
 create index if not exists matches_active_idx        on matches (active);
+alter table matches add column if not exists live_first_seen_at timestamptz;
+alter table matches add column if not exists prematch_first_seen_at timestamptz;
+alter table matches add column if not exists listing_stale boolean not null default false;
+update matches set live_first_seen_at=first_seen_at where service='LIVE' and live_first_seen_at is null;
+update matches set prematch_first_seen_at=first_seen_at where service='PREMATCH' and prematch_first_seen_at is null;
 
 create table if not exists odds_current (
   match_id     bigint not null,
@@ -82,6 +87,7 @@ alter table matches add column if not exists broadcast_url text;
 -- are what let the board tell "1-0 five minutes ago" apart from "1-0 right now".
 alter table matches add column if not exists clock_at timestamptz;
 alter table matches add column if not exists score_at timestamptz;
+alter table matches add column if not exists feed_status_at timestamptz;
 
 -- added later: full market tree (every odds group the feed sends, not just the board columns)
 alter table odds_current add column if not exists is_base     boolean not null default false;

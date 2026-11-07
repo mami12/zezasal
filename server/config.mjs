@@ -1,4 +1,10 @@
 import 'dotenv/config';
+import { localDatabaseDirectory, assertNoDatabaseMaintenance } from './database-location.mjs';
+
+assertNoDatabaseMaintenance();
+
+const databaseDriver = (process.env.DB_DRIVER ?? 'postgres').trim().toLowerCase();
+if (!['postgres', 'local'].includes(databaseDriver)) throw new Error('DB_DRIVER must be postgres or local');
 
 const list = (v, fallback) =>
   (v ?? fallback)
@@ -7,15 +13,18 @@ const list = (v, fallback) =>
     .filter(Boolean);
 
 export const config = {
+  sportsProvider: (process.env.SPORTS_PROVIDER ?? 'zizobet').trim().toLowerCase(),
   port: Number(process.env.PORT ?? 3000),
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
   databaseUrl: process.env.DATABASE_URL ?? '',
+  databaseDriver,
+  localDatabaseDir: databaseDriver === 'local' ? localDatabaseDirectory(process.env.LOCAL_DATABASE_DIR || 'data/database') : null,
 
   // the database is only the ledger now (users / tickets / results): the board runs from
   // memory, so a dead database must NOT stop the service. Set DB_INIT_STRICT=true if you
   // would rather fail the deploy when the ledger is unreachable.
-  dbInitStrict: (process.env.DB_INIT_STRICT ?? 'false') === 'true',
+  dbInitStrict: (process.env.DB_INIT_STRICT ?? (databaseDriver === 'local' ? 'true' : 'false')) === 'true',
 
   // where the match list lives: 'memory' (default - survives a database outage) or 'db'
   matchStore: (process.env.MATCH_STORE ?? 'memory').toLowerCase(),
@@ -36,8 +45,8 @@ export const config = {
   lang: process.env.LANG_CODE ?? 'en-001',
 
   // collector
-  pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 10000),
-  matchPageLimit: Number(process.env.MATCH_PAGE_LIMIT ?? 3000),
+  pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 30000),
+  matchPageLimit: Number(process.env.MATCH_PAGE_LIMIT ?? 1000),
 
   // browser clients
   allowedOrigins: list(process.env.ALLOWED_ORIGINS, '*'),
@@ -84,15 +93,20 @@ export const config = {
   // keeps its own, much tighter window in ledger/bets.mjs
   prematchStaleMs: Number(process.env.PREMATCH_STALE_MS ?? 90 * 60 * 1000),
 
-  /* ------------------------------------------------------------- idle mode
-   * With no visitor the feed is paused (upstream socket closed, collector/probe/settlement
-   * stopped) so the instance can be slept by the platform - see server/idle-mode.mjs. The
-   * first request wakes it again; the board shows "odds are being refreshed" meanwhile.
-   */
-  idleFeed: (process.env.IDLE_FEED ?? 'true') !== 'false',
-  idleAfterMs: Number(process.env.IDLE_AFTER_MS ?? 15 * 60 * 1000),
-  idleColdBootMs: Number(process.env.IDLE_COLD_BOOT_MS ?? 2 * 60 * 1000),
-  idleStopDbProbe: (process.env.IDLE_STOP_DB_PROBE ?? 'true') !== 'false',
+  // Retired Railway sleep settings: legacy environment values are ignored.
+  idleFeed: false,
+  idleAfterMs: 0,
+  idleColdBootMs: 0,
+  idleStopDbProbe: false,
+
+  // Automatic live risk controls. The provider's original prices remain untouched.
+  liveRiskEnabled: (process.env.LIVE_RISK_ENABLED ?? 'true') !== 'false',
+  liveRiskLeadMinute: Number(process.env.LIVE_RISK_LEAD_MINUTE ?? 75),
+  liveRiskLeadGoals: Number(process.env.LIVE_RISK_LEAD_GOALS ?? 2),
+  liveRiskLeadOdds: Number(process.env.LIVE_RISK_LEAD_ODDS ?? 1.50),
+  liveRiskLateMinute: Number(process.env.LIVE_RISK_LATE_MINUTE ?? 85),
+  liveRiskLateOdds: Number(process.env.LIVE_RISK_LATE_ODDS ?? 1.10),
+  liveRiskUltraOdds: Number(process.env.LIVE_RISK_ULTRA_ODDS ?? 1.05),
 
   // this feed's football sport id (verified)
   footballSportId: Number(process.env.FOOTBALL_SPORT_ID ?? 18),
@@ -108,7 +122,7 @@ export function pgClientOptions(connectionString = config.databaseUrl, max = 5) 
   url.searchParams.delete('sslmode');
   return {
     connectionString: url.toString(),
-    ssl: { rejectUnauthorized: false },
+    ssl: ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ? false : { rejectUnauthorized: false },
     max,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
@@ -121,6 +135,7 @@ export function pgClientOptions(connectionString = config.databaseUrl, max = 5) 
  * and so the IPv6-only direct host is recognisable instead of looking like a DNS outage.
  */
 export function dbTarget(connectionString = config.databaseUrl) {
+  if (config.databaseDriver === 'local') return { configured: true, driver: 'local', directory: config.localDatabaseDir };
   if (!connectionString) return { configured: false };
   try {
     const url = new URL(connectionString.replace(/^postgres:\/\//, 'postgresql://'));
@@ -140,6 +155,7 @@ export function dbTarget(connectionString = config.databaseUrl) {
 
 /** one-line, credential-free rendition of dbTarget() for logs */
 export function dbTargetLabel(target = dbTarget()) {
+  if (target.driver === 'local') return `local PostgreSQL files: ${target.directory}`;
   if (!target.configured) return 'not set (DATABASE_URL is empty)';
   if (target.invalid) return 'unparseable DATABASE_URL';
   return `${target.user}@${target.host}:${target.port}/${target.database}`;

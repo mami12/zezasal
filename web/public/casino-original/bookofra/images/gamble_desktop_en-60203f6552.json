@@ -1,0 +1,175 @@
+{"frames": {
+
+"gamble_desktop/btn_black/0.active":
+{
+	"frame": {"x":1012,"y":741,"w":335,"h":235},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":9,"w":335,"h":235},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_black/1.hover":
+{
+	"frame": {"x":338,"y":741,"w":335,"h":257},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":0,"w":335,"h":257},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_black/2.pressed":
+{
+	"frame": {"x":338,"y":741,"w":335,"h":257},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":0,"w":335,"h":257},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_black/3.disable":
+{
+	"frame": {"x":435,"y":1000,"w":335,"h":256},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":9,"w":335,"h":256},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_red/0.active":
+{
+	"frame": {"x":772,"y":1000,"w":334,"h":234},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":10,"w":334,"h":234},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_red/1.hover":
+{
+	"frame": {"x":675,"y":741,"w":335,"h":257},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":0,"w":335,"h":257},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_red/2.pressed":
+{
+	"frame": {"x":675,"y":741,"w":335,"h":257},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":0,"w":335,"h":257},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/btn_red/3.disable":
+{
+	"frame": {"x":1,"y":741,"w":335,"h":265},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":29,"y":0,"w":335,"h":265},
+	"sourceSize": {"w":386,"h":265}
+},
+"gamble_desktop/cards/clubs":
+{
+	"frame": {"x":1,"y":1008,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+},
+"gamble_desktop/cards/diamonds":
+{
+	"frame": {"x":218,"y":1008,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+},
+"gamble_desktop/cards/hearts":
+{
+	"frame": {"x":1302,"y":1,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+},
+"gamble_desktop/cards/spades":
+{
+	"frame": {"x":1302,"y":304,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+},
+"gamble_desktop/gambleBack":
+{
+	"frame": {"x":1,"y":1,"w":1299,"h":738},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":1299,"h":738},
+	"sourceSize": {"w":1299,"h":738}
+},
+"gamble_desktop/history_card/clubs":
+{
+	"frame": {"x":1302,"y":607,"w":80,"h":113},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":113},
+	"sourceSize": {"w":80,"h":113}
+},
+"gamble_desktop/history_card/diamonds":
+{
+	"frame": {"x":1384,"y":607,"w":80,"h":113},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":113},
+	"sourceSize": {"w":80,"h":113}
+},
+"gamble_desktop/history_card/hearts":
+{
+	"frame": {"x":1349,"y":722,"w":80,"h":113},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":113},
+	"sourceSize": {"w":80,"h":113}
+},
+"gamble_desktop/history_card/shirt_history":
+{
+	"frame": {"x":1349,"y":837,"w":80,"h":113},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":113},
+	"sourceSize": {"w":80,"h":113}
+},
+"gamble_desktop/history_card/spades":
+{
+	"frame": {"x":1431,"y":722,"w":80,"h":113},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":113},
+	"sourceSize": {"w":80,"h":113}
+},
+"gamble_desktop/shirt_animation/shirt_0":
+{
+	"frame": {"x":1108,"y":978,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+},
+"gamble_desktop/shirt_animation/shirt_1":
+{
+	"frame": {"x":1325,"y":978,"w":215,"h":301},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":215,"h":301},
+	"sourceSize": {"w":215,"h":301}
+}},
+"animations": {
+	"gamble_desktop/shirt_animation/shirt": ["gamble_desktop/shirt_animation/shirt_0","gamble_desktop/shirt_animation/shirt_1"]
+},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "gamble_desktop_en.png",
+	"format": "RGBA5555",
+	"size": {"w":1541,"h":1310},
+	"scale": "1.054",
+	"smartupdate": "$TexturePacker:SmartUpdate:d048952396e2948cd3456f8a49e7b577:73ae442e395531755398be55b2801b37:d078eec460ee0c1d5525efb3c2209d9b$"
+}
+}

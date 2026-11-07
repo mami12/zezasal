@@ -20,9 +20,7 @@
  * One cadence for everything is what made 150 fixtures kicking off hours from now cost as
  * much (on Railway: as much CPU) as the live board.
  *
- * pause()/resume() exist for idle mode (server/idle-mode.mjs): with no visitor the socket is
- * closed and nothing is subscribed, so no packet leaves the instance at all - which is what
- * lets the platform put it to sleep.
+ * pause()/resume() remain manual lifecycle controls; visitor inactivity never calls them.
  */
 import WebSocket from 'ws';
 import { config, dbErrorHint } from './config.mjs';
@@ -71,6 +69,7 @@ export function startPusher({
   prematchUnpricedMs = DEFAULT_UNPRICED_MS,
   tickMs = 5000,
   verbose = true,
+  socketFactory = (url, options) => new WebSocket(url, options),
 } = {}) {
   const url = `wss://api-gateway.gw-lucky-bet.com/push-server-v2/?Language=${encodeURIComponent(
     config.lang,
@@ -78,22 +77,18 @@ export function startPusher({
 
   let ws = null;
   let closed = false;
-  let ready = false; // the namespace is open: subscriptions may be sent
-  let sending = false; // one subscribe pass at a time (the passes are async)
+  let ready = false;
+  let sending = false;
   let attempt = 0;
   let timer = null;
   const counts = {
     connect: 0, frames: 0, oddsMessages: 0, infoMessages: 0, subscribedIds: 0,
-    // only snapshot frames carry the clock (matchTime) and the score (matchScore);
-    // these counters are what make a silent score/minute freeze visible in /health
     snapshots: 0, clockFrames: 0, scoreFrames: 0, subscribeCalls: 0, lastSnapshotAt: null,
-    // what each subscription tier actually costs is the point of the tiers, so /health shows
-    // how often each group was sent and how many ids it carried
     subscribeCallsByGroup: { live: 0, soon: 0, later: 0, unpriced: 0 },
     groupIds: { live: 0, soon: 0, later: 0, unpriced: 0 },
     lastSubscribeAt: null, pauses: 0, resumes: 0, paused: false,
+    fullMarketsIds: 0, fullPrematchIds: 0, boostedIds: 0,
   };
-  /** how often each group is sent; a non-positive value means "every cycle" (kill switch) */
   const intervals = {
     live: Number(resubscribeMs) || 0,
     soon: Number(prematchSoonMs) || 0,
@@ -102,10 +97,6 @@ export function startPusher({
   };
   const lastSent = {};
 
-  /**
-   * Sends the given groups. Every group goes out when the namespace opens; afterwards only the
-   * groups the scheduler says are due (see subscribe-plan.mjs and pump()).
-   */
   const subscribeGroups = async (groups = SUBSCRIBE_GROUPS, why = 'tick') => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     let ids;
@@ -117,10 +108,9 @@ export function startPusher({
     }
 
     const live = (ids.live ?? []).map(Number);
+    const pendingResults = withoutDuplicates(ids.pendingResults ?? [], live).map(Number);
     const soon = (ids.prematchSoon ?? ids.prematch ?? []).map(Number);
     const later = (ids.prematchLater ?? []).map(Number);
-    // unpriced fixtures are a subset of soon+later by definition: subscribing the same ids
-    // twice in one cycle only makes the feed repeat frames we already have
     const unpriced = withoutDuplicates(ids.unpriced ?? [], [...live, ...soon, ...later]).map(Number);
 
     const send = (messageType, list, isBaseOddsGroups) => {
@@ -156,17 +146,24 @@ export function startPusher({
         send('subscribe-match-odds', fullLive, false);
         send('subscribe-match-odds', baseLive, true);
         send('subscribe-match-info', live);
+        // Keep result snapshots flowing for actual tickets after a fixture
+        // leaves the visible catalog or falls outside its subscription limit.
+        send('subscribe-match-info', pendingResults);
+        counts.pendingResultIds = pendingResults.length;
         counts.fullMarketsIds = fullLive.length;
         counts.boostedIds = boostedLive.size;
       } else if (group === 'soon') {
-        // kicks off within PREMATCH_SOON_MIN: base markets (what a bet is placed on) plus its
-        // clock/score snapshot, so the minute is right the moment the match goes live
-        send('subscribe-match-odds', soon, true);
+        // Kicks off within PREMATCH_SOON_MIN. FULL markets (corners, cards, all totals) so
+        // the detail page shows corners/bookings the moment a user opens it — this is the
+        // tier that makes prematch corners visible, at the cost of extra frames. The clock
+        // snapshot is sent too, so the minute is right the moment the match goes live.
+        send('subscribe-match-odds', soon, false);   // false = FULL markets
         send('subscribe-match-info', soon.slice(0, 25));
+        counts.fullPrematchIds = soon.length;
       } else if (group === 'later') {
-        // hours away: one snapshot per hour keeps it on the board and bettable, and the store
-        // holds prices for 6h (odds-store.mjs)
-        send('subscribe-match-odds', later, true);
+        // hours away: base markets only (1X2 / handicap / total). Full markets here would
+        // multiply the frame traffic for fixtures nobody is betting on yet.
+        send('subscribe-match-odds', later, true);   // true = base markets
       } else {
         // no price yet -> the board hides it, so ask again every minute until one arrives
         send('subscribe-match-odds', unpriced, true);
@@ -180,20 +177,16 @@ export function startPusher({
     if (verbose) {
       console.log(
         `[pusher] subscribe(${why}) ${groups.join('+')} live=${live.length}` +
-          `${groups.includes('soon') ? ` soon=${soon.length}` : ''}` +
+          `${groups.includes('soon') ? ` soon=${soon.length}(full)` : ''}` +
           `${groups.includes('later') ? ` later=${later.length}` : ''}` +
           `${groups.includes('unpriced') ? ` unpriced=${unpriced.length}` : ''}`,
       );
     }
   };
 
-  /** sends whatever the cadences in `intervals` say is due right now */
   const pump = async () => {
     if (closed || counts.paused || sending || !ready) return;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    // a group that went out empty was not subscribed at all (a cold start connects before the
-    // first poll has filled the store): it retries on the live cadence instead of waiting an
-    // hour. A retry with nothing in it sends no frames.
     const empty = SUBSCRIBE_GROUPS.filter((group) => (counts.groupIds[group] ?? 0) === 0);
     const due = dueGroups({ lastSent, intervals: retryIntervals(intervals, empty) });
     if (!due.length) return;
@@ -209,7 +202,7 @@ export function startPusher({
 
   const connect = () => {
     if (closed) return;
-    ws = new WebSocket(url, { headers: HEADERS, handshakeTimeout: 20000 });
+    ws = socketFactory(url, { headers: HEADERS, handshakeTimeout: 20000 });
 
     ws.on('open', () => {
       attempt = 0;
@@ -230,7 +223,6 @@ export function startPusher({
         return;
       }
       if (text.startsWith('40')) {
-        // the namespace is open: send every group once, then let the cadences take over
         ready = true;
         subscribeGroups(SUBSCRIBE_GROUPS, 'open');
         clearInterval(timer);
@@ -263,8 +255,6 @@ export function startPusher({
       clearInterval(timer);
       timer = null;
       onStatus?.({ connected: false });
-      // a paused pusher is supposed to be closed: reconnecting here would defeat idle mode,
-      // because the socket's heartbeats are outbound traffic that keeps the instance awake
       if (closed || counts.paused) return;
       const delay = Math.min(30000, 3000 * 2 ** attempt++);
       console.log(`[pusher] closed, reconnecting in ${Math.round(delay / 1000)}s`);
@@ -276,7 +266,15 @@ export function startPusher({
 
   return {
     stats: () => ({ ...counts, intervals, lastSent }),
-    /** idle mode: close the socket so not a single packet leaves the instance */
+    // A detail-page open must not wait for the hourly prematch subscription.
+    // Request only this fixture's complete list, leaving the cheap board tiers intact.
+    subscribeFull(matchId) {
+      const id = Number(matchId);
+      if (!Number.isSafeInteger(id) || id <= 0 || !ready || !ws || ws.readyState !== WebSocket.OPEN) return false;
+      const data = { matchIds: [id], isBaseOddsGroups: false };
+      ws.send(`42["subscribe",${JSON.stringify({ messageType: 'subscribe-match-odds', data })}]`);
+      return true;
+    },
     pause() {
       if (counts.paused) return false;
       counts.paused = true;
@@ -287,17 +285,13 @@ export function startPusher({
       const socket = ws;
       ws = null;
       try {
-        // the listeners go first: ws.on('close') would otherwise schedule a reconnect
         socket?.removeAllListeners();
         socket?.close();
-      } catch {
-        /* ignore */
-      }
+      } catch {}
       onStatus?.({ connected: false, paused: true });
       console.log('[pusher] paused (idle mode)');
       return true;
     },
-    /** idle mode: a visitor is back - reconcile and subscribe again */
     resume() {
       if (!counts.paused) return false;
       counts.paused = false;
@@ -313,9 +307,7 @@ export function startPusher({
       timer = null;
       try {
         ws?.close();
-      } catch {
-        /* ignore */
-      }
+      } catch {}
     },
   };
 }

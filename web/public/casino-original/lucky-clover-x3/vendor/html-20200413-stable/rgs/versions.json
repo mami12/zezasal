@@ -1,0 +1,16 @@
+{
+  "scripts":["\/rgs\/Main.min.js","\/rgs\/second2.min.js","\/rgs\/preloader34.obf.js","\/..\/html-interface-stable\/PIXI\/pixi.min.js","\/..\/html-interface-stable\/PIXI\/pixi-dragonBones.min.js","\/..\/html-interface-stable\/PIXI\/pixi-spine.umd.min.js","\/..\/html-interface-stable\/PIXI\/CTG_PIXI.js","\/..\/html-interface-stable\/VideoAPI\/lottie.min.js","\/..\/html-interface-stable\/VideoAPI\/video.js","\/rgs\/soundjs-0.6.2.min.js"]
+	,"ver":[7,63,4,1,1,1,2,1,3,1]
+  ,"interfaceVer":2
+  ,"tablet6Ver":4
+	,"diamondTreeJPVer":8
+	,"ROprintHelpVer":96
+	,"historyVer":13
+	,"hotCashVer":20
+	,"BriliantsOnFireVer":18
+	,"CTSysAssetsVer":1
+  ,"mainSysVer":14,
+  "AssetVer":1,
+  "attrPIXI":1,
+  "videoAssetVer":1
+}

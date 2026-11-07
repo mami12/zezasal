@@ -1,0 +1,11 @@
+.market-info-trigger{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex-shrink:0;min-height:32px;padding:5px 7px;border:1px solid #ad81ce;border-radius:5px;background:#3a214e;color:#f2e5ff;font-size:11px;font-weight:600;cursor:pointer}
+.market-info-trigger:hover{background:#623384}.market-info-trigger:focus-visible{outline:2px solid #e6caff;outline-offset:2px}
+.market-info-dialog{position:fixed;inset:0;margin:auto;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:0;overflow:auto;border:1px solid #9864be;border-radius:13px;background:#241b2e;color:#f3ebfa;box-shadow:0 24px 90px #0009;font-family:Arial,Helvetica,sans-serif;text-align:left}
+.market-info-dialog::backdrop{background:#000a;backdrop-filter:blur(3px)}
+.market-info-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px;border-bottom:1px solid #5c3e70;background:#3b2550}
+.market-info-dialog header small{font-size:11px;color:#d0b4e5}.market-info-dialog h2{font-size:17px;line-height:1.4;font-weight:700;margin:5px 0 0;overflow-wrap:anywhere}
+.market-info-dialog header button{display:flex;align-items:center;justify-content:center;min-width:36px;min-height:36px;border-radius:6px;background:#ffffff10;color:#fff;cursor:pointer}
+.market-info-body{padding:18px;font-size:14px;line-height:1.65}.market-info-body>p{font-size:15px;color:#fff}.market-info-body ul{display:grid;gap:12px;padding-left:18px;margin-top:16px;color:#d7c8e2;list-style:disc}
+.market-info-dialog>footer{padding:0 18px 18px}.market-info-dialog footer button{display:block;min-height:44px;padding:10px 22px;margin-left:auto;background:#7F00FF;border:1px solid #b77aef;border-radius:7px;color:#fff;font-weight:700;cursor:pointer}
+.market-info-dialog button:focus-visible{outline:2px solid #e6caff;outline-offset:2px}
+@media(max-width:400px){.market-info-trigger{min-height:36px;padding:5px 6px}.market-info-dialog>header,.market-info-body{padding:14px}.market-info-dialog h2{font-size:16px}.market-info-dialog footer button{width:100%}}

@@ -8,12 +8,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.mjs';
 import { createUser, findUserByUsername, getUserById, publicUser } from './store.mjs';
+import {pool} from '../db.mjs';
+import {withDatabaseRequest} from '../database-request-context.mjs';
 
 export const hashPassword = (plain) => bcrypt.hashSync(String(plain), 10);
 export const verifyPassword = (plain, hash) => bcrypt.compareSync(String(plain), String(hash ?? ''));
 
 export function signToken(user) {
-  return jwt.sign({ sub: user.id, username: user.username, role: user.role }, config.jwtSecret, {
+  return jwt.sign({ sub: user.id, username: user.username, role: user.role,epoch:Number(user.financialEpoch??0) }, config.jwtSecret, {
     expiresIn: config.jwtTtl,
   });
 }
@@ -43,12 +45,14 @@ export async function requireAuth(req, res, next) {
   const payload = readToken(req);
   if (!payload?.sub) return res.status(401).json({ message: 'not authenticated' });
 
+  const generation=pool.generation;
   const user = await getUserById(payload.sub);
   if (!user) return res.status(401).json({ message: 'account no longer exists' });
   if (user.status === 'BANNED') return res.status(403).json({ message: 'account is banned' });
+  if(Number(payload.epoch??0)!==Number(user.financialEpoch??0))return res.status(401).json({message:'Sesioni përfundoi pas zerimit financiar. Identifikohu përsëri.'});
 
   req.user = user;
-  return next();
+  return withDatabaseRequest(pool,generation,next);
 }
 
 export const requireAdmin = (req, res, next) =>

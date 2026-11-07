@@ -1,0 +1,1460 @@
+
+FILE src/components/Layout/Header.tsx
+import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Menu, X, Globe, Wallet, LogOut, Shield, Users, Ticket, Zap } from 'lucide-react';
+
+interface Props {
+  /** small screens only: opens the sports / leagues drawer (the desktop rail is always there) */
+  onToggleNav?: () => void;
+}
+
+/**
+ * The top bar, from a wide desktop down to a phone. The account actions that need room
+ * (admin panel, my bets, logout) move into a menu below `md`, so nothing is cut off and the
+ * balance stays visible while a bet is being placed.
+ */
+export default function Header({ onToggleNav }: Props) {
+  const { user, logout } = useAuth();
+  const { t, lang, setLanguage } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const go = (path: string) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const links = (
+    <>
+      {user?.role === 'ADMIN' && (
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            isActive('/admin')
+              ? 'bg-accent-green/15 text-accent-green border border-accent-green/30'
+              : 'text-text-secondary hover:text-white hover:bg-tertiary/60'
+          }`}
+          onClick={() => go('/admin')}
+        >
+          <Shield size={14} />
+          <span>{t('nav.admin')}</span>
+        </button>
+      )}
+      {user?.role === 'MANAGER' && (
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            isActive('/manager')
+              ? 'bg-accent-green/15 text-accent-green border border-accent-green/30'
+              : 'text-text-secondary hover:text-white hover:bg-tertiary/60'
+          }`}
+          onClick={() => go('/manager')}
+        >
+          <Users size={14} />
+          <span>{t('manager.my_users')}</span>
+        </button>
+      )}
+      {user?.role === 'PLAYER' && (
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            isActive('/my-bets')
+              ? 'bg-accent-green/15 text-accent-green border border-accent-green/30'
+              : 'text-text-secondary hover:text-white hover:bg-tertiary/60'
+          }`}
+          onClick={() => go('/my-bets')}
+        >
+          <Ticket size={14} />
+          <span>{t('nav.myBets')}</span>
+        </button>
+      )}
+    </>
+  );
+
+  return (
+    <header className="shrink-0 bg-secondary/95 backdrop-blur-md border-b border-tertiary text-text-primary z-20">
+      <div className="h-14 sm:h-16 flex items-center justify-between gap-2 px-3 sm:px-6">
+        {/* Brand & Drawer toggle */}
+        <div className="flex items-center gap-2 min-w-0">
+          {onToggleNav && (
+            <button
+              onClick={onToggleNav}
+              className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-white hover:bg-tertiary/80 transition"
+              aria-label={t('nav.sports')}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+          <div
+            className="flex items-center gap-2 cursor-pointer group select-none py-1"
+            onClick={() => navigate('/')}
+          >
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-accent-green flex items-center justify-center text-primary shadow-glow-green group-hover:scale-105 transition-transform">
+              <Zap size={18} className="fill-primary text-primary" />
+            </div>
+            <div className="flex items-baseline gap-1 truncate">
+              <span className="text-base sm:text-lg font-black tracking-tight text-white group-hover:text-slate-100 transition">
+                NETFLY
+              </span>
+              <span className="text-base sm:text-lg font-black tracking-wider text-accent-green">
+                SPORT
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Switcher Pill */}
+          <div className="relative flex items-center bg-primary/70 border border-tertiary/80 hover:border-tertiary rounded-lg px-2 py-1 text-xs transition">
+            <Globe size={13} className="text-text-secondary mr-1.5 shrink-0" />
+            <select
+              value={lang}
+              onChange={(e) => setLanguage(e.target.value as any)}
+              className="bg-transparent text-[11px] sm:text-xs font-semibold text-text-primary focus:outline-none cursor-pointer pr-1"
+            >
+              <option value="al" className="bg-secondary text-white">Shqip</option>
+              <option value="en" className="bg-secondary text-white">English</option>
+              <option value="de" className="bg-secondary text-white">Deutsch</option>
+              <option value="fr" className="bg-secondary text-white">Français</option>
+            </select>
+          </div>
+
+          {user && (
+            <>
+              {/* Desktop links */}
+              <div className="hidden md:flex items-center gap-2">
+                {links}
+              </div>
+
+              {/* Wallet / Balance Pill (both desktop & mobile) */}
+              <div className="flex items-center gap-1.5 bg-primary/90 border border-tertiary px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-inner-glow">
+                <Wallet size={14} className="text-accent-yellow shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase font-bold text-text-secondary leading-none hidden sm:inline">
+                    {user.username || t('admin.balance')}
+                  </span>
+                  <span className="font-extrabold text-accent-yellow text-xs sm:text-sm tabular-nums whitespace-nowrap leading-tight">
+                    {user.balance.toFixed(2)} <span className="text-[10px] font-semibold text-amber-300/80">Lëk</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop logout */}
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-text-secondary hover:text-accent-red hover:bg-accent-red/10 border border-transparent hover:border-accent-red/20 transition-all"
+                title={t('nav.logout')}
+              >
+                <LogOut size={14} />
+                <span>{t('nav.logout')}</span>
+              </button>
+
+              {/* Mobile hamburger menu toggle */}
+              <button
+                className="md:hidden p-2 rounded-lg text-text-secondary hover:text-white hover:bg-tertiary transition"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="account menu"
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Menu Dropdown */}
+      {menuOpen && user && (
+        <div className="md:hidden border-t border-tertiary bg-secondary/95 backdrop-blur-md px-4 py-3 space-y-2 animate-in slide-in-from-top-2 duration-150">
+          <div className="text-[10px] font-black uppercase tracking-wider text-text-secondary mb-1">
+            {user.role} &bull; {user.username}
+          </div>
+          <div className="flex flex-col space-y-1">
+            {links}
+          </div>
+          <div className="pt-2 border-t border-tertiary/60">
+            <button
+              className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg text-xs font-bold text-accent-red hover:bg-accent-red/10 transition"
+              onClick={() => {
+                setMenuOpen(false);
+                logout();
+                navigate('/login');
+              }}
+            >
+              <LogOut size={15} />
+              <span>{t('nav.logout')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+
+FILE src/components/Layout/SportsSidebar.tsx
+import { useEffect, useState } from 'react';
+import { apiClient } from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
+import { Globe, Radio, ChevronRight, ChevronDown, Trophy } from 'lucide-react';
+
+interface Props {
+  selectedTournamentId?: string;
+  selectedSportId?: string;
+  isLiveOnly?: boolean;
+  onSelectTournament: (id: string) => void;
+  onSelectSport: (id: string) => void;
+  onSelectCategory: (id: string) => void;
+  onSelectAll: () => void;
+  onSelectLive: () => void;
+}
+
+const sportIcons: Record<string, string> = {
+  Football: '⚽',
+  Basketball: '🏀',
+  Tennis: '🎾',
+  'Ice Hockey': '🏒',
+  Volleyball: '🏐'
+};
+
+export default function SportsSidebar({
+  selectedTournamentId,
+  selectedSportId,
+  isLiveOnly,
+  onSelectTournament,
+  onSelectSport,
+  onSelectCategory,
+  onSelectAll,
+  onSelectLive
+}: Props) {
+  const { t } = useLanguage();
+  const [sports, setSports] = useState<any[]>([]);
+  const [expandedSports, setExpandedSports] = useState<Record<string, boolean>>({ '1': true }); // Expand Football by default
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ '1': true }); // Expand England by default
+
+  useEffect(() => {
+    apiClient.get('/sports')
+      .then(res => setSports(res.data))
+      .catch(() => {
+        apiClient.get('/sports/tree').then(res => setSports(res.data)).catch(console.error);
+      });
+  }, []);
+
+  const toggleSport = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedSports(p => ({ ...p, [id]: !p[id] }));
+  };
+
+  const toggleCat = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCategories(p => ({ ...p, [id]: !p[id] }));
+  };
+
+  const isAllActive = !selectedTournamentId && !selectedSportId && !isLiveOnly;
+
+  return (
+    <div className="w-64 sm:w-72 bg-secondary border-r border-tertiary h-full flex flex-col select-none text-text-primary">
+      {/* Top Quick Filters */}
+      <div className="p-3 border-b border-tertiary space-y-2 bg-secondary/80">
+        <button
+          onClick={onSelectAll}
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            isAllActive
+              ? 'bg-gradient-to-r from-emerald-600 to-accent-green text-primary shadow-glow-green'
+              : 'bg-primary/60 text-text-secondary hover:text-white hover:bg-tertiary/70 border border-tertiary/60'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Globe size={16} className={isAllActive ? 'text-primary' : 'text-accent-green'} />
+            <span className="tracking-wide">{t('sports.all')}</span>
+          </div>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-black ${
+            isAllActive ? 'bg-primary/20 text-primary' : 'bg-tertiary text-text-secondary'
+          }`}>
+            ALL
+          </span>
+        </button>
+
+        <button
+          onClick={onSelectLive}
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            isLiveOnly
+              ? 'bg-gradient-to-r from-rose-600 to-accent-red text-white shadow-glow-red'
+              : 'bg-primary/60 text-text-secondary hover:text-rose-400 hover:bg-rose-500/10 border border-tertiary/60'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-red opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-red"></span>
+            </span>
+            <Radio size={16} className={isLiveOnly ? 'text-white' : 'text-rose-400'} />
+            <span className="tracking-wide">{t('sports.live')}</span>
+          </div>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+            isLiveOnly ? 'bg-white/20 text-white' : 'bg-rose-500/20 text-rose-400'
+          }`}>
+            LIVE
+          </span>
+        </button>
+      </div>
+
+      {/* Sports Tree */}
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 text-xs">
+        <div className="px-2.5 py-1 text-[11px] font-black text-text-secondary/70 uppercase tracking-widest flex items-center gap-1.5">
+          <Trophy size={13} className="text-accent-yellow/80" />
+          <span>{t('nav.sports')}</span>
+        </div>
+
+        {sports.map(s => {
+          const isSportSelected = selectedSportId === String(s.id);
+          const isExpanded = !!expandedSports[s.id];
+          const icon = sportIcons[s.name] || '🏆';
+          const translatedName = t(`sports.${s.name}`) || s.name;
+
+          return (
+            <div key={s.id} className="rounded-xl overflow-hidden transition-colors">
+              <div 
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
+                  isSportSelected
+                    ? 'bg-primary border border-accent-green/50 text-white font-bold shadow-sm'
+                    : 'hover:bg-primary/60 text-text-primary'
+                }`}
+                onClick={() => onSelectSport(String(s.id))}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <span className="text-base select-none leading-none">{icon}</span>
+                  <span className="font-semibold truncate tracking-tight">{translatedName}</span>
+                </div>
+                <div 
+                  className="p-1 hover:bg-tertiary rounded-lg text-text-secondary hover:text-white transition"
+                  onClick={(e) => toggleSport(String(s.id), e)}
+                >
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                  />
+                </div>
+              </div>
+
+              {/* Categories & Tournaments */}
+              {isExpanded && s.categories && (
+                <div className="ml-3.5 pl-2.5 border-l border-tertiary/60 my-1 space-y-1">
+                  {s.categories.map((c: any) => {
+                    const isCatExpanded = !!expandedCategories[c.id];
+                    return (
+                      <div key={c.id}>
+                        <div 
+                          className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-primary/50 cursor-pointer text-text-secondary hover:text-white transition"
+                          onClick={(e) => {
+                            toggleCat(String(c.id), e);
+                            onSelectCategory(String(c.id));
+                          }}
+                        >
+                          <span className="truncate font-medium text-[11px]">{c.name}</span>
+                          <ChevronDown
+                            size={12}
+                            className={`transition-transform duration-150 ${isCatExpanded ? 'rotate-0' : '-rotate-90'}`}
+                          />
+                        </div>
+
+                        {isCatExpanded && c.tournaments && (
+                          <div className="ml-2 pl-2 border-l border-tertiary/40 space-y-0.5 my-0.5">
+                            {c.tournaments.map((tour: any) => {
+                              const isTourSelected = selectedTournamentId === String(tour.id);
+                              return (
+                                <button
+                                  key={tour.id}
+                                  onClick={() => onSelectTournament(String(tour.id))}
+                                  className={`w-full text-left px-2 py-1.5 rounded-lg text-[11px] truncate transition-all ${
+                                    isTourSelected 
+                                      ? 'bg-accent-green/20 text-accent-green font-bold border-l-2 border-accent-green pl-2.5' 
+                                      : 'text-text-secondary hover:text-white hover:bg-tertiary/40'
+                                  }`}
+                                >
+                                  {tour.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+FILE src/index.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Custom sleek dark scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 9999px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  body {
+    background-color: #090d16;
+    color: #f8fafc;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .animate-flash-green {
+    animation: flashGreen 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-flash-red {
+    animation: flashRed 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Subtle glassmorphism */
+  .glass-card {
+    background: rgba(19, 27, 46, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes flashGreen {
+  0% { 
+    background-color: rgba(16, 185, 129, 0.35);
+    border-color: #10b981;
+    color: #ffffff;
+  }
+  100% { 
+    background-color: transparent; 
+  }
+}
+
+@keyframes flashRed {
+  0% { 
+    background-color: rgba(239, 68, 68, 0.35);
+    border-color: #ef4444;
+    color: #ffffff;
+  }
+  100% { 
+    background-color: transparent; 
+  }
+}
+
+
+FILE src/types/index.ts
+export interface User {
+  id: string;
+  username: string;
+  role: 'ADMIN' | 'MANAGER' | 'PLAYER';
+  status: 'ACTIVE' | 'FROZEN' | 'BANNED';
+  balance: number;
+  currency: string;
+  managerId?: string | null;
+  manager?: { id: string; username: string } | null;
+  _count?: { managedUsers: number };
+  createdAt?: string;
+}
+
+export interface Sport {
+  id: number;
+  name: string;
+  slug: string;
+  iconName: string;
+  sortOrder: number;
+  isActive: boolean;
+  categories?: Category[];
+}
+
+export interface Category {
+  id: number;
+  sportId: number;
+  name: string;
+  slug: string;
+  countryCode?: string;
+  sortOrder: number;
+  tournaments?: Tournament[];
+}
+
+export interface Tournament {
+  id: number;
+  categoryId: number;
+  name: string;
+  slug: string;
+  sortOrder: number;
+}
+
+export interface Match {
+  id: string;
+  tournamentId: number;
+  homeTeam: string;
+  awayTeam: string;
+  status: 'PREMATCH' | 'LIVE' | 'ENDED' | 'CANCELLED';
+  startTime: string;
+  homeScore?: number;
+  awayScore?: number;
+  currentMinute?: number;
+  isSuspended: boolean;
+  isSimulated?: boolean;
+  tournament?: Tournament & { category?: Category & { sport?: Sport } };
+  markets?: Market[];
+  /** the feed's own phase, e.g. "2nd Half" or "Break Time" */
+  period?: string | null;
+  /** where the minute comes from: the feed clock, drift, or the kickoff-based estimate */
+  liveMinuteSource?: 'feed' | 'feed+drift' | 'derived' | null;
+  /** live counters the feed reports with the match (shown in the market panel) */
+  corners?: { home: number; away: number } | null;
+  cards?: { home: number; away: number } | null;
+  watchUrl?: string | null;
+}
+
+export interface Market {
+  id: string;
+  matchId: string;
+  marketType: string;
+  name: string;
+  specifier?: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'SETTLED';
+  sortOrder: number;
+  outcomes?: Outcome[];
+  /** the feed's own line for this market ("" when the market has none) */
+  line?: string;
+  isBase?: boolean;
+  period?: number;
+}
+
+export interface Outcome {
+  id: string;
+  marketId: string;
+  name: string;
+  odds: number;
+  isWinner?: boolean;
+  status: 'ACTIVE' | 'SUSPENDED' | 'SETTLED' | 'VOID';
+}
+
+export interface BetSelection {
+  outcomeId: string;
+  matchId: string;
+  marketId: string;
+  outcomeName: string;
+  marketName: string;
+  matchName: string;
+  odds: number;
+}
+
+export interface TicketLine {
+  id: string;
+  ticketId: string;
+  matchId: string;
+  marketId: string;
+  outcomeId: string;
+  outcomeName: string;
+  marketName: string;
+  matchName: string;
+  oddsAtPlacement: number;
+  status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
+}
+
+export interface Ticket {
+  id: string;
+  userId?: string;
+  bookingCode?: string;
+  ticketType: 'SINGLE' | 'COMBO' | 'SYSTEM';
+  systemType?: string;
+  stake: number;
+  totalOdds: number;
+  potentialPayout: number;
+  status: 'PENDING' | 'WON' | 'LOST' | 'CANCELLED' | 'VOID' | 'REVERTED';
+  placedAt: string;
+  settledAt?: string;
+  lines: TicketLine[];
+  user?: { username: string };
+}
+
+export interface PitchState {
+  matchId: string;
+  ballX: number;
+  ballY: number;
+  possessionTeam: 'home' | 'away';
+  eventText: string;
+  homeStats: { possession: number; shots: number; shotsOnTarget: number; corners: number; yellow: number; red: number };
+  awayStats: { possession: number; shots: number; shotsOnTarget: number; corners: number; yellow: number; red: number };
+}
+
+export interface MatchEvent {
+  matchId: string;
+  type: string;
+  minute: number;
+  team: 'home' | 'away';
+  text: string;
+}
+
+export interface OddsDelta {
+  outcomeId: string;
+  newOdds: number;
+  direction: 'up' | 'down';
+}
+
+FILE src/api/liveFeed.tsx
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { io, type Socket } from 'socket.io-client';
+import type { Match, MatchEvent, OddsDelta } from '../types';
+
+/**
+ * One shared Socket.IO connection for the whole board.
+ *
+ * Every odds button used to call useWebSocket(), so a board with ~150 matches opened hundreds
+ * of sockets (three per card), and the hook listened to odds:update only - which meant the
+ * minute, the score, the corners and the cards arrived through the 15s REST poll instead of by
+ * push. The provider owns a single connection and publishes:
+ *
+ *   oddsDeltas  - just the outcomes whose price moved, per outcome id
+ *   livePatches - per-match minute / score / corners / cards / status
+ *   matchEvents - the last 50 match-info events
+ */
+
+/** the pushed state of one match, already in the client's field names */
+export interface LivePatch {
+  status?: Match['status'];
+  currentMinute?: number;
+  /** seconds within the current minute (0-59), from the feed clock */
+  currentSecond?: number;
+  period?: string | null;
+  homeScore?: number;
+  awayScore?: number;
+  corners?: { home: number; away: number } | null;
+  cards?: { home: number; away: number } | null;
+  /** how many markets the board currently prices for this match (0 = nothing to bet yet) */
+  marketCount?: number;
+  isSuspended?: boolean;
+  updatedAt: string;
+}
+
+interface LiveFeedValue {
+  oddsDeltas: Record<string, OddsDelta>;
+  livePatches: Record<string, LivePatch>;
+  matchEvents: MatchEvent[];
+  connected: boolean;
+  /**
+   * 'live'   the feed is running: prices are fresh and bets are accepted
+   * 'idle'   the server paused the feed because nobody was on the board
+   * 'waking' it is collecting the first cycle again - the board is rebuilt in a few seconds
+   * While this is not 'live' the board shows "odds are being refreshed" instead of an empty
+   * list, and a bet would be refused by the server anyway.
+   */
+  feedMode: FeedMode;
+  /** prices the feed has locked right now, keyed exactly like the REST payload ids */
+  lockedOutcomes: Record<string, boolean>;
+  lockedMarkets: Record<string, boolean>;
+  lockedMatches: Record<string, boolean>;
+}
+
+export type FeedMode = 'live' | 'idle' | 'waking';
+
+const EMPTY: LiveFeedValue = {
+  oddsDeltas: {},
+  livePatches: {},
+  matchEvents: [],
+  connected: false,
+  feedMode: 'live',
+  lockedOutcomes: {},
+  lockedMarkets: {},
+  lockedMatches: {},
+};
+
+const LiveFeedContext = createContext<LiveFeedValue>(EMPTY);
+
+/** drops undefined keys, so spreading a patch over a REST match cannot blank a real value */
+const compact = <T extends object>(input: T): T => {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) if (v !== undefined) out[k] = v;
+  return out as T;
+};
+
+const cornersOf = (stats: any) => {
+  const home = stats?.home?.corners;
+  const away = stats?.away?.corners;
+  if (home === null || home === undefined) {
+    return away === null || away === undefined ? null : { home: 0, away: Number(away) };
+  }
+  return { home: Number(home), away: Number(away ?? 0) };
+};
+
+const cardsOf = (stats: any) => {
+  if (!stats?.home && !stats?.away) return null;
+  const count = (side: any) => Number(side?.yellow ?? 0) + Number(side?.red ?? 0);
+  return { home: count(stats.home), away: count(stats.away) };
+};
+
+export function LiveFeedProvider({ children }: { children: ReactNode }) {
+  const [oddsDeltas, setOddsDeltas] = useState<Record<string, OddsDelta>>({});
+  const [livePatches, setLivePatches] = useState<Record<string, LivePatch>>({});
+  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [lockedOutcomes, setLockedOutcomes] = useState<Record<string, boolean>>({});
+  const [lockedMarkets, setLockedMarkets] = useState<Record<string, boolean>>({});
+  const [lockedMatches, setLockedMatches] = useState<Record<string, boolean>>({});
+  const [feedMode, setFeedMode] = useState<FeedMode>('live');
+  const prevOdds = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    const socket: Socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+
+    // idle mode: the server says when it paused the feed (nobody was on the board) and when it
+    // is filling it again, so the board can say "odds are being refreshed" instead of looking
+    // broken. `hello` carries the mode on connect, `feed:state` on every change.
+    const useMode = (payload: any) => {
+      const mode = payload?.mode;
+      if (mode === 'live' || mode === 'idle' || mode === 'waking') setFeedMode(mode);
+    };
+    socket.on('hello', useMode);
+    socket.on('meta', useMode);
+    socket.on('feed:state', useMode);
+
+    socket.on('odds:update', (payload: { matchId: string | number; markets?: any[] }) => {
+      const deltas: Record<string, OddsDelta> = {};
+      const outcomeLocks: Record<string, boolean> = {};
+      const marketLocks: Record<string, boolean> = {};
+
+      for (const market of payload?.markets ?? []) {
+        const marketId = `${payload.matchId}|${market.key}|${market.line ?? ''}`;
+
+        for (const outcome of market?.outcomes ?? []) {
+          const outcomeId = `${marketId}|${outcome.key}`;
+
+          // The feed locks a price around a goal or a dangerous attack: "status":2 arrives as
+          // suspended. This is the whole point of using the socket - by REST poll the market
+          // stayed open for up to 15s, which is exactly the window nobody may bet in.
+          if (outcome?.suspended === true || outcome?.suspended === false) {
+            outcomeLocks[outcomeId] = outcome.suspended === true;
+          }
+
+          if (outcome?.price === null || outcome?.price === undefined) continue;
+          const next = Number(outcome.price);
+          const before = prevOdds.current[outcomeId];
+          prevOdds.current[outcomeId] = next;
+          if (before === undefined || before === next) continue;
+          deltas[outcomeId] = { outcomeId, newOdds: next, direction: next > before ? 'up' : 'down' };
+        }
+
+        // only the rows that moved are pushed, so "every row in this frame is suspended" is
+        // what a fully locked market looks like over the socket
+        const outcomes = market?.outcomes ?? [];
+        if (outcomes.length) marketLocks[marketId] = outcomes.every((o: any) => o.suspended === true);
+      }
+
+      if (Object.keys(deltas).length) setOddsDeltas(prev => ({ ...prev, ...deltas }));
+      if (Object.keys(outcomeLocks).length) setLockedOutcomes(prev => ({ ...prev, ...outcomeLocks }));
+      if (Object.keys(marketLocks).length) setLockedMarkets(prev => ({ ...prev, ...marketLocks }));
+
+      // also update the live clock when odds arrive (minute + phase travel with odds:update now)
+      const minute = (payload as any).minute;
+      const phase = (payload as any).phase;
+      if (Number.isFinite(minute) || phase) {
+        setLivePatches(prev => ({
+          ...prev,
+          [String(payload.matchId)]: compact({
+            ...prev[String(payload.matchId)],
+            currentMinute: Number.isFinite(minute) ? minute : undefined,
+            period: phase ?? undefined,
+            updatedAt: new Date().toISOString(),
+          }) as LivePatch,
+        }));
+      }
+    });
+
+    // the whole live board, once per collector cycle
+    socket.on('matches:live', (payload: { matches?: any[] }) => {
+      useMode(payload); // the first board after a wake also announces the mode
+      const patches: Record<string, LivePatch> = {};
+      for (const m of payload?.matches ?? []) {
+        if (!m || m.id === undefined || m.id === null) continue;
+        const minute = Number(m.minute);
+        const home = Number(m?.score?.home);
+        const away = Number(m?.score?.away);
+        patches[String(m.id)] = compact({
+          status: m.status === 'live' ? 'LIVE' : m.status === 'ended' ? 'ENDED' : undefined,
+          currentMinute: Number.isFinite(minute) ? minute : undefined,
+          currentSecond: Number.isFinite(Number(m.currentSecond)) ? Number(m.currentSecond) : 0,
+          marketCount: Number.isFinite(Number(m.marketCount)) ? Number(m.marketCount) : undefined,
+          period: m.phase ?? null,
+          homeScore: Number.isFinite(home) ? home : undefined,
+          awayScore: Number.isFinite(away) ? away : undefined,
+          corners: cornersOf(m.stats),
+          cards: cardsOf(m.stats),
+          isSuspended: m.suspended === true,
+          updatedAt: new Date().toISOString(),
+        }) as LivePatch;
+      }
+      if (Object.keys(patches).length) {
+        setLivePatches(prev => ({ ...prev, ...patches }));
+        // the board's own view: a match whose every market is locked
+        const matchLocks: Record<string, boolean> = {};
+        for (const [id, p] of Object.entries(patches)) matchLocks[id] = p.isSuspended === true;
+        setLockedMatches(prev => ({ ...prev, ...matchLocks }));
+      }
+    });
+
+    // one match (score / clock / stats), between poll cycles
+    socket.on('match:info', (info: any) => {
+      const id = info?.match_id ?? info?.matchId;
+      if (id === undefined || id === null) return;
+
+      const clock = Number(info.match_time_ms ?? info.matchTimeMs);
+      const minute = Number.isFinite(clock) ? Math.floor(clock / 60000) : undefined;
+      const second = Number.isFinite(clock) ? Math.floor((clock % 60000) / 1000) : undefined;
+      const patch = compact({
+        currentMinute: minute,
+        currentSecond: second,
+        period: info.feed_status ?? null,
+        homeScore: info.home_score === null || info.home_score === undefined ? undefined : Number(info.home_score),
+        awayScore: info.away_score === null || info.away_score === undefined ? undefined : Number(info.away_score),
+        corners: cornersOf(info.stats),
+        cards: cardsOf(info.stats),
+        updatedAt: new Date().toISOString(),
+      }) as LivePatch;
+
+      const key = String(id);
+      // the feed's own "this match has no open odds" flag locks every price on it
+      if (typeof info.has_open_odds === 'boolean') {
+        setLockedMatches(prev => ({ ...prev, [key]: info.has_open_odds === false }));
+      }
+      setLivePatches(prev => ({ ...prev, [key]: { ...(prev[key] ?? { updatedAt: patch.updatedAt }), ...patch } }));
+      setMatchEvents(prev => [
+        ...prev.slice(-49),
+        {
+          matchId: key,
+          type: info.feed_status ?? 'update',
+          minute: minute ?? 0,
+          team: 'home',
+          text: `${info.home_score ?? '-'}-${info.away_score ?? '-'}`,
+        },
+      ]);
+    });
+
+    // Live clock ticker: every second, advance active live matches so clock never freezes
+    const clockTicker = setInterval(() => {
+      setLivePatches(prev => {
+        let changed = false;
+        const next = { ...prev };
+        for (const [id, patch] of Object.entries(next)) {
+          if (patch.status === 'LIVE' && patch.currentMinute !== undefined) {
+            // Don't tick during halftime break
+            if (patch.period === 'HT' || patch.period === 'Break Time') continue;
+            let sec = (patch.currentSecond ?? 0) + 1;
+            let min = patch.currentMinute;
+            if (sec >= 60) {
+              sec = 0;
+              min += 1;
+            }
+            next[id] = { ...patch, currentMinute: min, currentSecond: sec };
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+
+    socket.on('connect_error', (e: Error) => console.warn('[socket] connect_error:', e.message));
+
+    return () => {
+      clearInterval(clockTicker);
+      socket.close();
+    };
+  }, []);
+
+  const value = useMemo<LiveFeedValue>(
+    () => ({ oddsDeltas, livePatches, matchEvents, connected, feedMode, lockedOutcomes, lockedMarkets, lockedMatches }),
+    [oddsDeltas, livePatches, matchEvents, connected, feedMode, lockedOutcomes, lockedMarkets, lockedMatches],
+  );
+
+  return <LiveFeedContext.Provider value={value}>{children}</LiveFeedContext.Provider>;
+}
+
+export const useLiveFeed = () => useContext(LiveFeedContext);
+
+/** the pushed patch for one match (minute / score / corners / cards), undefined if none yet */
+export const useLivePatch = (matchId?: string | number | null): LivePatch | undefined => {
+  const { livePatches } = useContext(LiveFeedContext);
+  if (matchId === undefined || matchId === null || matchId === '') return undefined;
+  return livePatches[String(matchId)];
+};
+
+
+
+FILE src/components/Betslip/Betslip.tsx
+import { useState } from 'react';
+import { useBetslip } from '../../context/BetslipContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { Trash2, AlertTriangle, Search, Ticket as TicketIcon, X } from 'lucide-react';
+import BookingModal from './BookingModal';
+import { apiClient } from '../../api/client';
+
+export default function Betslip() {
+  const { 
+    selections, stake, setStake, ticketType, setTicketType, systemType, setSystemType, 
+    removeSelection, clearAll, totalOdds, potentialPayout, placeBet, bookTicket 
+  } = useBetslip();
+  const { t } = useLanguage();
+  const { user, refreshUser } = useAuth();
+  
+  const [oddsChangedError, setOddsChangedError] = useState(false);
+  const [bookingCode, setBookingCode] = useState('');
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [stakeError, setStakeError] = useState('');
+
+  // Ticket search state
+  const [ticketSearch, setTicketSearch] = useState('');
+  const [searchedTicket, setSearchedTicket] = useState<any>(null);
+  const [ticketSearchError, setTicketSearchError] = useState('');
+  const [ticketSearchLoading, setTicketSearchLoading] = useState(false);
+
+  const handlePlaceBet = async () => {
+    const stakeNum = parseFloat(stake) || 0;
+    if (stakeNum < 1) {
+      setStakeError(t('betslip.min_stake'));
+      return;
+    }
+    setStakeError('');
+    
+    try {
+      await placeBet(() => refreshUser());
+      clearAll();
+      alert(t('common.success'));
+    } catch (e: any) {
+      if (e.response?.data?.message === 'Odds have changed') {
+        setOddsChangedError(true);
+      } else {
+        alert(e.response?.data?.message || t('common.error'));
+      }
+    }
+  };
+
+  const handleBook = async () => {
+    try {
+      const res = await bookTicket();
+      setBookingCode(res.bookingCode);
+      setShowBookingModal(true);
+      clearAll();
+    } catch (e: any) {
+      alert(e.response?.data?.message || t('common.error'));
+    }
+  };
+
+  const handleSearchTicket = async () => {
+    const query = ticketSearch.trim();
+    if (!query) {
+      setTicketSearchError(t('betslip.enter_ticket_code'));
+      return;
+    }
+    setTicketSearchError('');
+    setTicketSearchLoading(true);
+    setSearchedTicket(null);
+    try {
+      const res = await apiClient.get('/tickets/search', { params: { q: query } });
+      setSearchedTicket(res.data);
+    } catch (e: any) {
+      setTicketSearchError(e.response?.data?.error || t('betslip.ticket_not_found'));
+    } finally {
+      setTicketSearchLoading(false);
+    }
+  };
+
+  const clearTicketSearch = () => {
+    setTicketSearch('');
+    setSearchedTicket(null);
+    setTicketSearchError('');
+  };
+
+  const renderSearchedTicket = () => {
+    if (!searchedTicket) return null;
+    const ticket = searchedTicket;
+    const statusClass = ticket.status === 'WON' ? 'text-accent-green' : ticket.status === 'LOST' ? 'text-accent-red' : 'text-accent-yellow';
+
+    return (
+      <div className="bg-primary rounded-lg border border-tertiary p-3 space-y-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="text-xs text-text-secondary">{t('tickets.ticket_id')}: <span className="font-mono text-white">{ticket.id.slice(0, 8).toUpperCase()}</span></div>
+            {ticket.bookingCode && (
+              <div className="text-xs text-accent-blue font-mono font-bold mt-0.5">Code: {ticket.bookingCode}</div>
+            )}
+            {ticket.user?.username && (
+              <div className="text-xs text-text-secondary mt-0.5">{t('admin.user')}: {ticket.user.username}</div>
+            )}
+          </div>
+          <span className={`font-semibold text-xs ${statusClass}`}>{t(`tickets.${ticket.status.toLowerCase()}`)}</span>
+        </div>
+
+        <div className="space-y-1.5 border-t border-tertiary pt-2">
+          {ticket.lines?.map((line: any, idx: number) => (
+            <div key={idx} className="flex justify-between items-center text-xs">
+              <div className="min-w-0">
+                <div className="font-semibold text-white truncate">{line.matchName}</div>
+                <div className="text-text-secondary">{line.marketName} - {line.outcomeName}</div>
+              </div>
+              <div className="text-right shrink-0 ml-2">
+                <span className="text-accent-green font-bold">@{line.oddsAtPlacement?.toFixed(2)}</span>
+                <div className="text-[10px] text-text-secondary">{line.status}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-between items-center border-t border-tertiary pt-2 text-xs">
+          <div>
+            <span className="text-text-secondary">{t('tickets.stake')}: </span>
+            <span className="font-bold text-white">{ticket.stake?.toFixed(2)} Lëk</span>
+          </div>
+          <div className="text-right">
+            <span className="text-text-secondary">{t('tickets.payout')}: </span>
+            <span className="font-bold text-accent-yellow">{ticket.potentialPayout?.toFixed(2)} Lëk</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full min-h-0 bg-secondary select-none">
+      {/* Ticket Type Segmented Control */}
+      <div className="shrink-0 p-2.5 bg-secondary border-b border-tertiary/70">
+        <div className="flex bg-primary/80 p-1 rounded-xl border border-tertiary/60">
+          {['SINGLE', 'COMBO', 'SYSTEM'].map(type => (
+            <button 
+              key={type}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                ticketType === type 
+                  ? 'bg-gradient-to-r from-emerald-600 to-accent-green text-primary shadow-sm' 
+                  : 'text-text-secondary hover:text-white hover:bg-tertiary/40'
+              }`}
+              onClick={() => setTicketType(type as any)}
+            >
+              {t(`betslip.${type.toLowerCase()}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Ticket Search Section */}
+      <div className="shrink-0 p-3 border-b border-tertiary/70 bg-primary/40">
+        <div className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <TicketIcon size={13} className="text-accent-green" />
+            <span>{t('betslip.search_ticket')}</span>
+          </div>
+          {selections.length > 0 && (
+            <button
+              onClick={clearAll}
+              className="text-text-secondary hover:text-accent-red flex items-center gap-1 text-[10px] font-bold transition"
+            >
+              <Trash2 size={11} /> {t('common.clear_all')}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1.5">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+              <Search size={13} className="text-text-secondary" />
+            </div>
+            <input
+              type="text"
+              value={ticketSearch}
+              onChange={e => setTicketSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearchTicket()}
+              placeholder={t('betslip.enter_ticket_code')}
+              className="w-full bg-primary/90 border border-tertiary/80 rounded-lg pl-8 pr-2 py-1.5 text-xs text-white placeholder-text-secondary/60 focus:outline-none focus:border-accent-green transition"
+            />
+          </div>
+          <button
+            onClick={handleSearchTicket}
+            disabled={ticketSearchLoading}
+            className="px-3 py-1.5 bg-accent-green hover:bg-emerald-500 text-primary rounded-lg text-xs font-bold transition disabled:opacity-50"
+          >
+            {ticketSearchLoading ? '...' : t('betslip.search')}
+          </button>
+          {(searchedTicket || ticketSearch) && (
+            <button
+              onClick={clearTicketSearch}
+              className="p-1.5 bg-tertiary hover:bg-tertiary/80 text-text-secondary hover:text-white rounded-lg transition"
+              title={t('common.cancel')}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        {ticketSearchError && (
+          <div className="text-accent-red text-[11px] mt-1.5 font-semibold">{ticketSearchError}</div>
+        )}
+        {searchedTicket && (
+          <div className="mt-2.5">
+            {renderSearchedTicket()}
+          </div>
+        )}
+      </div>
+
+      {selections.length === 0 ? (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-text-secondary p-6 text-center space-y-2">
+          <div className="w-12 h-12 rounded-2xl bg-primary/60 border border-tertiary/60 flex items-center justify-center text-text-muted">
+            <TicketIcon size={24} />
+          </div>
+          <div className="font-bold text-white text-sm">{t('betslip.no_selections')}</div>
+          <p className="text-xs text-text-secondary/80 max-w-[200px]">
+            Click on any odds to add selections to your betslip.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Lista e seleksioneve — scroll-on vetëm kjo pjesë */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2.5 space-y-2">
+            {selections.map(s => (
+              <div 
+                key={s.outcomeId} 
+                className="bg-primary/80 p-3 rounded-xl border border-tertiary/80 hover:border-slate-600/60 relative group transition shadow-sm space-y-1.5"
+              >
+                <button 
+                  onClick={() => removeSelection(s.outcomeId)} 
+                  className="absolute top-2.5 right-2.5 p-1 rounded-md text-text-muted hover:text-accent-red hover:bg-accent-red/10 transition"
+                  title="Remove selection"
+                >
+                  <Trash2 size={14} />
+                </button>
+                <div className="text-[11px] text-text-secondary font-medium pr-6 truncate">{s.matchName}</div>
+                <div className="text-xs font-bold text-white">{s.marketName}</div>
+                <div className="flex justify-between items-center pt-1 border-t border-tertiary/40">
+                  <span className="text-xs font-bold text-accent-green bg-accent-green/10 px-2 py-0.5 rounded-md border border-accent-green/20">
+                    {s.outcomeName}
+                  </span>
+                  <span className="font-mono font-black text-sm text-white tabular-nums">
+                    @{s.odds.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {oddsChangedError && (
+            <div className="shrink-0 bg-accent-yellow/15 border-y border-accent-yellow/40 text-amber-200 p-3 text-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-medium">
+                <AlertTriangle size={15} className="text-accent-yellow shrink-0" />
+                <span>{t('betslip.odds_changed')}</span>
+              </div>
+              <button 
+                onClick={() => setOddsChangedError(false)} 
+                className="font-bold underline text-accent-yellow hover:text-white shrink-0"
+              >
+                {t('betslip.accept_changes')}
+              </button>
+            </div>
+          )}
+
+          {/* Stake & Calculations Footer — gjithmonë i dukshëm */}
+          <div className="shrink-0 p-3.5 bg-secondary/95 border-t border-tertiary/80 space-y-3 shadow-2xl">
+            {ticketType === 'SYSTEM' && (
+              <div>
+                <label className="text-[10px] uppercase font-bold text-text-secondary block mb-1">System Type</label>
+                <select 
+                  className="w-full bg-primary/90 border border-tertiary rounded-lg p-2 text-xs text-white focus:outline-none focus:border-accent-green" 
+                  value={systemType} 
+                  onChange={e => setSystemType(e.target.value)}
+                >
+                   <option value="">Select System</option>
+                   {Array.from({length: selections.length - 1}).map((_, i) => (
+                     <option key={i} value={`${i+2}/${selections.length}`}>{i+2}/{selections.length}</option>
+                   ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-text-secondary font-medium">{t('betslip.total_odds')}:</span>
+              <span className="font-mono font-black text-sm text-white tabular-nums">
+                {ticketType === 'COMBO' ? totalOdds.toFixed(2) : selections.length === 1 ? selections[0].odds.toFixed(2) : '-'}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[10px] uppercase font-bold text-text-secondary">{t('betslip.stake')}</label>
+                <span className="text-[10px] text-text-secondary font-mono">Min 1 Lëk</span>
+              </div>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={stake} 
+                  onChange={e => setStake(e.target.value)} 
+                  className="w-full bg-primary/90 border border-tertiary rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent-green font-mono font-black"
+                  min="1"
+                  step="1"
+                />
+                <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-bold text-text-secondary pointer-events-none">
+                  Lëk
+                </span>
+              </div>
+              {stakeError && <div className="text-accent-red text-[11px] font-semibold mt-1">{stakeError}</div>}
+            </div>
+
+            {/* Quick Stake Pills */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+              {[100, 200, 500, 1000, 2500, 5000].map(amount => (
+                <button
+                  key={amount}
+                  onClick={() => setStake(String(amount))}
+                  className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    Number(stake) === amount
+                      ? 'bg-accent-green text-primary font-black shadow-sm'
+                      : 'bg-primary/70 text-text-secondary hover:text-white hover:bg-tertiary border border-tertiary/60'
+                  }`}
+                >
+                  +{amount >= 1000 ? `${amount / 1000}k` : amount}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-tertiary/50">
+              <span className="text-xs text-text-secondary font-medium">{t('betslip.potential_payout')}:</span>
+              <span className="font-mono font-black text-accent-yellow text-base tabular-nums">
+                {potentialPayout.toFixed(2)} <span className="text-xs font-bold text-amber-300">Lëk</span>
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              {user ? (
+                <button 
+                  onClick={handlePlaceBet}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-accent-green text-primary font-black py-2.5 rounded-xl shadow-glow-green hover:brightness-105 active:scale-[0.99] transition text-xs tracking-wide"
+                >
+                  {t('betslip.place_bet')}
+                </button>
+              ) : (
+                <button disabled className="flex-1 bg-tertiary/50 text-text-muted font-bold py-2.5 rounded-xl text-xs cursor-not-allowed">
+                  Login to Bet
+                </button>
+              )}
+              <button 
+                onClick={handleBook}
+                className="px-3.5 border border-accent-green/60 hover:border-accent-green text-accent-green font-bold py-2.5 rounded-xl hover:bg-accent-green/10 transition text-xs whitespace-nowrap"
+              >
+                {t('betslip.book_ticket')}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showBookingModal && <BookingModal code={bookingCode} onClose={() => setShowBookingModal(false)} />}
+    </div>
+  );
+}
+
+
+FILE src/pages/MyBetsPage.tsx
+import { useState, useEffect } from 'react';
+import Header from '../components/Layout/Header';
+import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../api/client';
+import { Ticket } from '../types';
+
+export default function MyBetsPage() {
+  const { t } = useLanguage();
+  const { user, isAuthenticated, refreshUser } = useAuth();
+  const [activeTickets, setActiveTickets] = useState<Ticket[]>([]);
+  const [historyTickets, setHistoryTickets] = useState<Ticket[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTickets();
+    }
+  }, [isAuthenticated, activeTab]);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const [activeRes, historyRes] = await Promise.all([
+        apiClient.get('/bets/active'),
+        apiClient.get('/bets/history')
+      ]);
+      setActiveTickets(activeRes.data);
+      setHistoryTickets(historyRes.data);
+    } catch (e) {
+      console.error('Failed to fetch tickets:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString([], { 
+      year: 'numeric', month: 'short', day: 'numeric', 
+      hour: '2-digit', minute: '2-digit' 
+    });
+  };
+
+  const renderTicket = (ticket: Ticket) => {
+    const isPending = ticket.status === 'PENDING';
+    const isWon = ticket.status === 'WON';
+    const statusClass = isWon 
+      ? 'bg-emerald-500/15 border border-emerald-500/30 text-accent-green' 
+      : isPending 
+      ? 'bg-amber-500/15 border border-amber-500/30 text-accent-yellow' 
+      : 'bg-rose-500/15 border border-rose-500/30 text-accent-red';
+    const totalStake = ticket.stake;
+    const totalOdds = ticket.totalOdds;
+
+    return (
+      <div key={ticket.id} className="bg-secondary/90 rounded-2xl border border-tertiary/80 p-4 sm:p-5 space-y-3.5 shadow-sm hover:border-slate-600/70 transition">
+        <div className="flex justify-between items-start gap-2">
+          <div className="space-y-0.5">
+            <div className="text-xs text-text-secondary">
+              {t('tickets.ticket_id')}: <span className="font-mono text-white font-bold bg-primary/70 px-2 py-0.5 rounded border border-tertiary/60">{ticket.id.slice(0, 8).toUpperCase()}</span>
+            </div>
+            <div className="text-[11px] text-text-muted">{t('tickets.placed_at')}: {formatDate(ticket.placedAt)}</div>
+          </div>
+          <span className={`font-black text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusClass}`}>
+            {t(`tickets.${ticket.status.toLowerCase()}`)}
+          </span>
+        </div>
+
+        <div className="space-y-2.5 border-t border-tertiary/50 pt-3">
+          {ticket.lines?.map((line, idx) => (
+            <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-xs bg-primary/40 p-2.5 rounded-xl border border-tertiary/40">
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-white truncate text-xs sm:text-sm" title={line.matchName}>{line.matchName}</div>
+                <div className="text-text-secondary text-[11px] mt-0.5">{line.marketName} - <span className="text-accent-green font-semibold">{line.outcomeName}</span></div>
+              </div>
+              <div className="sm:text-right shrink-0 flex sm:flex-col justify-between items-baseline sm:items-end">
+                <div className="text-white font-mono font-black text-xs sm:text-sm">@{line.oddsAtPlacement.toFixed(2)}</div>
+                <div className="text-[10px] text-text-muted font-bold uppercase">{line.status}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-between items-center border-t border-tertiary/50 pt-3 text-xs">
+          <div>
+            <span className="text-text-secondary">{t('tickets.stake')}: </span>
+            <span className="font-mono font-bold text-white">{totalStake.toFixed(2)} Lëk</span>
+          </div>
+          <div className="text-right">
+            <div>
+              <span className="text-text-secondary">{t('tickets.payout')}: </span>
+              <span className="font-mono font-black text-accent-yellow text-sm">{ticket.potentialPayout.toFixed(2)} Lëk</span>
+            </div>
+            <div className="text-[11px] text-text-muted font-mono">{t('tickets.total_odds')}: @{totalOdds.toFixed(2)}</div>
+          </div>
+        </div>
+
+        {ticket.status === 'PENDING' && ticket.settledAt && (
+          <div className="text-[11px] text-text-muted">
+            {t('tickets.settled_at')}: {formatDate(ticket.settledAt)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-[100dvh] bg-primary flex flex-col">
+      <Header />
+      <div className="p-3 sm:p-6 max-w-4xl mx-auto w-full flex-1">
+        {!isAuthenticated ? (
+          <div className="bg-secondary/90 p-8 text-center text-text-secondary rounded-2xl border border-tertiary shadow-sm">
+            <h2 className="text-xl font-bold text-white mb-2">{t('auth.login_title')}</h2>
+            <p>{t('tickets.no_tickets_logged_out')}</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2 mb-5 p-1 bg-secondary/80 rounded-2xl border border-tertiary/80 w-fit">
+              <button 
+                onClick={() => { setActiveTab('active'); fetchTickets(); }}
+                className={`py-2 px-4 rounded-xl font-bold text-xs transition-all ${
+                  activeTab === 'active' 
+                    ? 'bg-accent-green text-primary shadow-sm' 
+                    : 'text-text-secondary hover:text-white'
+                }`}
+              >
+                {t('tickets.active_tickets')} {activeTickets.length > 0 && `(${activeTickets.length})`}
+              </button>
+              <button 
+                onClick={() => { setActiveTab('history'); fetchTickets(); }}
+                className={`py-2 px-4 rounded-xl font-bold text-xs transition-all ${
+                  activeTab === 'history' 
+                    ? 'bg-accent-green text-primary shadow-sm' 
+                    : 'text-text-secondary hover:text-white'
+                }`}
+              >
+                {t('tickets.ticket_history')} {historyTickets.length > 0 && `(${historyTickets.length})`}
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-3 border-accent-green border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : activeTab === 'active' ? (
+              activeTickets.length === 0 ? (
+                <div className="bg-secondary/60 p-10 text-center text-text-secondary rounded-2xl border border-tertiary space-y-2">
+                  <div className="text-3xl">🎫</div>
+                  <div className="font-bold text-white">{t('tickets.no_active_tickets')}</div>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  {activeTickets.map(renderTicket)}
+                </div>
+              )
+            ) : (
+              historyTickets.length === 0 ? (
+                <div className="bg-secondary/60 p-10 text-center text-text-secondary rounded-2xl border border-tertiary space-y-2">
+                  <div className="text-3xl">📜</div>
+                  <div className="font-bold text-white">{t('tickets.no_history_tickets')}</div>
+                </div>
+              ) : (
+                <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+                  {historyTickets.map(renderTicket)}
+                </div>
+              )
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

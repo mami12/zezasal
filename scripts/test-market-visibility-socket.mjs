@@ -1,0 +1,62 @@
+import './fixtures/isolated-casino-env.mjs';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import express from 'express';
+import {Server} from 'socket.io';
+import {io as connect} from 'socket.io-client';
+import {PGlite} from '@electric-sql/pglite';
+import {detailProjection,emitScopedOdds,setSocketScope} from '../server/market-delivery.mjs';
+import {marketFamily,catalogRows,categoryPolicies,scopeBlockRows,setCatalogRows,setCategoryPolicies,setScopeBlocks} from '../server/market-catalog.mjs';
+import {refreshMarketCatalog,saveMarketPolicy,saveScopePolicy,onMarketPolicy} from '../server/ledger/market-catalog-store.mjs';
+
+const db=new PGlite(),actor={id:'visibility-admin',username:'admin'};
+const database={query:(...args)=>db.query(...args),connect:async()=>({query:(...args)=>db.query(...args),release(){}})};
+const mk=(key,name)=>({key,name,marketType:key==='result'?'1X2':'OVER_UNDER',line:'',outcomes:[{key:'1',price:2}]});
+const markets=[mk('result','Full Time Result'),mk('total','Total Goals')];
+const resultKey=marketFamily(markets[0]).key;
+const matches=[{id:'101',matchId:'101',service:'LIVE',category_name:'England',tournament_name:'Premier League',markets},
+ {id:'102',matchId:'102',service:'PREMATCH',category_name:'England',tournament_name:'Premier League',markets},
+ {id:'103',matchId:'103',service:'PREMATCH',category_name:'Japan',tournament_name:'J1 League',markets}];
+const app=express();app.use(express.json());let server,io,left,right;
+const received={left:[],right:[]},policies={left:[],right:[]};
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const until=async(fn,label)=>{const stop=Date.now()+5000;while(!fn()&&Date.now()<stop)await wait(10);assert.ok(fn(),label);};
+try{
+ await db.exec(`create table app_user(id text primary key,username text,role text,status text,deleted_at timestamptz);
+ create table app_live_risk_settings(id integer primary key);
+ create table app_admin_audit(actor_id text,actor_name text,actor_role text,action text,target_type text,target_id text,details jsonb);
+ insert into app_user values('visibility-admin','admin','ADMIN','ACTIVE',null);insert into app_live_risk_settings values(1);`);
+ setCatalogRows(markets.map(m=>({key:marketFamily(m).key,name:m.name,enabled:true})));setCategoryPolicies([]);setScopeBlocks([]);
+ await refreshMarketCatalog({initialize:true,database});
+ app.get('/matches',(_q,r)=>r.json(matches.map(m=>detailProjection(m))));
+ app.patch('/admin/policy',async(q,r)=>{if(q.get('x-test-role')!=='ADMIN')return r.sendStatus(403);try{await saveMarketPolicy(q.body,actor,{database});r.json({ok:true});}catch(e){r.status(e.status??500).json({message:e.message});}});
+ app.put('/admin/scope',async(q,r)=>{if(q.get('x-test-role')!=='ADMIN')return r.sendStatus(403);try{await saveScopePolicy(q.body.scopes,actor,{database});r.json({ok:true});}catch(e){r.status(e.status??500).json({message:e.message});}});
+ server=http.createServer(app);io=new Server(server);onMarketPolicy(()=>io.emit('markets:policy',{markets:catalogRows(),categories:categoryPolicies(),scopes:scopeBlockRows()}));
+ io.on('connection',socket=>socket.on('scope',async(scope,ack)=>{await setSocketScope(socket,scope);ack();}));
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+ const open=async name=>{const client=connect(origin,{transports:['websocket']});client.on('odds:update',p=>received[name].push(p));client.on('markets:policy',p=>policies[name].push(p));await new Promise(resolve=>client.once('connect',resolve));await new Promise(resolve=>client.emit('scope',name==='left'?{boardIds:['101','102','103']}:{detail:{id:'101',category:'all'}},resolve));return client;};
+ left=await open('left');right=await open('right');
+ const call=(path,method,body,admin=true)=>fetch(origin+path,{method,headers:{'content-type':'application/json',...(admin?{'x-test-role':'ADMIN'}:{})},body:JSON.stringify(body)});
+ const snapshot=async()=>await(await fetch(origin+'/matches')).json();
+ const emit=match=>emitScopedOdds(io,{...match,at:new Date().toISOString()},new Set(markets.map(m=>m.key+'|')));
+ emit(matches[0]);await until(()=>received.left.length&&received.right.length,'both real sockets receive their initial offer');
+ assert.equal(received.left.at(-1).markets.length,2);assert.equal(received.right.at(-1).markets.length,2);
+ assert.equal((await call('/admin/policy','PATCH',{key:resultKey,enabled:false},false)).status,403);
+ assert.equal((await call('/admin/policy','PATCH',{key:resultKey,enabled:false})).status,200);
+ await until(()=>policies.left.at(-1)?.markets.some(m=>m.key===resultKey&&!m.enabled)&&policies.right.at(-1)?.markets.some(m=>m.key===resultKey&&!m.enabled),'both sockets receive the explicit removal policy');
+ assert.ok((await snapshot()).every(m=>m.markets.length===1),'global hide applies to LIVE and PREMATCH through HTTP');
+ emit(matches[0]);await until(()=>received.left.at(-1)?.markets.length===1&&received.right.at(-1)?.markets.length===1,'all socket projections exclude the hidden market');
+ const before=[received.left.length,received.right.length];emit({...matches[0],markets:[markets[0]]});await wait(75);
+ assert.deepEqual([received.left.length,received.right.length],before,'a delta containing only hidden prices is not leaked; markets:policy is the removal signal');
+ await refreshMarketCatalog({database});assert.ok((await snapshot()).every(m=>m.markets.length===1),'cache reload cannot resurrect the disabled market');
+ await call('/admin/policy','PATCH',{key:resultKey,enabled:true});
+ await until(()=>policies.left.at(-1)?.markets.some(m=>m.key===resultKey&&m.enabled),'reactivation policy arrives');
+ assert.ok((await snapshot()).every(m=>m.markets.length===2),'re-enabling restores the original offered market');
+ await call('/admin/scope','PUT',{scopes:[{country:'England',league:'Premier League',families:[resultKey],categories:[]}]});
+ const scoped=await snapshot();assert.deepEqual(scoped.map(m=>m.markets.length),[1,1,2],'scope hide affects the selected LIVE/PREMATCH league without altering Japan');
+ emit(matches[0]);await until(()=>received.left.at(-1)?.markets.length===1&&received.right.at(-1)?.markets.length===1,'scoped socket hide matches HTTP');
+ await refreshMarketCatalog({database});assert.deepEqual((await snapshot()).map(m=>m.markets.length),[1,1,2],'scoped cache refresh preserves the admin selection');
+ await call('/admin/scope','PUT',{scopes:[]});assert.ok((await snapshot()).every(m=>m.markets.length===2));
+ emit(matches[0]);await until(()=>received.left.at(-1)?.markets.length===2&&received.right.at(-1)?.markets.length===2,'both sockets see original prices again after scope reactivation');
+ console.log('PASS persisted global/scoped market hide and reactivation: real HTTP + board/detail sockets, LIVE/PREMATCH, cached reload, isolated permissions and unaffected leagues');
+}finally{left?.close();right?.close();io?.disconnectSockets(true);io?.engine.close();server?.closeAllConnections();if(io)await new Promise(resolve=>io.close(resolve));if(server)await new Promise(resolve=>server.close(resolve));await db.close();}

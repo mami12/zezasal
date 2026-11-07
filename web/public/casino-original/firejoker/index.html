@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#140805">
+  <title>Fire Joker</title>
+  <link rel="stylesheet" href="./firejoker.css?v=20261031-fire-auto">
+</head>
+<body>
+  <main id="gameContainer" class="fj-shell" aria-label="Fire Joker">
+    <header class="fj-header">
+      <div class="fj-brand" role="img" aria-label="Fire Joker"><img src="./assets/logo.png" alt="Fire Joker" onerror="this.style.display='none'"></div>
+      <div class="fj-balance"><span>ACCOUNT BALANCE</span><strong id="balance">--</strong><small>ALL</small></div>
+    </header>
+    <section class="fj-stage" aria-label="Slot reels">
+      <div class="fj-stage-top"><span id="round-label">5 FIXED LINES</span><span id="round-state" aria-live="polite">CONNECTING</span></div>
+      <div class="fj-reels-frame">
+        <div id="reels" class="fj-reels" role="grid" aria-label="5 reels, 3 rows"></div>
+      </div>
+      <div id="win-message" class="fj-win-message" aria-live="polite">Fire Joker</div>
+    </section>
+    <section class="fj-controls" aria-label="Game controls">
+      <div class="fj-bet-control">
+        <span class="fj-control-label">TOTAL BET</span>
+        <select id="line-bet" aria-label="Total bet"></select>
+        <strong id="stake-total">-- ALL</strong>
+      </div>
+      <div class="fj-lines-fixed"><span class="fj-control-label">LINES</span><strong>5</strong></div>
+      <div class="fj-spin-actions">
+        <button id="auto-spin" class="fj-auto" type="button" disabled aria-pressed="false" aria-label="Start 10 automatic spins">
+          <span id="auto-spin-label">AUTO</span><small id="auto-spin-hint">10 SPINS</small>
+        </button>
+        <button id="spin" class="fj-spin" type="button" disabled><span id="spin-icon">SPIN</span><small>ENTER</small></button>
+      </div>
+    </section>
+    <p id="status" class="fj-status" role="status" aria-live="polite">Connecting to your account...</p>
+  </main>
+  <script src="./firejoker.js?v=20261031-fire-auto" defer></script>
+</body>
+</html>

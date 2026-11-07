@@ -1,0 +1,20 @@
+{"frames": {
+
+"popup/popupBack":
+{
+	"frame": {"x":1,"y":1,"w":800,"h":420},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":800,"h":420},
+	"sourceSize": {"w":801,"h":420}
+}},
+"meta": {
+	"app": "http://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "popup-hd.png",
+	"format": "RGBA8888",
+	"size": {"w":802,"h":422},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:fc2eb6a27180e1742b56b11a71c27b0b:1ca5486b6562a00ef2919db5eabb30b4:37bc8d7269537b71347a71b145802039$"
+}
+}

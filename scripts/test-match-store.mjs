@@ -104,8 +104,8 @@ check('freshness: live counted, stale not', fresh.live === 2 && fresh.staleClock
 
 // --- expiry ----------------------------------------------------------------------
 const expired = store.expireStale(0, Date.now() + 60 * 60 * 1000); // everything is "old" an hour from now
-check('expireStale deactivates and ends matches', expired.length === 3 && !store.getMatches({ includeEnded: true }).length);
-check('expired live matches become ended', store.getById(1).status === 'ended');
+check('missing listings suspend unresolved matches instead of inventing FT', expired.length === 1 && store.getMatches({ includeEnded: true }).length === 2);
+check('unconfirmed live match retains its phase and is suspended', store.getById(1).status === 'live' && store.getById(1).listing_stale === true);
 check('reappearing match becomes active again', store.upsert([mkRow({ match_id: 1 })]) === 1 && store.getById(1).active === true);
 // --- subscription tiers (what the pusher subscribes, and how often) --------------
 store.clear();
