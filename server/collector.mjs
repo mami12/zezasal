@@ -308,18 +308,9 @@ export function buildMarkets(oddsRows,{includeRemoved=false}={}) {
   // with the SAME market_key + line. A duplicate display name is not proof
   // that two different provider IDs are interchangeable betting contracts.
 
-  // Hide handicap offers from every public market view, never from stored
+  // Hide handicap and early payout offers from every public market view, never from stored
   // provider odds or historical ticket settlement.
-  visible = visible.filter((m) => !isHandicapOfferMarket({ name: m.name, marketType: m.column }));
-
-  // Keep only 1 "1x2 (xup)" market per match (prefer 2-up: eyJwMSI6Mn0)
-  const xupMarkets = visible.filter((m) => /^1x2\s*\(xup\)$/i.test(m.name));
-  if (xupMarkets.length > 1) {
-    const bestXup = xupMarkets.find((m) => String(m.key).includes('eyJwMSI6Mn0'))
-      ?? xupMarkets.find((m) => String(m.key).includes('eyJwMSI6M30'))
-      ?? xupMarkets[0];
-    visible = visible.filter((m) => !/^1x2\s*\(xup\)$/i.test(m.name) || m === bestXup);
-  }
+  visible = visible.filter((m) => !isExcludedOfferMarket({ name: m.name, marketType: m.column, nativeMarketId: String(m.key).split('@')[0].replace(/^zz/, '') }));
 
   visible.sort(
     (a, b) =>

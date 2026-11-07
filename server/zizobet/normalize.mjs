@@ -78,6 +78,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
  const rows=[];
  const widths=new Map();for(const q of quotes??[]){const p=text(meta.positions?.get(String(q.pid))??q.pn).match(/^min\s+(\d+)-(\d+)$/i);if(!p)continue;const width=Number(p[2])-Number(p[1])+1;if(width<=0)continue;const counts=widths.get(Number(q.mid))??new Map();counts.set(width,(counts.get(width)??0)+1);widths.set(Number(q.mid),counts);}
  for(const q of quotes??[]){const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);if(!def)continue;
+  if(id===27073)continue;
   const rawName=def.Name??def.name;if(!rawName)continue;
   if((def.IsOverUnder===true||def.ou===true)&&q.h!=null&&Math.abs(Number(q.h)*4)%2===1)continue;
   const params=Object.fromEntries(['p1','p2','p3','pl','comp','seq'].filter(k=>q[k]!=null).map(k=>[k,q[k]]));
@@ -117,7 +118,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
  * remain separate even if a translation happens to look similar. */
 export function dedupeMarketRows(rows){
  const groups=new Map();for(const r of rows){const key=r.marketKey+'|'+r.line;const group=groups.get(key)??[];group.push(r);groups.set(key,group);}
- const accepted=[],signatures=new Set(),correctScores=new Map(),xupMarkets=new Map();
+ const accepted=[],signatures=new Set(),correctScores=new Map();
  const norm=s=>String(s).trim().toLowerCase().replace(/\s+/g,' ');
  for(const group of [...groups.values()].sort((a,b)=>a[0].marketKey.localeCompare(b[0].marketKey,undefined,{numeric:true}))){
   const r=group[0],base=[norm(r.marketName),r.period,r.line].join('|');
@@ -129,17 +130,9 @@ export function dedupeMarketRows(rows){
    if(!existing||group.length>existing.length)correctScores.set(base,group);
    continue;
   }
-  if(r.nativeMarketId==='27073'||/^1x2\s*\(xup\)$/i.test(r.marketName)){
-   const p1=Number(r.nativeParameters?.p1??0);
-   const rank=p1===2?1:p1===3?2:3;
-   const existing=xupMarkets.get(r.matchId);
-   if(!existing||rank<existing.rank)xupMarkets.set(r.matchId,{rank,group});
-   continue;
-  }
   const signature=base+'|'+r.marketKey.split('@')[1]+'|'+JSON.stringify(labels);
   if(!signatures.has(signature)){signatures.add(signature);accepted.push(...group);}
  }
  for(const group of correctScores.values())accepted.push(...group);
- for(const {group} of xupMarkets.values())accepted.push(...group);
  return accepted;
 }
