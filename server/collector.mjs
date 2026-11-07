@@ -175,7 +175,7 @@ export function buildMarkets(oddsRows,{includeRemoved=false}={}) {
 
     const isCombo = isResultBttsMarket(m.name) || isResultTotalMarket(m.name) || isTotalBttsMarket(m.name);
     const is1X2 = !isHTFT && !isCombo &&
-                  (m.column === 'result' || /1x2|match result|full time result|\bwinner\b|moneyline/i.test(mName)) &&
+                  (m.column === 'result' || /1x2|match result|full time result|\bwinner\b|moneyline|3way|3-way/i.test(mName)) &&
                   !/half|score|rezultat|both|corner|card|handicap|chance/i.test(mName);
     const isBTTS = !isHTFT && !isCombo && /both teams? to score|both score|\bbtts\b/i.test(mName) && !/half|halves|result|1x2|winner/i.test(mName);
     const isOU = !isHTFT && !isCombo && m.column === 'total' && /total|over\/?under/i.test(mName) && !/corner|card|half|team/i.test(mName);
@@ -311,6 +311,15 @@ export function buildMarkets(oddsRows,{includeRemoved=false}={}) {
   // Hide handicap offers from every public market view, never from stored
   // provider odds or historical ticket settlement.
   visible = visible.filter((m) => !isHandicapOfferMarket({ name: m.name, marketType: m.column }));
+
+  // Keep only 1 "1x2 (xup)" market per match (prefer 2-up: eyJwMSI6Mn0)
+  const xupMarkets = visible.filter((m) => /^1x2\s*\(xup\)$/i.test(m.name));
+  if (xupMarkets.length > 1) {
+    const bestXup = xupMarkets.find((m) => String(m.key).includes('eyJwMSI6Mn0'))
+      ?? xupMarkets.find((m) => String(m.key).includes('eyJwMSI6M30'))
+      ?? xupMarkets[0];
+    visible = visible.filter((m) => !/^1x2\s*\(xup\)$/i.test(m.name) || m === bestXup);
+  }
 
   visible.sort(
     (a, b) =>

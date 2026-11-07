@@ -10,7 +10,7 @@ const fullTime = (market) => {
 const standalone = (market) => !/\+|&|\b(?:and|combo|combination|builder)\b/.test(nameOf(market));
 const aggregateResult = (market) => !/\b(?:home|away|team\s*[12]|[12](?:st|nd)\s+team)\b/.test(nameOf(market));
 const differentNamedFamily = (market) => /double chance|dopjo shans|both teams? (?:to )?score|both score|\bbtts\b|gg\/?ng|total|over\/?under|under\/?over|goal line/.test(nameOf(market));
-const result = (market) => fullTime(market) && standalone(market) && aggregateResult(market) && !differentNamedFamily(market) && (typeOf(market) === "1X2" || /^(?:1x2|match result|full[ -]time result|match winner|winner|moneyline)(?:\s*\(1x2\))?$/.test(nameOf(market)));
+const result = (market) => fullTime(market) && standalone(market) && aggregateResult(market) && !differentNamedFamily(market) && (typeOf(market) === "1X2" || /^(?:1x2|match result|full[ -]time result|match winner|winner|moneyline|3way|3-way)(?:\s*(?:\(1x2\)|\(xup\)|\([^)]+\)))?$/.test(nameOf(market)));
 const doubleChance = (market) => fullTime(market) && standalone(market) && aggregateResult(market) && (["DOUBLE_CHANCE", "DC"].includes(typeOf(market)) || /^(?:double chance|dopjo shans)$/.test(nameOf(market)));
 const bothScore = (market) => fullTime(market) && standalone(market) && (typeOf(market) === "BTTS" || /^(?:both teams? to score|both teams? score|both score|btts|gg\/?ng)$/.test(nameOf(market)));
 function getBoardTotalLine(market) {
@@ -64,7 +64,7 @@ function selectBoardMarkets(markets, visible, suspended, teams = {}) {
   // own identity and the announced contract never silently changes.
   const extraResult = main || dc || btts ? null : markets.find((market) =>
     Number(market.period ?? 0) === 0 && standalone(market) && aggregateResult(market) && !differentNamedFamily(market)
-    && (typeOf(market) === "1X2" || /1x2|match result|match winner|winner|moneyline/.test(nameOf(market)))
+    && (typeOf(market) === "1X2" || /1x2|match result|match winner|winner|moneyline|3way|3-way/.test(nameOf(market)))
     && usable(market)) ?? null;
   const primary = main ? closed(main) ? null : main : dc ?? btts ?? extraResult;
   const primaryType = main ? "1X2" : dc ? "DC" : btts ? "BTTS" : "1X2";

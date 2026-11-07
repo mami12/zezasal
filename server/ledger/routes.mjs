@@ -342,7 +342,7 @@ ledgerRouter.get(
 
     const board = req.query.view === 'board';
     const serialized = await withOdds(rows,Date.now(),{board});
-    const matches = (board?projectClientBoardMatches(toClientMatches(projectBoardMatches(serialized))):toClientMatches(serialized));
+    const matches = (board?toClientMatches(projectBoardMatches(serialized)):toClientMatches(serialized));
     // Board cards show base odds; build the complete automatic menu when a
     // visitor opens /matches/:id rather than sending it for 500 matches per poll.
     res.json(!board&&ledger.isLedgerReady() ? await builders.decorateMatches(matches,{includeAutomatic:false}) : matches);
@@ -423,7 +423,7 @@ ledgerRouter.get(
     const selected=await publishedBoard();const rows=filterPublishedRows(selected.rows,{sportId:req.params.sportId});
     const board = req.query.view === 'board';
     const serialized = await withOdds(rows,Date.now(),{board});
-    const matches = (board?projectClientBoardMatches(toClientMatches(projectBoardMatches(serialized))):toClientMatches(serialized));
+    const matches = (board?toClientMatches(projectBoardMatches(serialized)):toClientMatches(serialized));
     return res.json(!board&&ledger.isLedgerReady() ? await builders.decorateMatches(matches,{includeAutomatic:false}) : matches);
   }),
 );

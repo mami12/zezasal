@@ -86,6 +86,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
   if(!position)continue;
   const measuredWidth=[...(widths.get(id)??[])].sort((a,b)=>b[1]-a[1]||a[0]-b[0])[0]?.[0];
   let name=resolveMarketTitle(live&&id===18639?'Correct score [{score}]':rawName,q,{intervalWidth:measuredWidth});if(!name)continue;
+  if(live&&id===602)name='1X2';
   name=name.replace(/\bHometeam\b/gi,'Home team').replace(/\bAwayteam\b/gi,'Away team');
   if(q.pl&&!name.includes(String(q.pl)))name+=' · '+q.pl;
   const fullResult=(live&&id===602)||(!live&&id===448);
@@ -116,7 +117,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
  * remain separate even if a translation happens to look similar. */
 export function dedupeMarketRows(rows){
  const groups=new Map();for(const r of rows){const key=r.marketKey+'|'+r.line;const group=groups.get(key)??[];group.push(r);groups.set(key,group);}
- const accepted=[],signatures=new Set(),correctScores=new Map();
+ const accepted=[],signatures=new Set(),correctScores=new Map(),xupMarkets=new Map();
  const norm=s=>String(s).trim().toLowerCase().replace(/\s+/g,' ');
  for(const group of [...groups.values()].sort((a,b)=>a[0].marketKey.localeCompare(b[0].marketKey,undefined,{numeric:true}))){
   const r=group[0],base=[norm(r.marketName),r.period,r.line].join('|');
@@ -128,9 +129,17 @@ export function dedupeMarketRows(rows){
    if(!existing||group.length>existing.length)correctScores.set(base,group);
    continue;
   }
+  if(r.nativeMarketId==='27073'||/^1x2\s*\(xup\)$/i.test(r.marketName)){
+   const p1=Number(r.nativeParameters?.p1??0);
+   const rank=p1===2?1:p1===3?2:3;
+   const existing=xupMarkets.get(r.matchId);
+   if(!existing||rank<existing.rank)xupMarkets.set(r.matchId,{rank,group});
+   continue;
+  }
   const signature=base+'|'+r.marketKey.split('@')[1]+'|'+JSON.stringify(labels);
   if(!signatures.has(signature)){signatures.add(signature);accepted.push(...group);}
  }
  for(const group of correctScores.values())accepted.push(...group);
+ for(const {group} of xupMarkets.values())accepted.push(...group);
  return accepted;
 }

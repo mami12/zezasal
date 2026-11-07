@@ -63,7 +63,7 @@ export function marketColumn(key = '', name = '') {
   if (/corner/.test(s)) return 'corners';
   // word boundaries matter: "goals sco-red" must not look like a red card
   if (/\bcards?\b|\bbookings?\b|penalt|yellow|\bred\b/.test(s)) return 'cards';
-  if (/1x2|1 ?x ?2|full time result|match result|winner|double chance|moneyline/.test(s)) return 'result';
+  if (/1x2|1 ?x ?2|full time result|match result|winner|double chance|moneyline|3way|3-way/.test(s)) return 'result';
   if (/handicap|fora|asian/.test(s)) return 'other';
   if (/total|over\/?under|\bgoals?\b|odd\/even/.test(s)) return 'total';
   return 'other';

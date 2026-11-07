@@ -1,11 +1,11 @@
-﻿import {marketDiagnosticAll} from '../market-diagnostic.mjs';
+import {marketDiagnosticAll} from '../market-diagnostic.mjs';
 import {selectBoardMarkets} from '../board-markets.mjs';
 import {isDecidedLiveMarket} from './decided-markets.mjs';
 import {marketIsEnabled} from '../market-catalog.mjs';
 export function isBoardOddsRow(o){
  if(Number(o.period??0)!==0)return false;
  const name=String(o.market_name??'').trim().toLowerCase();
- return /^(?:1\s*x\s*2|match result|full[ .-]*time[ .-]*result|match winner|winner|moneyline|result|double chance|dc|both teams (?:to )?score|btts|both score|next goal|next team to score|first team to score|team to score(?: first)?|first goal|goli i radh[eÃ«]s|total(?: goals?)?|over\s*\/?\s*under|under\s*\/?\s*over|goals(?: over\s*\/?\s*under)?|goal line)(?:\s*\(?\d+(?:[.,]\d+)?\)?)?$/.test(name);
+ return /^(?:1\s*x\s*2|match result|full[ .-]*time[ .-]*result|match winner|winner|moneyline|result|3way|3-way|double chance|dc|both teams (?:to )?score|btts|both score|next goal|next team to score|first team to score|team to score(?: first)?|first goal|goli i radh[eÃ«ë]s|total(?: goals?)?|over\s*\/?\s*under|under\s*\/?\s*over|goals(?: over\s*\/?\s*under)?|goal line)(?:\s*(?:\([^)]+\)|\d+(?:[.,]\d+)?))?$/.test(name);
 }
 /** Keep the small set of full-time board contracts, including alternate goal
  * lines and double chance. The browser chooses a visible line; removing those
@@ -28,7 +28,7 @@ export function projectBoardMatches(matches) {
       const nextGoalName=!/when\s+will|interval|goalscorer|scorer|player/.test(name)&&/next\s+goal|next\s+team\s+to\s+score|first\s+team\s+to\s+score|team\s+to\s+score|goli\s+i\s+radh/.test(name);
       if(nextGoalType||nextGoalName){if(!chosen.has('nextgoal'))chosen.set('nextgoal',market);continue;}
       if(/\b(?:half|halves|quarter|period|extra[ -]?time|overtime|first|last|next|min(?:ute)?s?|corners?|cards?|bookings?|handicap|asian|home|away|team)\b|\+|&/.test(name)) continue;
-      if(/^(?:1\s*x\s*2|match result|full[ .-]*time[ .-]*result|match winner|winner|moneyline|result)(?:\s*\(1x2\))?$/.test(name)) kind='result';
+      if(/^(?:1\s*x\s*2|match result|full[ .-]*time[ .-]*result|match winner|winner|moneyline|result|3way|3-way)(?:\s*(?:\(1x2\)|\(xup\)|\([^)]+\)))?$/.test(name)) kind='result';
       else if(/^(?:full[ .-]*time[ .-]*)?(?:double chance|dc)$/.test(name)) kind='dc';
       else if(/^(?:full[ .]*time[ .]*)?(?:both teams (?:to )?score|btts|both score)$/.test(name)) kind='btts';
       else if(/^(?:full[ .-]*time[ .-]*)?(?:total(?: goals?)?|over\s*\/?\s*under|under\s*\/?\s*over|goals(?: over\s*\/?\s*under)?|goal line)(?:\s*\(?\d+(?:[.,]\d+)?\)?)?$/.test(name)) {
@@ -56,5 +56,5 @@ export function projectBoardMatches(matches) {
 export function projectClientBoardMatches(matches){return matches.map(match=>{
  const markets=match.markets??[],available=m=>!isDecidedLiveMarket(match,m)&&(m.outcomes??[]).some(o=>o.decided!==true&&o.odds!=null),suspended=m=>!isDecidedLiveMarket(match,m)&&(m.status==='SUSPENDED'||(m.outcomes??[]).some(o=>o.feedSuspended||o.riskSuspended));
  const selected=selectBoardMarkets(markets,available,suspended,match);
- return {...match,marketCount:match.marketCount??markets.length,markets:[selected.primary,selected.total].filter(Boolean)};
+ return {...match,marketCount:match.marketCount??markets.length,markets:[selected.primary,selected.total,selected.nextGoal].filter(Boolean)};
 });}
