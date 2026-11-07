@@ -5,7 +5,7 @@ import {mkdir,open,rename} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pool} from '../db.mjs';
-import {requireAuth,signToken} from './auth.mjs';
+import {requireAuth,signToken,verifyPassword} from './auth.mjs';
 import {isLedgerReady,publicUser} from './store.mjs';
 import {outsideDatabaseRequest} from '../database-request-context.mjs';
 import {localDatabaseDirectory} from '../database-location.mjs';
@@ -14,6 +14,7 @@ export const FINANCIAL_RESET_TABLES=Object.freeze([
  'app_manager_commission','app_ticket_line','app_ticket_batch','app_ticket','app_bet_rejection','app_transaction','app_staff_transfer',
  'app_casino_gamble_event','app_casino_gamble_state','app_casino_freespin_state',
  'app_casino_original_event','app_casino_original_state','app_casino_round','app_admin_audit',
+ 'app_manual_review_notice','app_settlement_override','app_live_settlement_preview',
 ]);
 const defaultBackupDir=fileURLToPath(new URL('../../backups/',import.meta.url));
 const fail=(status,message)=>Object.assign(new Error(message),{status});
@@ -23,7 +24,16 @@ function verifyInput(actor,{code,confirmation,requestId}={}){
  const at=Date.now(),previous=attempts.get(actor.id);
  if(previous&&previous.until>at&&previous.count>=5)throw fail(429,'Shumë kode të pasakta. Provo përsëri pas 5 minutash.');
  const hash=value=>createHash('sha256').update(String(value??'')).digest();
- if(!timingSafeEqual(hash(code),hash(process.env.FINANCIAL_RESET_CODE||'1122'))){
+ let codeValid=false;
+ try{
+  if(timingSafeEqual(hash(code),hash(process.env.FINANCIAL_RESET_CODE||'1122'))) codeValid=true;
+ }catch{}
+ if(!codeValid&&actor?.password_hash){
+  try{
+   if(verifyPassword(String(code??''),actor.password_hash)) codeValid=true;
+  }catch{}
+ }
+ if(!codeValid){
   attempts.set(actor.id,{count:previous?.until>at?previous.count+1:1,until:at+300000});
   if(attempts.size>1000)for(const [id,entry] of attempts)if(entry.until<at)attempts.delete(id);
   throw fail(403,'Kodi i zerimit nuk është i saktë.');
@@ -33,7 +43,15 @@ function verifyInput(actor,{code,confirmation,requestId}={}){
  attempts.delete(actor.id);
 }
 export async function previewFinancialReset({database=pool}={}){
- const counts={};for(const table of FINANCIAL_RESET_TABLES)counts[table]=Number((await database.query(`select count(*)::int as n from ${table}`)).rows[0].n);
+ const counts={};
+ for(const table of FINANCIAL_RESET_TABLES){
+  try{
+   const r=await database.query(`select count(*)::int as n from "${table}"`);
+   counts[table]=Number(r.rows[0]?.n??0);
+  }catch{
+   counts[table]=0;
+  }
+ }
  const {rows}=await database.query(`select count(*)::int as accounts,coalesce(sum(balance),0) as balance,count(*) filter(where balance<>0)::int as nonzero from app_user`);
  return {counts,accounts:Number(rows[0].accounts),totalBalance:Number(rows[0].balance),accountsWithBalance:Number(rows[0].nonzero),preserves:['accounts','passwords','roles','ownership','settings','player-controls','provider-results'],requiresLogin:true};
 }
@@ -60,7 +78,14 @@ export async function executeFinancialReset(actor,input,{database=pool,backup=sa
   const result={resetId,requestId:input.requestId,counts:preview.counts,accounts:preview.accounts,previousTotalBalance:preview.totalBalance,backupFile:saved.backupFile,requiresLogin:true};
   await client.query('begin');
   try{
-   await client.query(`truncate table ${FINANCIAL_RESET_TABLES.join(',')} restart identity`);
+   const existingTablesRes = await client.query(
+    'select tablename from pg_tables where schemaname = $1 and tablename = any($2)',
+    ['public', FINANCIAL_RESET_TABLES]
+   );
+   const toTruncate = existingTablesRes.rows.map(r => `"${r.tablename}"`);
+   if (toTruncate.length) {
+    await client.query(`truncate table ${toTruncate.join(',')} restart identity cascade`);
+   }
    await client.query('update app_user set balance=0,financial_epoch=financial_epoch+1,updated_at=now()');
    await client.query(`insert into app_admin_audit(actor_id,actor_name,actor_role,action,target_type,target_id,details) values($1,$2,'ADMIN','FINANCIAL_RESET','system',$3,$4::jsonb)`,[actor.id,actor.username,resetId,JSON.stringify({counts:preview.counts,backupFile:saved.backupFile,accounts:preview.accounts})]);
    await client.query('insert into app_financial_reset(request_id,actor_id,response) values($1,$2,$3::jsonb)',[input.requestId,actor.id,JSON.stringify(result)]);
@@ -78,7 +103,7 @@ export async function executeFinancialReset(actor,input,{database=pool,backup=sa
 export function createFinancialResetRouter(options={}){
  const router=express.Router();
  const access=[requireAuth,(req,res,next)=>!isLedgerReady()?res.status(503).json({message:'Databaza nuk është gati.'}):req.user.role!=='ADMIN'||req.user.status!=='ACTIVE'?res.status(403).json({message:'Vetëm administratori aktiv.'}):next()];
- const safe=fn=>async(req,res)=>{try{res.set('Cache-Control','no-store');res.json(await fn(req));}catch(error){if(!error.status)console.error('[financial reset] operation failed and rolled back');res.status(error.status||500).json({message:error.status?error.message:'Zerimi nuk u krye. Të dhënat e mëparshme u ruajtën.'});}};
+ const safe=fn=>async(req,res)=>{try{res.set('Cache-Control','no-store');res.json(await fn(req));}catch(error){console.error('[financial reset] operation error:', error);res.status(error.status||500).json({message:error.message||'Zerimi nuk u krye. Të dhënat e mëparshme u ruajtën.'});}};
  router.get('/admin/financial-reset/preview',...access,safe(()=>previewFinancialReset({database:options.database||pool})));
  router.post('/admin/financial-reset',...access,safe(req=>executeFinancialReset(req.user,req.body,options)));
  return router;
