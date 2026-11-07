@@ -13,6 +13,7 @@ import { staticCacheHeaders } from './static-cache.mjs';
 import { config, dbTarget, dbTargetLabel, dbErrorHint } from './config.mjs';
 import { initSchema, dbHealth, getOddsHistory, getOddsForMatches as getDbOddsForMatches, recentRawFrames, closePool, logRawFrame, query } from './db.mjs';
 import { initLedgerSchema } from './ledger/store.mjs';
+import { importDatabaseSeedIfEmpty } from './ledger/seed-import.mjs';
 import { purgeDeletedPlayerHistory } from './ledger/user-removal.mjs';
 import * as overrides from './ledger/overrides.mjs';
 import { ensureDefaultAccounts } from './ledger/auth.mjs';
@@ -165,6 +166,7 @@ async function ensureLedgerSchema() {
     await refreshLiveRiskSettings({ initialize: true });
     await refreshBoardSettings();
     await refreshMarketCatalog({initialize:true});
+    await importDatabaseSeedIfEmpty();
     await ensureDefaultAccounts();
     // admin overrides live in the database and are read through a snapshot: warm it now so a
     // restart does not silently drop a suspension or a pinned price until someone edits again

@@ -11,6 +11,7 @@
     "start": "node server/index.mjs",
     "start:local": "node scripts/start-local.mjs",
     "pack:windows": "node scripts/pack-windows-transfer.mjs",
+    "export:seed": "node scripts/export-database-seed.mjs",
     "probe:db": "node scripts/probe-db.mjs",
     "probe:gateway": "node scripts/probe-gateway.mjs",
     "probe:sockets": "node scripts/probe-sockets.mjs",
