@@ -1,0 +1,68 @@
+{
+  "megaWin":{
+    "animData":{
+      "load": false,
+      "skeleton": "../../html-interface-stable/1024/dragonBones/megaWin/Mega_Win_1024_ske.json",
+      "texture_json": "../../html-interface-stable/1024/dragonBones/megaWin/Mega_Win_1024_tex.json",
+      "texture_png": "../../html-interface-stable/1024/dragonBones/megaWin/Mega_Win_1024_tex.png",
+      "armature": "Armature",
+      "project": "Mega_Win_1024",
+      "animation": "animtion0",
+
+      "autoRemove": true,
+      "loopCount": 1,
+      "attractionBackground": true,
+      "nonstopAttraction": false,
+      "slowShowing": true,
+      "fading": true,
+      "sound": "megaWin",
+      "soundFading": true,
+      "stopAnimOnSoundEnd": true,
+      "maxAnimTime": 10000
+    }
+  },
+  "coinAtr":{
+    "animData":{
+      "load": false,
+      "skeleton": "../../html-interface-stable/1024/dragonBones/CoinAtr/Coin_atr_5x4_interf_Next_ske.json",
+      "texture_json": "../../html-interface-stable/1024/dragonBones/CoinAtr/Coin_atr_5x4_interf_Next_tex.json",
+      "texture_png": "../../html-interface-stable/1024/dragonBones/CoinAtr/Coin_atr_5x4_interf_Next_tex.png",
+      "armature": "Armature",
+      "project": "Coin_atr_5x4_interf_Next",
+      "animation": "coin_burst_1",
+
+      "autoRemove": true,
+      "loopCount": 1,
+      "attractionBackground": true,
+      "nonstopAttraction": false,
+      "slowShowing": true,
+      "fading": true,
+      "sound": "bigWin",
+      "soundFading": true,
+      "stopAnimOnSoundEnd": true,
+      "maxAnimTime": 10000
+    }
+  },
+  "treeWithDiamonds":{
+    "animData":{
+      "load": false,
+      "skeleton": "../../html-interface-stable/1024/dragonBones/TREE_DT_anim_Final/TREE_DT_anim_Final_ske.json",
+      "texture_json": "../../html-interface-stable/1024/dragonBones/TREE_DT_anim_Final/TREE_DT_anim_Final_tex.json",
+      "texture_png": "../../html-interface-stable/1024/dragonBones/TREE_DT_anim_Final/TREE_DT_anim_Final_tex.png",
+      "armature": "Armature",
+      "project": "TREE_DT_anim_Final",
+      "animation": "animtion0",
+
+      "autoRemove": false,
+      "loopCount": 1,
+      "attractionBackground": false,
+      "nonstopAttraction": true,
+      "slowShowing": false,
+      "fading": false,
+      "sound": false,
+      "soundFading": false,
+      "stopAnimOnSoundEnd": false,
+      "maxAnimTime": false
+    }
+  }
+}

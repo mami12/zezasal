@@ -1,0 +1,24 @@
+{"main_1":"\/FortunePyramid\/croppedSyms\/sym_01.webp", "main_2":"\/FortunePyramid\/croppedSyms\/sym_02.webp", "main_3":"\/FortunePyramid\/croppedSyms\/sym_03.webp", "main_4":"\/FortunePyramid\/croppedSyms\/sym_04.webp", "main_5":"\/FortunePyramid\/croppedSyms\/sym_05.webp", "main_6":"\/FortunePyramid\/croppedSyms\/sym_06.webp", "main_7":"\/FortunePyramid\/croppedSyms\/sym_07.webp", "main_8":"\/FortunePyramid\/croppedSyms\/sym_08.webp"}
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_01.webp")] public var class_sym_main_1:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_02.webp")] public var class_sym_main_2:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_03.webp")] public var class_sym_main_3:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_04.webp")] public var class_sym_main_4:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_05.webp")] public var class_sym_main_5:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_06.webp")] public var class_sym_main_6:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_07.webp")] public var class_sym_main_7:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_08.webp")] public var class_sym_main_8:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/sym_small.webp")] public var class_smallsym_main:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/top_name.webp")] public var class_asset_top_name:Class;
+[Embed(source = "../../gamescontent/1024_COMMON/FortunePyramid/game/main/top_jp.webp")] public var class_asset_top_jackpot:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/background.webp")] public var class_asset_background_main:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/MainFortunePyramid_1024_background_1920.webp")] public var class_asset_background_online_1920:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/main_attract.mp3")] public var class_sound_main_attraction:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/Scatter.mp3")]  public var class_sound_sym_main_1:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_02.mp3")] public var class_sound_sym_main_2:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_03.mp3")] public var class_sound_sym_main_3:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_04.mp3")] public var class_sound_sym_main_4:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_05.mp3")] public var class_sound_sym_main_5:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_06.mp3")] public var class_sound_sym_main_6:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/sym_07.mp3")] public var class_sound_sym_main_7:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/Wild.mp3")] public var class_sound_main_wild:Class;
+[Embed(source="../../gamescontent/1024_COMMON/FortunePyramid/game/main/audio/main_autospin.mp3")] public var class_sound_main_auto_spin:Class;

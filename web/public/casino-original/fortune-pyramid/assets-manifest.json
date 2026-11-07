@@ -1,0 +1,2829 @@
+{
+  "game": "fortune-pyramid",
+  "source": "Supplied game-sources/fortune pyramid folder",
+  "root": "vendor",
+  "assets": [
+    {
+      "path": "html-20200413-stable/css/fullscreen.css",
+      "bytes": 11845,
+      "sha256": "171ea31cc119ae38d8084cc025df3e853277c619543434f0ca09a88e86b30a28",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/css/start.min.css",
+      "bytes": 2177,
+      "sha256": "e327d1d725b97bfb895704031d657fc321708aaab01b7c328afcd7d20d52d7b6",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/css/tablet6.min.css",
+      "bytes": 42181,
+      "sha256": "3e4f9173bc2fa78e6c64fb864b986375689673da8e7bfefd8f90cac3cc373af0",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/FortunePyramid/app.html",
+      "bytes": 3938,
+      "sha256": "fa4389013b734b226ef9f456b58a063ec3171e442e14612f4298e5aae90908cd",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/images/CTLoader_empty.png",
+      "bytes": 2297,
+      "sha256": "156fa54482df0d96a9161ce0fe3af9a24ce512df012c70c11cacb54706b59103",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/images/CTLoader_interactive.png",
+      "bytes": 913,
+      "sha256": "a4dbd8f5672910e2e0b9a4e47e76b84b12de65286f015d365e3003e742c4aff3",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/interface/1024/menu_button_sound_no.png",
+      "bytes": 16205,
+      "sha256": "351eee6b34facfaa78b2f17670c50e84c9d9aa578638c682760143b35d7f276b",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/interface/1024/menu_button_sound_yes.png",
+      "bytes": 12933,
+      "sha256": "e8e6a4f52ed506beb0b7e77acad008e6df7038e451f65ae97129e45daab0e4fb",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/interface/1024/swipe-arrow.svg",
+      "bytes": 478,
+      "sha256": "a5ae911a6238d84e91b62aea1783d09151467a227ad8f09b3914ebd01c11fea1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/interface/1024/swipe-hand-click.svg",
+      "bytes": 697,
+      "sha256": "3dea1f54bc4a26bc1a3890e8414c7aab3e125c7bd6f6b451917b45e9787de8cc",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/interface/1024/swipe-hand.svg",
+      "bytes": 1024,
+      "sha256": "9e073e5be6beee93ae39a3acf6cebbb42c955712fe08abb5c0eb865004bcc56a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/jquery-2.2.4.min.js",
+      "bytes": 150279,
+      "sha256": "26d12475adfc6394585fba4a14b0b4cc28f8b469f8251b2acb173b1f51f0aa13",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/jquery.pixelentity.shiner.min.js",
+      "bytes": 21911,
+      "sha256": "7e06be0cac56f60586e1c3d1e5b4149469986c892a114b3b667cd47bc2d9df30",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/rgs/first1.min.js",
+      "bytes": 28,
+      "sha256": "4c25ba8be81d68cc188fa9e4e1de851343262d0ad2fff5a803a99e4b73f3f27e",
+      "edits": [
+        "Identical original shared CT client recovered from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/rgs/Main.min.js",
+      "bytes": 8929,
+      "sha256": "0e86cb6a5af2441eec0f72ce4560cde9f613e359f3e105c0254ef1545bc49ab6",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/rgs/preloader2.min.js",
+      "bytes": 28,
+      "sha256": "4c25ba8be81d68cc188fa9e4e1de851343262d0ad2fff5a803a99e4b73f3f27e",
+      "edits": [
+        "Identical original shared CT client recovered from existing package"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/rgs/preloader34.obf.js",
+      "bytes": 9284,
+      "sha256": "3936b9e13cade1157af1bdd581e04efeffbebac9aae048e0eac388bd1f6228c4",
+      "edits": [
+        "Recovered byte-identical current original CDN loader; captured formatting caused its decoder to hang"
+      ]
+    },
+    {
+      "path": "html-20200413-stable/rgs/second2.min.js",
+      "bytes": 585379,
+      "sha256": "61a11562094b86914e7f01e3eab427207ebab043b688cdb78a73d070659ec72a",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/rgs/soundjs-0.6.2.min.js",
+      "bytes": 82208,
+      "sha256": "871f15c2bb3916218775a032ce9c5544251628ea43a8c602ff1872d68606563d",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/rgs/versions.json",
+      "bytes": 729,
+      "sha256": "30cefc3325dcbd6b69b3967f5aeb950489495b076c5e2b97928cf591b82632f9",
+      "edits": []
+    },
+    {
+      "path": "html-20200413-stable/system/casino_settings1.min.js",
+      "bytes": 77260,
+      "sha256": "1c82326513b5d0348906d3c4564a2948dcad0a77233a37727f5c1dc3cbd39ee3",
+      "edits": [
+        "Removed captured demo session fallbacks; wallet authorization remains server-side"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/5_of_a_KIND_small.webp",
+      "bytes": 1326548,
+      "sha256": "b6a2471c75f7c6d54a9d04947eeae92685eb049d70225be0a741cb4988458dc4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/5_of_a_KIND.webp",
+      "bytes": 3867046,
+      "sha256": "eac7ed99164e98f416db9547603fe00e71e8e868c8643af91eaccad98d3ee5d0",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/BIG_WIN_small.webp",
+      "bytes": 1927718,
+      "sha256": "a6dcc0559537eb068ce8a631b85bc56c0c9999b6c2412c529d55439d04263192",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/BIG_WIN.webp",
+      "bytes": 4979504,
+      "sha256": "c717784570efada46f9430317e3339e5e115f2b67757f08aaa9f72830aafe1a3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/MEGA_WIN_small.webp",
+      "bytes": 1356288,
+      "sha256": "f03e1fef30e7f997e22b4b088e578b3fa870bc01a426191d27fadc91d1631b31",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/attractions/new/MEGA_WIN.webp",
+      "bytes": 3961170,
+      "sha256": "51620e03c7ad468c3f5d0c48f89e65c4f5e97a39760652ef37a436e1f1fce5ba",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_button_frame.webp",
+      "bytes": 4042,
+      "sha256": "161d0529e23b45bf3835726643369235ad3e619a14b5bc7effd5ca8a31137dfe",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_button_number.webp",
+      "bytes": 26842,
+      "sha256": "8f87db2a961b74245600172d285537eb5de9a4f743c76c4b1ee7b2ccc5e16f78",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_buttons_arrows_left.webp",
+      "bytes": 11496,
+      "sha256": "7dcd7b441492128b6a2ca60538b34c83da3018258b552a7a08ea323b323704a2",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_buttons_arrows_right.webp",
+      "bytes": 12770,
+      "sha256": "f961dffa8aa5943bafd6e01fe2e88b6b82fb1a7cd5b4b7e1c46ed193854f6be5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_checkbox.webp",
+      "bytes": 5246,
+      "sha256": "26988a195773fc1373c1c5f2bd6d05cc029a83cea67c3da6c8c851a47a586c13",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/auto_sign_settings.webp",
+      "bytes": 33492,
+      "sha256": "e2be39c82cd5ee6a54c12a512a2f8bbf388f087042bcea05e34cf1b7d1d64d87",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/help_buttons_arrows_left.webp",
+      "bytes": 16814,
+      "sha256": "ce9154c42077b1c3e13e4ef6fd482371d4ad9f0967341ce3d6dc06edde50acc6",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/autoplay_controle_21/help_buttons_arrows_right.webp",
+      "bytes": 16994,
+      "sha256": "37ba87518487737389145dcead6ecbbd0da63b6d5c9fad2d5ea227bbf42e83e0",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/banners/FortunePyramid.webp",
+      "bytes": 22246,
+      "sha256": "8721045974cb0526ebe677a9c49f4018ea4215fafc6d1bc935f164fd1b34fb22",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/CTSysAssets.as",
+      "bytes": 7021,
+      "sha256": "e17897dcf5c349d88cb9168b96727934851225b5a18bcd10fad0eb7b921d4bbd",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/all-boi 001.webp",
+      "bytes": 8212,
+      "sha256": "2ccfd6a25ea592faf5ec6b4acd6bda8355333bb55ec1728ef58f9f9ad22fe8aa",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/all-boi 002.webp",
+      "bytes": 9920,
+      "sha256": "5ceee853b157b53e6bdce2ad9b281f4a676667f7f4cdcce8c065f4b288da4b83",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/all-boi 003.webp",
+      "bytes": 6490,
+      "sha256": "9a49ad6c9d25e82a4aa3c001b6ae3fdb7012ce7eb635e2a057f73672bd7ad8c8",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/all-boi 004.webp",
+      "bytes": 4698,
+      "sha256": "6f9e377acfba2ae8505b429e7646afe2204f63b1cd67ddd6771c8c70e2b16de4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/all-boi 005.webp",
+      "bytes": 6000,
+      "sha256": "a2daa0026eb96e6f840c7e29b245bfde6088fda0262acb79b1e517e7dc1671ff",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/arrow.webp",
+      "bytes": 3396,
+      "sha256": "2a6e15f0442f4eeb356e888ea95ae0c94e934746988686d4890248aaddf467a5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_all_001.webp",
+      "bytes": 7664,
+      "sha256": "0b2cbc6cd9a3f9ee4b814a9b3c2a85714478448dc03009cb51cfbf4f3d8ee1fb",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_all_002.webp",
+      "bytes": 8080,
+      "sha256": "599f9e74d6c75b3f732f9f0b7e2d68f2de9a7a992f55cdb2dd435cf62cf6dc78",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_all_003.webp",
+      "bytes": 8006,
+      "sha256": "bd16f8364ccfe95814a4961ddf76489a83c577857417f64a423574d311fcf0b5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_all_004.webp",
+      "bytes": 7822,
+      "sha256": "32abf30b674baa8c77d4bfa23fc8ec549c1bef09004e57cbdb780788d27dde23",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_b.webp",
+      "bytes": 7428,
+      "sha256": "6b2095e7fb4f7ce4a1db046cc5d6443fbfe8c0b3007ed025bd127abbe52f240e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/buttons_r.webp",
+      "bytes": 9114,
+      "sha256": "7c412d85ca7f0937c62a930178b2e562cf23d55a1d0ab3bada486ff7839bbee8",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/cards.webp",
+      "bytes": 31048,
+      "sha256": "53987b0373bd0d50831d1906b66882dd904fae34dbe18ea209a5b0624493726c",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_LC-16_2_16-alfa_left.webp",
+      "bytes": 3688,
+      "sha256": "004d5cb61a1657f5dcd2ea620639b4d93cb4c3d46ada95168b9238fe22caa64f",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_LC-16_2_16-alfa_middle.webp",
+      "bytes": 3410,
+      "sha256": "b304fa32a257e2ac2b87674dbec2841a975c1805d4aa91b887bdf9e22f96d8cc",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_LC-16_2_16-alfa_right.webp",
+      "bytes": 3738,
+      "sha256": "e0f7619e3f2309fb36c370a47b844cd58e96e4821543234c6d8f0e9c83f60f51",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_1_left.webp",
+      "bytes": 3464,
+      "sha256": "c7d2d8c7a5888f1a8ba619cfc02c11e88c92c220a31f86a7a6bbf1261b8b3bc7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_1_middle.webp",
+      "bytes": 3328,
+      "sha256": "1f1107c3f98d62afda1be22c451a02d01a61ef66d6f9cf8c615ce631453e1297",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_1_right.webp",
+      "bytes": 3460,
+      "sha256": "6f578f8c466264fb135477ab668375d217d7c6e3764e403735a12018b28e0f7c",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_2_left.webp",
+      "bytes": 3476,
+      "sha256": "82c96989b8cfe72511d9ef2204b415629fae951417835265db56c2eb6f253371",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_2_middle.webp",
+      "bytes": 3334,
+      "sha256": "c0f67fd6c366544951db1d95d5a35bcbdd9f9999bb97965068420b5544fe85e8",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_2_right.webp",
+      "bytes": 3482,
+      "sha256": "18c0bf6dd733d1fd7a5c158f01c9185539770e7d75db1cd99f1560d864b5107b",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_3_left.webp",
+      "bytes": 3464,
+      "sha256": "ad047438e27bdcfc8a0d1927ef8ca4cb864f49c85e430695779d5d40d5c42fcf",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_3_middle.webp",
+      "bytes": 3332,
+      "sha256": "7c22cdf34bffe7b1b6fe60d16e961287c59e6e35842f8af4ba29b371b772db55",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame_small-16_2_16-alfa_3_right.webp",
+      "bytes": 3478,
+      "sha256": "36e7206f89ef0bcc529eac583a7396e438f65b304fd834feaf1fb4f21932cd53",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame-16_2_16px-alfa_left.webp",
+      "bytes": 3800,
+      "sha256": "d9bf17962d96f629f87f92b08eb34c42037f45d689871cec2aac069005237b5e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame-16_2_16px-alfa_middle.webp",
+      "bytes": 3412,
+      "sha256": "e2504dcc5b9ce514e573020aa2070f9234ea0e9a6762254e0b5d69b84a5b0df3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/double/frame-16_2_16px-alfa_right.webp",
+      "bytes": 3866,
+      "sha256": "839e920ea34f1a2c398d2ebc12dcd740ed9f8a5e9d42833321ea7b86e189d5da",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Fixed_bets/total_bet_buttons_arrows_left.webp",
+      "bytes": 12520,
+      "sha256": "b77bf3ecc97f6e34635b0a1ae3b066caba6f92339378d25097c5d8f60ca65260",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Fixed_bets/total_bet_buttons_arrows_right.webp",
+      "bytes": 13244,
+      "sha256": "f7b295af0c150731bb60640e96572ba48cda4d50bbc25f13b2eae4b02fc7ca97",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Fixed_bets/total_bet_buttons_settings1.webp",
+      "bytes": 4824,
+      "sha256": "4cf1963764a50596160bb024e391f8b69f03008dbd7e704894969b2b4be43085",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Fixed_bets/total_bet_buttons.webp",
+      "bytes": 26170,
+      "sha256": "fdd1e27f8b63a32bc0843ce6f03f228bbe8f0aa89605c8a5bc09fb297063c1fd",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/AssetFortunePyramid_1024_base_hi.as",
+      "bytes": 3437,
+      "sha256": "c7bfa49ca5dcaf90373ff7a1f7dbdd30cf527737cd7823303b78405d6dacd933",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_01.webp",
+      "bytes": 10226,
+      "sha256": "65f546cc7ae9629366dbbf1277503c6128286c4fe64442ef3ad28e7d47c77234",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_02.webp",
+      "bytes": 7142,
+      "sha256": "2ee5c33d425b21a48c62e706f982dac3a47950a2a416211bb29f1eaeae535f47",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_03.webp",
+      "bytes": 9208,
+      "sha256": "a9480d671cead6cbc4eb0b233cf5c6212c7d1ee7b9279a0538629336545bb476",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_04.webp",
+      "bytes": 6576,
+      "sha256": "52975ae7023b59e32d6a090fa0aef179bf48c789b512c4ef588a8f6e4d1caabb",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_05.webp",
+      "bytes": 9678,
+      "sha256": "99def0efe73655b4e239c4578807694dc0351515e501d4c7b130ae9ad207cf85",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_06.webp",
+      "bytes": 9662,
+      "sha256": "bfec28389e4a6dd99cc317d6389e9e141ad70c98226c0f8d49ebf959713cf7e7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_07.webp",
+      "bytes": 12512,
+      "sha256": "6d384406a6790229edf12698bf6b5c037ff9620842ebc8d7f91d28ba2fc939f4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/croppedSyms/sym_08.webp",
+      "bytes": 11406,
+      "sha256": "f6bc4bc96ed9c7b1ece360b4f75bec8a1f65bfb0a30608621a43c9e2b5a20f4e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/FortunePyramid.conf",
+      "bytes": 821,
+      "sha256": "bd856729ed6c0672dab2ffa562a2019b4de37fb4e6bd6052c4eb2d4af2d06baf",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/main_attract.mp3",
+      "bytes": 150794,
+      "sha256": "a76ba0a188dab3a8c1bf049d9ddb42b20a6d8674d59d72c5057addde8f8bdf94",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/main_attract.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/main_autospin.mp3",
+      "bytes": 658688,
+      "sha256": "1ac411b2d5f25f64b0122705ce3e7eba99370567205795483dcc2553bcb190c2",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/main_autospin.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/Scatter.mp3",
+      "bytes": 38785,
+      "sha256": "15eaae3a157082d47ce184fb88864ec9ae0c32bd3fdbc52db5deee734d0d0625",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/Scatter.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_02.mp3",
+      "bytes": 24152,
+      "sha256": "74e5a66b87c8349bbebe68452800a52709a225f11069165fdd76eae9f4cf9d56",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_02.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_03.mp3",
+      "bytes": 21231,
+      "sha256": "95e0d077ed8943eb5c4a51c195e042d1650da98fbac470a7d71b4c9b90e97559",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_03.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_04.mp3",
+      "bytes": 27904,
+      "sha256": "05a8011541d2d517ca99f2dae73bcef5c59c1f4abf2b47ff551e2e71b5ebcca5",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_04.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_05.mp3",
+      "bytes": 31680,
+      "sha256": "c911b4aac79828a8c278b53285ab13df91c3d576bdff1ebb73306021ee6b5191",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_05.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_06.mp3",
+      "bytes": 19560,
+      "sha256": "e004a4d2b192ff4df9a0ae7e74fba1145b659486f92b770873df88eeabab6ff5",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_06.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_07.mp3",
+      "bytes": 31679,
+      "sha256": "9bdf3887291e5fbb12ad59eee650d856414fb124706f39f214a49d19023ac0a6",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/sym_07.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/audio/Wild.mp3",
+      "bytes": 47970,
+      "sha256": "8b75f9fcf8da8e18acc41d3e279c1bc744fc6fb9ef440bca71ebbfae151bd82b",
+      "source": "https://cdn2.ctrgs.com/html-interface-stable/1024/games/FortunePyramid/game/main/audio/Wild.mp3",
+      "edits": [
+        "Original game-specific MP3 recovered from provider CDN"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/background.webp",
+      "bytes": 35224,
+      "sha256": "d8e12edb93b4422dfa2e525d79f424f58d587accae2a27ee16cdee3c94fab55a",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_01.webp",
+      "bytes": 536702,
+      "sha256": "13636d3d75f641e09ba0a6eb49fa7d3796a13af41139e12652b0e72fec3265f9",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_02.webp",
+      "bytes": 130420,
+      "sha256": "53d973eea98d44c684c456f61f5647289f69397d1ef6f58257106ebac8210e77",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_03.webp",
+      "bytes": 164956,
+      "sha256": "0cf63abe31e04b3ee1786219675e480e53eeb939a3fad2066fbbaa00337e3446",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_04.webp",
+      "bytes": 136266,
+      "sha256": "0be160e7d2e9f86c6ce17f4d4615a1892e4d2c6a3e7bee7183a3c0350d08fe3e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_05.webp",
+      "bytes": 185366,
+      "sha256": "49552a0f081d8da22ac312e47fd571034f961f6982c3dfe2c37241528d67a954",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_06.webp",
+      "bytes": 184866,
+      "sha256": "2a74ff9dc6ab4e32e5dd064385cfdb10720c04c30aa573f1997853c2a2ff9fde",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_07.webp",
+      "bytes": 239756,
+      "sha256": "d996c285dc9dcb4e6efe690a7f7f9f578e2478300d389e21ffb38d1b146e65e3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_08.webp",
+      "bytes": 439684,
+      "sha256": "b41063ac0a9698fae32b7046c17d9af34f4515a2a5b9ff5e138b1eb77e4fcb91",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/sym_small.webp",
+      "bytes": 5584,
+      "sha256": "1eaa3643917113bbcf17f130dee7c7643bab5e78579ebd9a722527e906e97f98",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/top_name.webp",
+      "bytes": 28742,
+      "sha256": "980e421c3c004ac2a0677df5997d0c1da85f9dd9aa0f13988f4692a9b697a7c6",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/game/main/top_wild_en.jpg",
+      "bytes": 60962,
+      "sha256": "9f93d1df151bbe63ddd0e8a65da79f384fedd75e8f2597174af7830d782eba62",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/games/FortunePyramid/MainFortunePyramid_1024_en.as",
+      "bytes": 207,
+      "sha256": "e673cfcda24a1be236862f33431de3c59688de6cf12f7ee1b9b0db4f2d442046",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/help/FortunePyramid.webp",
+      "bytes": 548,
+      "sha256": "d465172175d35d493fb1633e237700022bd849fa123164790b168b8318acb090",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/help/help_buttons_arrows_left.webp",
+      "bytes": 3842,
+      "sha256": "1e649c9bb184b479405cb403bbd6a8ef5f1746b415bbe7a51639b5d762e704a5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/help/help_buttons_arrows_right.webp",
+      "bytes": 3874,
+      "sha256": "95f6fd2517d03f0c90565a2aef7c07f52b05357a9874c02ea1e2b869da0d63c4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/interface13.json",
+      "bytes": 20264,
+      "sha256": "25f892aa371193c8325ee1a7dd50f4d06c67e6ca1b66c5642be557b1dec4fbfb",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/jackpot/qcm_levels_all_progr_NEW.webp",
+      "bytes": 68190,
+      "sha256": "fc56b9e50f76d0a1c87f56830c014227e9fab10c1c05ba386c1cca0756f3e5ce",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/jp_top/top_jp_digits.webp",
+      "bytes": 43938,
+      "sha256": "7b85bed4ee284d31bf742c42379350614889891c64f998bedda12ee73fe298ca",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/menu/menu_frame_2px_alfa.webp",
+      "bytes": 3540,
+      "sha256": "7e8b425931c622dfb1ee473c804ccd5577cded36944ac5eafc07d8dae1db33f9",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/menu/menu_frame_8px_alfa.webp",
+      "bytes": 4220,
+      "sha256": "8f7730c171bc718107c32532906be53e16517e9c3c76482eb35cffe47706241d",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/jp_txt.webp",
+      "bytes": 47672,
+      "sha256": "f91fab5b92fe5c8f0e2a77a9df5c4b9b9a06da9da7d9600d19beadf80616c804",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/JP-txt_progressive_levels_v2_NEW.webp",
+      "bytes": 121518,
+      "sha256": "304add506594bca2ae69d6c68aa1d94b21bc21a8a69a6735721e390930a14779",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/tablo_BRONZE_1024.webp",
+      "bytes": 24422,
+      "sha256": "1feb66f773a1671f4a7cfedd7c5315f23b8fd7829958ff3e96ea249924284073",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/tablo_digits_1024_new.webp",
+      "bytes": 31708,
+      "sha256": "612c078887f3caa02d9a4cd9b502cd97fdfa682f14c657647d73ba5623e7b5de",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/tablo_GOLD_1024.webp",
+      "bytes": 33734,
+      "sha256": "b1aa75bb0a40c29c9f14bae726a991cbd1d78bdb862425d8afa4a3d0382081e4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New_NEON_Jackpot/tablo_SILVER_1024.webp",
+      "bytes": 30874,
+      "sha256": "6ec4e6aa2740cf3b34ebcefead661ba3d0257f4ad945d9281bb6aca1f464d5bd",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/New/menu_frame_credit_center.webp",
+      "bytes": 4674,
+      "sha256": "fa783cfa35c2b5f8572d425259d82729fc5a691fcf2b44916b1864facca19961",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/menu_frame_credit_left.webp",
+      "bytes": 4970,
+      "sha256": "69aafbab1e64e3dcfdfb93f340abf9b5db7b9bde6f39524436f7dc507fc5afb4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/menu_frame_credit_rihgt.webp",
+      "bytes": 5008,
+      "sha256": "36c8fa38f91b0dcc83b5d20ece129d90455af7a00f22a71df560ad408f51dea5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/menu_frame_icon.webp",
+      "bytes": 20350,
+      "sha256": "8972c069bdb9f702ea9c8de16617ad437008d45290f0737ec923860f4026f6e0",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/panel_frame_credit_30_2_30_alfa_left.webp",
+      "bytes": 3818,
+      "sha256": "0bda21afea11228064b22ee6c83548237d38e78f3d83a7272984191b34c86187",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/panel_frame_credit_30_2_30_alfa_mid.webp",
+      "bytes": 3406,
+      "sha256": "adc3184d5116f193e66c4d882c547bc919dbe72039aa300bf934d55ac8295d64",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/New/panel_frame_credit_30_2_30_alfa_right.webp",
+      "bytes": 3860,
+      "sha256": "ab3454fc598b6757e2c2b110f9bd1ac2fac2bc79040b0f38daa8030cee7088b3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest1/menu_button_round_denom.png",
+      "bytes": 50172,
+      "sha256": "2a8df828ce27425b20be7710f76ef7a322d15c484bb646f7907f0d37240bbd84",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_arrows_down.webp",
+      "bytes": 15816,
+      "sha256": "afb365432eb3015ffdc37a4fa831b3354b7ab54c4996feace7799ed777e094ea",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_arrows_up.webp",
+      "bytes": 17392,
+      "sha256": "71e0c8493ac46c768face61f21c99340e9741f4d65d92778efb3261b49a218bc",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_close.webp",
+      "bytes": 24278,
+      "sha256": "fd7ef53dc98fa5f99cc62ce098ad32382034dc721b8c6893f0f3a7cc56ac7071",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_home.webp",
+      "bytes": 24396,
+      "sha256": "f1e1dbe639fbf990a7fbfd26e840b3e41c66174f485db52b92ae6d598d1ca26d",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_info.webp",
+      "bytes": 22990,
+      "sha256": "54cab2f4e56fd1f058222c0e4b040cba129c255f867764544cef10f8c0fa9d7e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_question_mark.webp",
+      "bytes": 39618,
+      "sha256": "1280fb4653762e9af74ac523a97597283a494b249235a8cdbf3b1adb4d9615e6",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_screen_full.webp",
+      "bytes": 26918,
+      "sha256": "f81a3fd772bd8a562647484ef3c56ab0cd66c4099302005b767b07d1cee93061",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_screen_normal.webp",
+      "bytes": 26358,
+      "sha256": "577e2f15c9bf31e9e6375a4c4a18a9d8764696f7a042ba28013f1b3aa41ab205",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_sound_off.webp",
+      "bytes": 33024,
+      "sha256": "2e6d36ccd8edae24011c2c8fe241e1f59073a47564ee9055846c1e3e014037ff",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_sound_on.webp",
+      "bytes": 23984,
+      "sha256": "1e30f3acee15afd61909686a36c99e638859c204c24b6cd390ce965a75af84d3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/menu_sign_statistic.webp",
+      "bytes": 32648,
+      "sha256": "d11047bd683a742720705484103d4ba9042feabc26ae3fe4e3d2ba77c0d6761c",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_1_2.webp",
+      "bytes": 68418,
+      "sha256": "2d33f67bf211a8f3eb765e082e3a0f21e2e349f366b35c79cc8995f0174e0bee",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_autostop.webp",
+      "bytes": 91090,
+      "sha256": "799715c4e5f2b84bff010c0160be6b9e2dfa753e649541ec9c94f3603997a6b4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_play_rotation.webp",
+      "bytes": 109888,
+      "sha256": "baf78b8ad97b445e69d2866e2e79436637581753dc80501c4aa5668bb4783c9e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_settings_rotation.webp",
+      "bytes": 109460,
+      "sha256": "9e5c5a2738361e2ffae88a009619e2fda30a4bc84dfb7e10984af47d3f069d6f",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_take.webp",
+      "bytes": 49508,
+      "sha256": "d7753345a738af0bf37cb50d2cf9c86988fd7a46dd9181935d39cbd787db91a7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/Newest2/play_sign_x2.webp",
+      "bytes": 56586,
+      "sha256": "d741d3f062b50856963cb4f94b06b5cfc261d40c34c2e8f790e8d36c7d3a1d19",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/panel_frame_msgbar_48_2_48_alfa_left.webp",
+      "bytes": 3814,
+      "sha256": "c14124fbc232472c6a6893da59dcd2c1792e0def3cd50b35ea0c5346806282c7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/panel_frame_msgbar_48_2_48_alfa_mid.webp",
+      "bytes": 3378,
+      "sha256": "a16839fe141b522be143993a6ec54dda8e904ec1b6fd268669cfb1a78a69d98a",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/panel_frame_msgbar_48_2_48_alfa_right.webp",
+      "bytes": 3834,
+      "sha256": "5e0dbaa1f7fa1ae030a4c1d0a47d3a4603ba4f3660d31d6719afb427929fd750",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/videos/FortunePyramid.mp4",
+      "bytes": 548,
+      "sha256": "d465172175d35d493fb1633e237700022bd849fa123164790b168b8318acb090",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/1024/VLT/Big_win_COINS/Big_win_Big_win_1.webp",
+      "bytes": 473710,
+      "sha256": "0194c2bc5db521ad4d345d98b3764d265537278f42a6a2912022634c092fc696",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/VLT/Big_win_COINS/Big_win_Big_win_2.webp",
+      "bytes": 2232582,
+      "sha256": "dbe703d09195aa550c5b90fd72d826f8c1355d4f080f87aab22b568ef2350126",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/1024/VLT/Big_win_COINS/Big_win_MEGA_WIN.webp",
+      "bytes": 2944938,
+      "sha256": "6a5f270b0f52193c02205f5ff49fd8976a94ca7ce8ffceac937beb9e432a5c5a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/celebration/service_winline_big.mp3",
+      "bytes": 28558,
+      "sha256": "daac236288ebb051af9e5ce2cb8c8042f81db43f9225392e9210b806f1e25277",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_1.wav.mp3",
+      "bytes": 9238,
+      "sha256": "a504359c4709bca029acea08a7d119dabf1159b2c329dba7b55d1adce09f1c7a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_10.wav.mp3",
+      "bytes": 9238,
+      "sha256": "47a6b2ab693efd95f37413e7a2f89cf9304e6631704d8f52fd30d7777c2cfe99",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_11.wav.mp3",
+      "bytes": 9238,
+      "sha256": "9ee0316ac4136baf025b2e36725edcec55a91f8fb43e9422da0f23dd2a6aba38",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_12.wav.mp3",
+      "bytes": 9238,
+      "sha256": "07a013d02e3b58a67adcdb57cff374aebc7a0b5f69d96c32619669a08224d945",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_13.wav.mp3",
+      "bytes": 9238,
+      "sha256": "a9a20534e14c46926abd0cd97ecd003802d8fc1000f8723db3d55cc8ab60a117",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_14.wav.mp3",
+      "bytes": 9238,
+      "sha256": "c312cf2c00cb1378c987a32f4cbf2d1b4b29983c1f2672a00c7114d36b9b2b6b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_2.wav.mp3",
+      "bytes": 9238,
+      "sha256": "e594365e35b3c0bece6639065d98c7325cdee9c5160a4fcf13caed50670c45c0",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_3.wav.mp3",
+      "bytes": 9238,
+      "sha256": "99c9f86eeda00bac83bf02f04550bf63d9f919e89e5834e9c91cdc858ebd90c1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_4.wav.mp3",
+      "bytes": 9238,
+      "sha256": "93294320ed7a28e4812d4d07007b42ada03f1ae2313d9a93bc5a19c1ff9947c3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_5.wav.mp3",
+      "bytes": 9238,
+      "sha256": "d233636d7430d87543dc3e52c72aeb638578645a8d16523c97d52fe720087c20",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_6.wav.mp3",
+      "bytes": 9238,
+      "sha256": "7081ccaa80d8ccb8d98eab1a5d4bfd4aebf89452ba213854cd10fc95da8948df",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_7.wav.mp3",
+      "bytes": 9238,
+      "sha256": "d7d78dc0b2477c3b80a279c004cbe5c7f729472379bfde059d003f574223d73b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_8.wav.mp3",
+      "bytes": 9238,
+      "sha256": "b859366ca10130f3fe607be3573378855b40bb94cc55ef4a284e3fe6f4d61531",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_blinknew_9.wav.mp3",
+      "bytes": 9238,
+      "sha256": "7b93445efda031e77ccd0eed56e1fbaf2ab1e80397482d2905b1f48438cacede",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_1new.wav.mp3",
+      "bytes": 49318,
+      "sha256": "27ec107ce0e4fb92b044bd3c0ebed4ee522175c8a5e587ef45cafad026c6a566",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_2new.wav.mp3",
+      "bytes": 49318,
+      "sha256": "ba003e86dbcdde54f762e4f190361ef06d3069793af3b444bd3c497d71f1262a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_3new.wav.mp3",
+      "bytes": 50572,
+      "sha256": "e0eb7ef986435df84c14b2717406be4cab05a4f5cbdaccd05a25b4f13dcd87b7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_4new.wav.mp3",
+      "bytes": 52661,
+      "sha256": "43014cff6cdf711ef97c4b2b47ca90afa7af094ae7f6c63aeed15220027a70a3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_5new.wav.mp3",
+      "bytes": 52243,
+      "sha256": "487011ee9e69e447670bdd70c8b34b25b3fcb82b0da835d90de335ae0e887644",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_6new.wav.mp3",
+      "bytes": 52243,
+      "sha256": "0562929d0a5d8b7996123ae6e4c3757c9260b2c8507b56643e71158a7c6dd714",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_7new.wav.mp3",
+      "bytes": 56885,
+      "sha256": "a025eecb58a31a1b6db4cd5f46b525e68e0d1d5f7ff06c3b3328eb7bf9378153",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_hg_0.wav.mp3",
+      "bytes": 24285,
+      "sha256": "0154a7788bcbc2578f18fc89c9d06077c160bb3ebc58d95ef2e7aceedf3443d1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_hg_1.wav.mp3",
+      "bytes": 25121,
+      "sha256": "0749b9725511cf55587d128f0deba1310404718beee5c19062476d876437f605",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/doubleRB/service_double_lose_new.wav.mp3",
+      "bytes": 46854,
+      "sha256": "695c4b866caaa547a10bd51780b3c94d520222509b34606407a5c867717462a7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/amazing_win_celebration.mp3",
+      "bytes": 97339,
+      "sha256": "4d53f3db5e40f9f2e83ab248fd95983bce0d5b3f44eeb892d556f3d910321e24",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/Anticipation_2.mp3",
+      "bytes": 51364,
+      "sha256": "c8325e508230382c96b2cc61c8d60fe0c18473cce53af53078f279ee3d69d5ac",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/Anticipation_3.mp3",
+      "bytes": 51364,
+      "sha256": "73ac81cf3f86d12ef2005017cfd69431a45be9bf0b3bff79dc75ee6cfabe7767",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/Anticipation.mp3",
+      "bytes": 51364,
+      "sha256": "04518d2622119b8f382883572ffc9f8f35fc9aaf8c301be9b05a95103ed247c6",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/arrow_down_clicked.mp3",
+      "bytes": 9568,
+      "sha256": "4af2e99eb54d1e15b9c36dc8c56dd32e4085177ec618ddeae0aa1e97e5d1c170",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/arrow_up_clicked.mp3",
+      "bytes": 9568,
+      "sha256": "63e3abf1ef2e090876ee492baff8d4516e815ef4add4c0cba0788b1a3367564d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/autoplay_start.mp3",
+      "bytes": 9568,
+      "sha256": "91189dcf11e038d806fe6b2fa52fb012b11cc23acff8a634aa0eb2ff51f7229a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/autoplay_stop.mp3",
+      "bytes": 9568,
+      "sha256": "4531b5618d97be7edbc4acd96ab4c15fa20dc52316a1a2c8d784d6c61cd1535e",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/button_click_game.mp3",
+      "bytes": 9568,
+      "sha256": "c068d8a97f629c14aefbde8090dfb13c3249a1196e032f372522c916e29a6ff4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/button_click_menu.mp3",
+      "bytes": 9568,
+      "sha256": "c43f63401975482dfdbaf9641091d5c61eb27f2c64870cd43f46f4a61be660a3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/five_of_a_kind.mp3",
+      "bytes": 41333,
+      "sha256": "4b306bd79e26f4c6dbd17ecc6c663b6b818963fb509e9ce46c542163cb690726",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/full_house.mp3",
+      "bytes": 57215,
+      "sha256": "494e3e6c3930f63ec4a1b368d44ebcd3d5159573d4a49756ccac2f9cdf65b5a7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/jackpot_win_big.mp3",
+      "bytes": 169228,
+      "sha256": "f951bd23ae69fc6e1b1680ec059badcc1fbd821c94fea82ee9195fcfcb6c7219",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/jackpot_win_small.mp3",
+      "bytes": 105280,
+      "sha256": "eec577beaf9b741fb5ac18713286cd6e869243e97c2c0562a20e7babc8126afb",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/mega_win_celebration.mp3",
+      "bytes": 161287,
+      "sha256": "b1862a68d9b53c549e5461189ce5721d97b7b4a53e48e5e47c163b2a2b239d3e",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_2nd_bonus_2.mp3",
+      "bytes": 17509,
+      "sha256": "bba570f32c058b60ba81517bbffef79665b9e1316535f35c3ed9946ebffaaeed",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_2nd_bonus_hit.mp3",
+      "bytes": 17509,
+      "sha256": "7a584aaf5d0d4dee9a09a41f1f31d12a1b19b9a637452556b15b8abef4b08fec",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_2nd_bonus_hit2.mp3",
+      "bytes": 17509,
+      "sha256": "7fb660bfb1c14e32909098707e4d86088f5158cd9c1f1e2d90f0786b3ea318b5",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_2nd_bonus_hit3.mp3",
+      "bytes": 17509,
+      "sha256": "69e9bb88a54e87a1195c98903fdf070ba2cf90879895d2bc23a9dadf78967b8b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_2nd_bonus.mp3",
+      "bytes": 17509,
+      "sha256": "e700b62d4c79b6378a327b140143fa86be1c558c0d63e4fb170ca36452f5206d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_bonus_2.mp3",
+      "bytes": 17509,
+      "sha256": "3548c8161d60bb8cbb18af896f756e1f70c03f9210f3681d39e270f4b266f490",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_bonus_hit.mp3",
+      "bytes": 17509,
+      "sha256": "9409ae02f1100d47ded81de31ad07fb03ce7de40791824485066c6d8acfb2af2",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_bonus_hit2.mp3",
+      "bytes": 17509,
+      "sha256": "eb942d54dcb3b66bbdd8e35184f58a77d32492ea7f8a3ce30e84197aa8dd45f7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_bonus_hit3.mp3",
+      "bytes": 17509,
+      "sha256": "9b47a873fb91f3bbb315ad7e5266bd0f42c8405b9725863b5b9982de00618958",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reel_stop_bonus.mp3",
+      "bytes": 17509,
+      "sha256": "192555062b1501144e54403f2d78c084450b43b1075731fb64c9d5a67b092f96",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reels_start.mp3",
+      "bytes": 9568,
+      "sha256": "0decd13d30211fe50487b30848bc339cbe77f13dd298a7a20b42fa14dd6b3867",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/reels_stop.mp3",
+      "bytes": 11240,
+      "sha256": "57a14fb0cfb068dbc7e2c15e26d064ea6054b63e43a5173f96e69cec329597ae",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/wild_stop.mp3",
+      "bytes": 19599,
+      "sha256": "8bc5ded05ff7e04e0b4827b8d58b6ea235e31c996a572801defa23b95e13b50a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/window_close.mp3",
+      "bytes": 9568,
+      "sha256": "8004d6262be29c62d4d994702befe23adba03fd2f6de812ddcfbdbdd1e55a16f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds 2/window_open.mp3",
+      "bytes": 9568,
+      "sha256": "0df8ba491d303f15068b28f26761fd6536eb767a12104e23d17bc3934a122b37",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds/barabani opt 2-1.mp3",
+      "bytes": 6314,
+      "sha256": "4698f2ee46ed9690d4a76327f5cac687fc45c9ec2dc03a9a711c9c6af438096e",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds/bonus 2 coins .mp3",
+      "bytes": 22852,
+      "sha256": "1fcc15c9648c47062674f3458c95c8fe141be887962a3d7144f40df79b828bb1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new sounds/extra_win_of.mp3",
+      "bytes": 40458,
+      "sha256": "9a13bf47ddd1317f45011aee83ec449792c3828bf32631b7ab0ce76f92be0d90",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds/barabani%20opt%202-1.mp3",
+      "bytes": 6314,
+      "sha256": "4698f2ee46ed9690d4a76327f5cac687fc45c9ec2dc03a9a711c9c6af438096e",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds/bonus%202%20coins%20.mp3",
+      "bytes": 22852,
+      "sha256": "1fcc15c9648c47062674f3458c95c8fe141be887962a3d7144f40df79b828bb1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds/extra_win_of.mp3",
+      "bytes": 40458,
+      "sha256": "9a13bf47ddd1317f45011aee83ec449792c3828bf32631b7ab0ce76f92be0d90",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/Anticipation_2.mp3",
+      "bytes": 51364,
+      "sha256": "c8325e508230382c96b2cc61c8d60fe0c18473cce53af53078f279ee3d69d5ac",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/Anticipation_3.mp3",
+      "bytes": 51364,
+      "sha256": "73ac81cf3f86d12ef2005017cfd69431a45be9bf0b3bff79dc75ee6cfabe7767",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/Anticipation.mp3",
+      "bytes": 51364,
+      "sha256": "04518d2622119b8f382883572ffc9f8f35fc9aaf8c301be9b05a95103ed247c6",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/arrow_down_clicked.mp3",
+      "bytes": 9568,
+      "sha256": "4af2e99eb54d1e15b9c36dc8c56dd32e4085177ec618ddeae0aa1e97e5d1c170",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/arrow_up_clicked.mp3",
+      "bytes": 9568,
+      "sha256": "63e3abf1ef2e090876ee492baff8d4516e815ef4add4c0cba0788b1a3367564d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/autoplay_start.mp3",
+      "bytes": 9568,
+      "sha256": "91189dcf11e038d806fe6b2fa52fb012b11cc23acff8a634aa0eb2ff51f7229a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/autoplay_stop.mp3",
+      "bytes": 9568,
+      "sha256": "4531b5618d97be7edbc4acd96ab4c15fa20dc52316a1a2c8d784d6c61cd1535e",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/button_click_game.mp3",
+      "bytes": 9568,
+      "sha256": "c068d8a97f629c14aefbde8090dfb13c3249a1196e032f372522c916e29a6ff4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/button_click_menu.mp3",
+      "bytes": 9568,
+      "sha256": "c43f63401975482dfdbaf9641091d5c61eb27f2c64870cd43f46f4a61be660a3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_2nd_bonus_2.mp3",
+      "bytes": 17509,
+      "sha256": "bba570f32c058b60ba81517bbffef79665b9e1316535f35c3ed9946ebffaaeed",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_2nd_bonus_hit.mp3",
+      "bytes": 17509,
+      "sha256": "7a584aaf5d0d4dee9a09a41f1f31d12a1b19b9a637452556b15b8abef4b08fec",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_2nd_bonus_hit2.mp3",
+      "bytes": 17509,
+      "sha256": "7fb660bfb1c14e32909098707e4d86088f5158cd9c1f1e2d90f0786b3ea318b5",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_2nd_bonus_hit3.mp3",
+      "bytes": 17509,
+      "sha256": "69e9bb88a54e87a1195c98903fdf070ba2cf90879895d2bc23a9dadf78967b8b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_2nd_bonus.mp3",
+      "bytes": 17509,
+      "sha256": "e700b62d4c79b6378a327b140143fa86be1c558c0d63e4fb170ca36452f5206d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_bonus_2.mp3",
+      "bytes": 17509,
+      "sha256": "3548c8161d60bb8cbb18af896f756e1f70c03f9210f3681d39e270f4b266f490",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_bonus_hit.mp3",
+      "bytes": 17509,
+      "sha256": "9409ae02f1100d47ded81de31ad07fb03ce7de40791824485066c6d8acfb2af2",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_bonus_hit2.mp3",
+      "bytes": 17509,
+      "sha256": "eb942d54dcb3b66bbdd8e35184f58a77d32492ea7f8a3ce30e84197aa8dd45f7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_bonus_hit3.mp3",
+      "bytes": 17509,
+      "sha256": "9b47a873fb91f3bbb315ad7e5266bd0f42c8405b9725863b5b9982de00618958",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reel_stop_bonus.mp3",
+      "bytes": 17509,
+      "sha256": "192555062b1501144e54403f2d78c084450b43b1075731fb64c9d5a67b092f96",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reels_start.mp3",
+      "bytes": 9568,
+      "sha256": "0decd13d30211fe50487b30848bc339cbe77f13dd298a7a20b42fa14dd6b3867",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/reels_stop.mp3",
+      "bytes": 11240,
+      "sha256": "57a14fb0cfb068dbc7e2c15e26d064ea6054b63e43a5173f96e69cec329597ae",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/wild_stop.mp3",
+      "bytes": 19599,
+      "sha256": "8bc5ded05ff7e04e0b4827b8d58b6ea235e31c996a572801defa23b95e13b50a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/window_close.mp3",
+      "bytes": 9568,
+      "sha256": "8004d6262be29c62d4d994702befe23adba03fd2f6de812ddcfbdbdd1e55a16f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/new%20sounds%202/window_open.mp3",
+      "bytes": 9568,
+      "sha256": "0df8ba491d303f15068b28f26761fd6536eb767a12104e23d17bc3934a122b37",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/ring_fg.mp3",
+      "bytes": 73176,
+      "sha256": "4ee01c54b34641350e33d336b383148c27d11828d3b1626ccebfecaef16e400d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_10lines_mid02.wav.mp3",
+      "bytes": 19687,
+      "sha256": "8f8da7758fb3188cfba926e533f3f07f20193693372af08d320386046a4582a1",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_line001.wav.mp3",
+      "bytes": 15045,
+      "sha256": "33b0065d102fb4ab5421685f76e271235ca8b38f624d5c0e26bbdfbd7ce5a0d7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_line012.wav.mp3",
+      "bytes": 15045,
+      "sha256": "010ec6a6ed3e552e11cd29c3bdf28f96830dad5c1dea2e9fbf757449a9f37747",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_line014.wav.mp3",
+      "bytes": 19269,
+      "sha256": "d2a537d0f69ebb667affedd4a0dbe76270ec106b9e268790dde5d151c06b7d14",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_line016.wav.mp3",
+      "bytes": 15045,
+      "sha256": "327162903ea4a479e33459c144d28a94bc922d7c2c727518a22f067fbc1d09e9",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_line021.wav.mp3",
+      "bytes": 18851,
+      "sha256": "b574b866363cf120fd6f0bed525708a469299dbc1e63c72859251d970feaebe4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/audio/service_winline50_004.wav.mp3",
+      "bytes": 9578,
+      "sha256": "1826bbb3144ba4791dfe155151faee23cda0da6d10de0d58ac56fd979ee3169c",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/HD_Backgrounds/MainFortunePyramid_1024_background_1920.webp",
+      "bytes": 88394,
+      "sha256": "8e63de3ab2c2fdc02864938f0bd4c1b74275f4e955c3e7f08e5b44e94e228eab",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/Mainsys_en.as",
+      "bytes": 15980,
+      "sha256": "4d1f75bf1787c4637f7de355a2660e777977aef990466e5faec745733ad397cd",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/PIXI/attrPIXI_Asset.json",
+      "bytes": 2394,
+      "sha256": "ae060e0cd875a2a18adaa8dc222c441269f5b8f02c02344a99aaf47bbdf8a2bb",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/PIXI/CTG_PIXI.js",
+      "bytes": 34697,
+      "sha256": "fbcaf72f407d86d38448640367a3e23a5ce8e787e7dde073b17217e3df3d30ee",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/PIXI/pixi-dragonBones.min.js",
+      "bytes": 463351,
+      "sha256": "f91be70cd76ff90cceb1a5d5327ca9e4adea1a5ec5c28761a83335567b505ad9",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/PIXI/pixi-spine.umd.min.js",
+      "bytes": 776091,
+      "sha256": "c9d3784d0ab1a7dc93f6e893539f29c7345e44bd51b8a6d03284795112b00931",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/PIXI/pixi.min.js",
+      "bytes": 773047,
+      "sha256": "e51d900985e1686321dbd3c510f3b7d575776010505a2f78a3c3855aaaa893f6",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/lottie.min.js",
+      "bytes": 432426,
+      "sha256": "02e73cdff5d715cdb4912e18ee24feac286921886b10ca2363fae376547da490",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00000.webp",
+      "bytes": 938,
+      "sha256": "81e1614abd131975fcacf6d728d0b868e67ee995c5395c8afd61752e57f39cd7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00001.webp",
+      "bytes": 1248,
+      "sha256": "d4aa7445821240d067f951fba0bd7bd39dd41e32d078078ba1f61172d8d8d5bc",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00002.webp",
+      "bytes": 2126,
+      "sha256": "dde972efd54a11f806dad68735df5be9111dea476b116d2bf95a051927c6914c",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00003.webp",
+      "bytes": 2242,
+      "sha256": "46c1cb763e93dcb28603cdb21db641658211f421b177089386956e8046e4d05b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00004.webp",
+      "bytes": 2980,
+      "sha256": "ca42770ec09e2e726949f8852c0af27c5ab352f987fa563afd408992a3b42a7b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00005.webp",
+      "bytes": 3746,
+      "sha256": "69e932db531ff0e9f46a0b5bc09dd423ff6391f620785f87a1a7e7a5763c7376",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00006.webp",
+      "bytes": 3684,
+      "sha256": "47494b36b53d670b5cf6f3378927da36c85e9501d76f048427f4b221537b8e98",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00007.webp",
+      "bytes": 4728,
+      "sha256": "cebd3cc29692a9c0334fe9f8073d057e2ecce894d507de309526989111655f60",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00008.webp",
+      "bytes": 5626,
+      "sha256": "0a96a8efc8eee879822457fbb847cee71b0361fba4435a40bca95a21c150f7c2",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00009.webp",
+      "bytes": 5386,
+      "sha256": "987554565395a68db3e424c29dd40419384ec328539d7b26035d81a26ed3858b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00010.webp",
+      "bytes": 6106,
+      "sha256": "c2e37a5652aa8ea4a803f4181d07be7dcae3f9941ffd1c6b72bcc17b1feb2286",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00011.webp",
+      "bytes": 6054,
+      "sha256": "57262e6dc5b8cd8368ae8a18cf0c8eafc58b489aa24cd3a5ad32b8e7e3f6c247",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00012.webp",
+      "bytes": 5426,
+      "sha256": "a5f697d7397085e6b2ff1ccf4b6030787f8928d3612f73caac4d4f34c87411e6",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00013.webp",
+      "bytes": 5658,
+      "sha256": "fadfd090f6b37783d8127e8354b9e536b6f4a7c04f55ba80ac22c7d16fbebc37",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00014.webp",
+      "bytes": 6484,
+      "sha256": "b1994ab4fc0c116c2714c1bc27b05cd963471131934951d1dbf7045817374de3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00015.webp",
+      "bytes": 7798,
+      "sha256": "4b6e6eb6d07023b74b415103e493b76cc7f085f2347cc42feba118fa87e8c12c",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00016.webp",
+      "bytes": 8586,
+      "sha256": "1643a37db00167e9cbd782997ff0fab5f904a3ca1c7bc24420cfa3c9978b1dff",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00017.webp",
+      "bytes": 9298,
+      "sha256": "c4b1059af261272c806d0022ed45ec784023a9972545e7d8e1e19c9001e2d32a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00018.webp",
+      "bytes": 11206,
+      "sha256": "fdde99bb7261a2fc3ffef337b67f0287c29b08d7a76f63d65086e77cf1d7e26d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00019.webp",
+      "bytes": 12426,
+      "sha256": "5b0383fd470dd8860284b55c9a51aff52cb9abc5cb0736648848fb51edb0f4b4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00020.webp",
+      "bytes": 13476,
+      "sha256": "de31a02e341713c3f54361b25e879ebeab694a949d3acb6629f6ff2b0e1dfb23",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00021.webp",
+      "bytes": 14864,
+      "sha256": "99b99411f6b1a26002bfc533a11c7ba6d31351e9bc33690e122bc87126178a57",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00022.webp",
+      "bytes": 15800,
+      "sha256": "705f50098ea4809a7814d941cb52d35f1fe36857f3be6618744b1a3e3d02a472",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00023.webp",
+      "bytes": 18328,
+      "sha256": "da1239f16ae7a1cb81eae6b3e374f604835845efc5d4cd5abf41a252d8569ebf",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00024.webp",
+      "bytes": 20726,
+      "sha256": "993ea4ae7100455c02c757cdd3f3e1d892b61ab612e9b815fab4819a693c2164",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00025.webp",
+      "bytes": 21882,
+      "sha256": "6a5f4b049c7061191a014e195bb4f4f7134a4c1cfa06e7b8c61997d34400fe32",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00026.webp",
+      "bytes": 24060,
+      "sha256": "29bde369c70f1571625930b02b49d691ce84d2b65f109acd60047a972fdbffda",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00027.webp",
+      "bytes": 24602,
+      "sha256": "f8a36ba565c8c3a231f17d8df51022906787722dd51b9838e7ff50672ff70e94",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00028.webp",
+      "bytes": 24252,
+      "sha256": "9a86adac18bc682262ad7fc65b141048543d9e65a12996d95d8f3f1c1a848be8",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00029.webp",
+      "bytes": 26652,
+      "sha256": "ac5c88436a83e14311f0699f9602ce4b9fe07cb0bc350439c82f5b398f132da9",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00030.webp",
+      "bytes": 27392,
+      "sha256": "1934ea0a40e2b7a954ff048ed75897267b2c9a9ed35889a238c0c798caf02f86",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00031.webp",
+      "bytes": 26782,
+      "sha256": "a1fa19f24524172c16aec3a14bf1e4dc8f799300e37649d8f560bcbb54757f8a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00032.webp",
+      "bytes": 27484,
+      "sha256": "9f28b2b2747cdf4a6c1a131004f842f16826a4b946f108b7eb35b922384fe77d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00033.webp",
+      "bytes": 30188,
+      "sha256": "9f0fb8a4435c583010247d50eae9d1147c10f611c7c2a47e90a9206de8705170",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00034.webp",
+      "bytes": 31850,
+      "sha256": "47fae0b9139b9198810326d39244b9c7ff11375deddf00d606b12f808ce8e9f9",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00035.webp",
+      "bytes": 33454,
+      "sha256": "014046b382d6b2872dca077709de72e16d2670e12fff3b8f1cabfffd65ee4d92",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00036.webp",
+      "bytes": 34802,
+      "sha256": "0a18b30a300828237db02bf0429ce641ef79eabd8f21df8bc81a2e084506c380",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00037.webp",
+      "bytes": 37664,
+      "sha256": "df5648d758898c3924958866d7210cf92e294be50e9119c9f081712817651c29",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00038.webp",
+      "bytes": 39628,
+      "sha256": "e5779d08d6285e205bd212738cfe554a0d992f6d2430e611d4b41b852fddfddc",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00039.webp",
+      "bytes": 38726,
+      "sha256": "4b3f3b759b3a6a4d91688275abe28edbd5aae84f54311c32e2fe046f370562c9",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00040.webp",
+      "bytes": 40320,
+      "sha256": "92cfeccffc2d20c0f72cda64b2253e86a5895c281b1d5a87dc731448132c4ba5",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00041.webp",
+      "bytes": 43108,
+      "sha256": "1e79cb09a0942b1ae2e5cf98d817d033fb7fcfd3a7a5d69bbc2829c4692923b9",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00042.webp",
+      "bytes": 43460,
+      "sha256": "b823753ef3cdb76115719f55057b9571b9de1992e2d9152554fdeebb52199281",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00043.webp",
+      "bytes": 43280,
+      "sha256": "5be2506d969b87fd0b69a8f5fef0f78ab8c785b168e3799c030468942210536f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00044.webp",
+      "bytes": 45018,
+      "sha256": "d784a6c5c0e2b50824ab9e381e0f3ebba825a7441847117d09dc324535ee27c3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00045.webp",
+      "bytes": 44920,
+      "sha256": "5abc40fb62ca18c16f8d1f3c90add700262abaa44a925216b55657690daf76e8",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00046.webp",
+      "bytes": 46870,
+      "sha256": "dcaa14d0affea8f1e578a5543059b8110860a9330b015b0a285b5dae3f389a0d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00047.webp",
+      "bytes": 47766,
+      "sha256": "333daa883bcb4ec9d1257ff09a784a1493d5a7215d3e4644d3b86cf3a87699ab",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00048.webp",
+      "bytes": 49290,
+      "sha256": "f58c8b3367db800bbf7b9a3c65a18481aea1ee7202c10d476c85b521cb8d7ffc",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00049.webp",
+      "bytes": 49238,
+      "sha256": "bf287bf401b9caa2ea7122062d004d363ffa791f201e83a924a3e070aef2274a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00050.webp",
+      "bytes": 48256,
+      "sha256": "2d8a75baa3abdd358c4da11de794bfd5f8f95056a9cab2c6203f50f585e4b9dc",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00051.webp",
+      "bytes": 48014,
+      "sha256": "c9cace63a5a65c414df7290a930d5e871fdc9fd893c5e692f1ff0b98e3913a1f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00052.webp",
+      "bytes": 48760,
+      "sha256": "10d6e9cd5d1a863bc35cb624c300381fe85916b247ef27e1e473b0c72d8e7982",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00053.webp",
+      "bytes": 49464,
+      "sha256": "7d72a64985ad559d26b977337d62f94e61c28386cb237fa4ec7f95f21128959a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00054.webp",
+      "bytes": 50392,
+      "sha256": "9dbb3da46041975816adcbb9a314c78159b55151016c835b1bbb405f3efcb510",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00055.webp",
+      "bytes": 51010,
+      "sha256": "e58efb2c2d858566904719ca5f79765b74d5d98d1a5cee51d1f91ab49560e71f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00056.webp",
+      "bytes": 49874,
+      "sha256": "4fbb607016ad0acc0a87468fc03595b311b69d627d0bd6811fd6773d8565d653",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00057.webp",
+      "bytes": 49390,
+      "sha256": "2bd78e1b446d2805921daec837aee7cf1aee3f622a800a890829ddc796087c2f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00058.webp",
+      "bytes": 49964,
+      "sha256": "0f18bab87d78f4028ea7b470a0ae1d7fd8470c6a77aa9feaf16455ee47938248",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00059.webp",
+      "bytes": 49100,
+      "sha256": "224bf831198bab501947ee0a23e1ab49477e28cbf7b5dff4f954db6b6503c84b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00060.webp",
+      "bytes": 51188,
+      "sha256": "37eefb3b812300cd24dda4e2fb078962c446a18e929cc35d7ae5f21a738844ab",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00061.webp",
+      "bytes": 54686,
+      "sha256": "0108c59fcbb6cc38f6e032629bb711614ae25ca8fa308157eaed913a2e1b002c",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00062.webp",
+      "bytes": 56910,
+      "sha256": "4ae73784824aadcda1d3ee8fe13b47a85795c2ac0581742fea1c29078718cda8",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00063.webp",
+      "bytes": 58378,
+      "sha256": "2c2c1252b8bd590d98282383315fce8dc6f48f3426362efe9756b0ab61ddd3b8",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00064.webp",
+      "bytes": 57396,
+      "sha256": "3c398bb6753cf9443ee4551d6e1ad7b93d85fb428582a0410511475b4e5cec26",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00065.webp",
+      "bytes": 56812,
+      "sha256": "7d711f0628b92daa2d38fd92daf2d912ae2b476eb91be89740413c510e0465ce",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00066.webp",
+      "bytes": 55160,
+      "sha256": "4566575c605e6d0c73b1073a1cfdd95dd96fdfa22655cfda59b35cd842eccf6d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00067.webp",
+      "bytes": 50994,
+      "sha256": "f1ad686c2528b0214c77cfe3612f14a4245640ce94e374fd70479b3f47ea8dab",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00068.webp",
+      "bytes": 50058,
+      "sha256": "4efb838181c351953fcea47ea2346d221181c22d6cd098aa271014cc46af266d",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00069.webp",
+      "bytes": 46918,
+      "sha256": "7ab0e4dc5d54354cfa45efd46bff7032a4caceaa755fceee0f7ba3ef7e640ff7",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00070.webp",
+      "bytes": 47568,
+      "sha256": "b5c5c798fbcf174f8c2e90dfb8e0e743fc509e9ffde56b739b75b312eff37f3c",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00071.webp",
+      "bytes": 41370,
+      "sha256": "ffc3f454ce655f361336be7358e59eb9f8473e034d9d2ba810f0255b81138757",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00072.webp",
+      "bytes": 41002,
+      "sha256": "8c7131c5ffa8446847d776ae41c555c874c5eb71646edf79aa2d90d6874919c4",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00073.webp",
+      "bytes": 39500,
+      "sha256": "fd6bca5ef919dced859050704f44cdfa9dac38ad6de7c500df23c9d8907cb6d3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00074.webp",
+      "bytes": 39978,
+      "sha256": "696744b6a7613938a73ba4dc5191a8e032f64858efcb3068404f1fd366499bd6",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00075.webp",
+      "bytes": 39604,
+      "sha256": "dd9c39f5d2e108ab023507ac2aa89959a0b84e3423dea3b069748ef928b51ab3",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00076.webp",
+      "bytes": 41682,
+      "sha256": "731722f9b9eb521dc707cfae1ae64948b04cfc17e05f15c5f0fb0be2dc43cdbf",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00077.webp",
+      "bytes": 41096,
+      "sha256": "45471fc6f2e7a87c1e666fb9b7642926e76cc0604e78ec31c25566faa0eb8c7f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00078.webp",
+      "bytes": 1108,
+      "sha256": "1be656bfda0ccfbfa563fe0671f185c4ca0d6ee7e23addd82ab0e0d910864c5b",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00079.webp",
+      "bytes": 1352,
+      "sha256": "1ce36a2c55fcc528e6579ac3e0e67cb45ea0422b8addff2b1ab2d121518bdc36",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00080.webp",
+      "bytes": 2174,
+      "sha256": "e632e297cdcfedc1814253c43efa0a2495faedf75958ed9b0e5d7edc23a3dc4f",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY_webp/money_crop_1024x618_00081.webp",
+      "bytes": 2120,
+      "sha256": "5c4f0e6de2ac559b902a6aa3c2107cc2d45743f7888d7162eb876407ffa78c86",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY.json",
+      "bytes": 25676,
+      "sha256": "1f11d06832e6e57c42313424d2d076cf5cdea27cef1779fdbb547c583c86cf95",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/MONEY/MONEY.webm",
+      "bytes": 1028311,
+      "sha256": "125cd575f0962ff6905d6dd6bba1821519b4ab7029af09f82c4870bd8721168a",
+      "edits": [
+        "Original shared CT resource absent from supplied capture, recovered unchanged from existing package"
+      ]
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00000.webp",
+      "bytes": 110,
+      "sha256": "4074620fbd8dfb91e5a23aeda0a886b53c16882de8f292d5473fbff2be7e61b5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00001.webp",
+      "bytes": 5130,
+      "sha256": "724b501fffdc57971872e53ae5dadef7e3ca91a93941b723320e2265a7e7ddd7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00002.webp",
+      "bytes": 10770,
+      "sha256": "46faca20b55cc38092c9df7370dcc3d47f367242bab5dc9f3bb33c7f4e77ba9b",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00003.webp",
+      "bytes": 17386,
+      "sha256": "2429c42a767de129155a2782036f56917a3560d58b215c817df26d366ad2c09f",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00004.webp",
+      "bytes": 24744,
+      "sha256": "d2a73465826264649ed76d7f6908090297312b9068a9d94731473e613bb1581b",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00005.webp",
+      "bytes": 34646,
+      "sha256": "6b712ff26605e81a3598efffbe1cd55f9eb1d13dd321ce44ea0cbd2112f52018",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00006.webp",
+      "bytes": 35686,
+      "sha256": "18d493c9ac9c92cc74672d2e787b7603c8d33f1623396a417d14e17c20ad669b",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00007.webp",
+      "bytes": 35488,
+      "sha256": "1b6f4161dd4035c9851c495d40b4d99989504f48f63a010189c52404c6551ef2",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00008.webp",
+      "bytes": 36764,
+      "sha256": "8223bd5a4cea666e2220ce3eb59fc7a003cddaf905597fe21646803d45eb7d5f",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00009.webp",
+      "bytes": 36600,
+      "sha256": "b2bd9cd333e5a1989c6d307c0fa5e455d34dda8d272ec21f5489ae4678a70901",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00010.webp",
+      "bytes": 36948,
+      "sha256": "6f65c5c880abe656db5ae6e198b0fd52f98983608676c6807967266b25fc6315",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00011.webp",
+      "bytes": 36420,
+      "sha256": "efb9a51155f20d31d6ce010dada59f6cecfbf4a448665be740c3bcb6c0caa3b5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00012.webp",
+      "bytes": 35070,
+      "sha256": "0c2e08cb797b2609be8d17e901c42d09c0ce24d3cc1cd37862bf7c9cd0f8b576",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00013.webp",
+      "bytes": 34396,
+      "sha256": "08fd759f9611d1b3a7dd9a7a0529f43fa4c7cbc0af407804fb68f13d071ef048",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00014.webp",
+      "bytes": 34190,
+      "sha256": "1fdf626916fd1b744ab7967450e1e5814ac3c067a9cacbeb29ef7e52f1784803",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00015.webp",
+      "bytes": 34490,
+      "sha256": "f9fbe8eddd79e42b48ddadb31f6eac8c162b9e1f14523bd880ef6baab8923b3b",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00016.webp",
+      "bytes": 34786,
+      "sha256": "ec9f49e5eab5bf9f22b1cc5c8b69216e06fd99f32f9f436546131cfddf82c3e2",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00017.webp",
+      "bytes": 35166,
+      "sha256": "0364478c1f7e263653a11c080b8e9f8ce3dff062e6e081b7b47e07d0e7a2f752",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00018.webp",
+      "bytes": 34746,
+      "sha256": "2552466c557ef43967850cd7aba17652649a8b7f0cecf26550762cce6cb45a5a",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00019.webp",
+      "bytes": 35272,
+      "sha256": "840e95fc8962370079265a2f75d4cb9e56a85d746928dc45177a30c5432a21f7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00020.webp",
+      "bytes": 35490,
+      "sha256": "5d631015cef75edfaa8a40a842040278b74726b770815414c810f0ce1d3df8a5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00021.webp",
+      "bytes": 35788,
+      "sha256": "2290267d97f80ed35ddb36778ea329e0d54d9f273441f7d8bf8c1a9e6c4bddf5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00022.webp",
+      "bytes": 36008,
+      "sha256": "560a6148cce3e897ada7dc622e114f11d3b0e8b76b1d1f7150580b6510e0ac99",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00023.webp",
+      "bytes": 36088,
+      "sha256": "8203f49cd14992fd4d5056a8e02e146c4b4892e93930bdeb35e85c8301e9ea54",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00024.webp",
+      "bytes": 35816,
+      "sha256": "380b09f67b1bc2f3d0358d8ec4c2f24ffb253adea9ceb490b2d2b6c9b6b6600d",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00025.webp",
+      "bytes": 36360,
+      "sha256": "c0c052b409d41e8f2c89fc1a391a440bcb0d6a0a1ac0efcde83aa810b1bd7a4c",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00026.webp",
+      "bytes": 35976,
+      "sha256": "ccf63ac530b8a1e0c107cf7ca0ae2b508c133d83780e6e29ef43ecee9c7b8f3c",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00027.webp",
+      "bytes": 36160,
+      "sha256": "c75ed85ba77ce41cec7dba782b159a12646fbdbeae89f59839f4735355073ebf",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00028.webp",
+      "bytes": 35942,
+      "sha256": "207ee0731fd2b0a272dd451d55ee48289e6a3a777137faadb592768a1c4684fe",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00029.webp",
+      "bytes": 35764,
+      "sha256": "aa19913fbd67b317e2bdf011e03fcbef3259e408429e8dce3a7cb83f74ba7377",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00030.webp",
+      "bytes": 35522,
+      "sha256": "b1479fa4e021bed4cb75c1ec012c70fd45cbb01fb7ae9e62b3204cfd2035221a",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00031.webp",
+      "bytes": 35402,
+      "sha256": "72563da102686615171c99743a87c7d6fd978775c1265b89029ed0a15baa29b8",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00032.webp",
+      "bytes": 35216,
+      "sha256": "30abe4531ad23bb83090c7feab2f020d6400614723bd9e9c30f842508a0a13dd",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00033.webp",
+      "bytes": 34710,
+      "sha256": "5ae644472e7104c3153703f810b4b9a0e2c043e49379a8e06f01b997b8c9bcf1",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00034.webp",
+      "bytes": 34670,
+      "sha256": "2c76417db6d7b3e94746bb07862c8a6c313a30acc44b88f26fced9c268cfb7b6",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00035.webp",
+      "bytes": 34484,
+      "sha256": "14b052f451fc772175742c5f7e3932ca8be737c55505015a2c9e0ac686833602",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00036.webp",
+      "bytes": 34330,
+      "sha256": "ad5fa8cd3c28306825ffb3b8acacde76cad01b6888912517eeb7756739aa3082",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00037.webp",
+      "bytes": 34890,
+      "sha256": "ff213846b04b6b49d7751578c976c80ddd9c087a00f8c352ee69af89c8f25bd7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00038.webp",
+      "bytes": 35404,
+      "sha256": "0546154cda67fa1a24ff8a6bad17f08f4dd1f5ba57ee842c7586b94fbf872140",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00039.webp",
+      "bytes": 35902,
+      "sha256": "91c6caed3e65cb91c3022ac1c4b66fe76d5851169ce7632b42e3e971529a65d9",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00040.webp",
+      "bytes": 35810,
+      "sha256": "e35bd7970997434988ed97607e796a7decf66e3b3c56dae8ec4e894aa28359b2",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00041.webp",
+      "bytes": 35962,
+      "sha256": "fc446f5288dcf0c548c717ae6c21d083c87fc954c51bb61d5f04fbb8b4fc6b4d",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00042.webp",
+      "bytes": 35522,
+      "sha256": "6393fa4dab930dbf72ad9b916692e91b86486426b3be1a6f03daf0728ec0f7e4",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00043.webp",
+      "bytes": 35742,
+      "sha256": "b2acfbe68931694221ba03d25cc8b4b98c20c39ff0cb756d68144d080e8c7356",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00044.webp",
+      "bytes": 35276,
+      "sha256": "eb070e43003e7cac9459ac4bd51b4cdd381087807a92063bab99a8a78696ee73",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00045.webp",
+      "bytes": 34800,
+      "sha256": "d54db41919b5c3ff4cbf2c1e1e5af68b220c8f03ca75238a4207a1eadbaa3346",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00046.webp",
+      "bytes": 22998,
+      "sha256": "12fbece11436038e0e2e37f14db4077d4b75d26d5f03f337810596367cc806af",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00047.webp",
+      "bytes": 13752,
+      "sha256": "0fb8a9e1651825658e0de205aa9fff95b6cb4ecf20e88f2ceb6981b200b4df47",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00048.webp",
+      "bytes": 6666,
+      "sha256": "2bc0121d6dc4a46fbadf2cb2ecfe93470176fa7d3f257fb2585b708581471ae5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN_webp/TOTAL_WIN_1024x768_00049.webp",
+      "bytes": 110,
+      "sha256": "4074620fbd8dfb91e5a23aeda0a886b53c16882de8f292d5473fbff2be7e61b5",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN.json",
+      "bytes": 15978,
+      "sha256": "24cdf34baeb8a3738b4a0485c359ff6c8735644bebd5569df81bca0c999c3a50",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100_links.json",
+      "bytes": 1076,
+      "sha256": "150b8b99110e6f1c68edb023ec79fe5b4478c7f4553e556d587a61ef1e227080",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/0.webp",
+      "bytes": 117998,
+      "sha256": "fcaff316fda802e6436f4133b57004aadde55cbc3f06e851556b1810df2446e7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/1.webp",
+      "bytes": 92822,
+      "sha256": "ca0720177c2995c7abfbf562732f4bd8e358bbbd9199122a6083f045052e7034",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/2.webp",
+      "bytes": 125744,
+      "sha256": "6a36b923a6b125f3c3c5825a457c4ebc595bdad67ac58a3f78a51130c39358c3",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/3.webp",
+      "bytes": 136090,
+      "sha256": "9c51ae9d4c509cb835514473013f36eb41059f7c8056885847c61f39321bfd80",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/4.webp",
+      "bytes": 100184,
+      "sha256": "d02d622b47d279859e7722f80e4f762001df1e3156d69771578748766a49717e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/5.webp",
+      "bytes": 126186,
+      "sha256": "51072b4ad4ef46a7c0b7ca6b772cecbf2b82409beb173214b2522f6a532c35a1",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/6.webp",
+      "bytes": 122544,
+      "sha256": "5a7b5e1ec34f902142bfbb4963b8a865dd35aa7c356ca06f74fa1780b65a3516",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/7.webp",
+      "bytes": 101628,
+      "sha256": "caa4ccdab87421f4546bf08c6c20b536e9b11b2f637fb438aa26c0c7bb0a8b4e",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/8.webp",
+      "bytes": 128042,
+      "sha256": "1202e387dfadad092d1a3434dc68decee3402746121e55c7fbb65dcf78463dea",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/9.webp",
+      "bytes": 125034,
+      "sha256": "eb68f51acb6e622831ab250c1f6ed37136d55ad9a91304d29f225c55a3282c21",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/coma.webp",
+      "bytes": 51964,
+      "sha256": "bfb89e4110a7670b53d35c6604eaecd75715e18835084c6e9075317bb1e6ef01",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100/dot.webp",
+      "bytes": 39178,
+      "sha256": "2dc8a8af255a0079d296d40e10ef7b27d5127d575b764a2b68b977b7b8933763",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/video.js",
+      "bytes": 19929,
+      "sha256": "72b655e5d029941f21de531938a3eb6737c1a5b94fb1b6d78ef064860da2f6c7",
+      "edits": []
+    },
+    {
+      "path": "html-interface-stable/VideoAPI/videoAssets6.json",
+      "bytes": 1043,
+      "sha256": "ec15f670e88e2f8dd7f7d02e158ee40f3fda6dd14987b1181165a69e194d2bad",
+      "edits": []
+    }
+  ]
+}

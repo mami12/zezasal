@@ -1,0 +1,31 @@
+{
+"cifri":{
+  "deleteOn": "all_attractions",
+  "type": "imageArchive",
+  "jsonSrc": "../../html-interface-stable/VideoAPI/resources3/cifri_sprites_webp-q100_links.json",
+  "cifriTopPos": 345
+},
+"MONEY":{
+  "deleteOn": "all_attractions",
+  "animCanBeMissed": true,
+  "webmSrc": "../../html-interface-stable/VideoAPI/resources/MONEY/MONEY.webm",
+  "lottieSrc": "../../html-interface-stable/VideoAPI/resources/MONEY/MONEY.json",
+  "width": 1024, "height": 618,
+  "autoRemove": true, "manageParentDisplay": false,
+  "attractionBackground": false,
+  "nonstopAttraction": true,
+  "dim": [1024,618,0,65,997],
+  "start":[0,77]
+},
+"TOTAL_WIN":{
+  "deleteOn": "all_attractions",
+  "animCanBeMissed": true,
+  "lottieSrc": "../../html-interface-stable/VideoAPI/resources/TOTAL_WIN/TOTAL_WIN.json",
+  "width": 1024, "height": 768,
+  "autoRemove": false, "manageParentDisplay": false,
+  "attractionBackground": false,
+  "nonstopAttraction": true,
+  "dim": [1024,768,0,-23,998],
+  "start":[0,8],"loop":[9,42],"end":[43,49]
+}
+}

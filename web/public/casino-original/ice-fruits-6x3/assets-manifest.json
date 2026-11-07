@@ -1,0 +1,807 @@
+{
+  "game": "ice-fruits-6x3",
+  "source": "Supplied game-sources/icefruit6x3 folder",
+  "root": ".",
+  "assets": [
+    {
+      "path": "6megaice.html",
+      "bytes": 7893,
+      "sha256": "ca2667e8bd42ab4a256eaf717fd0a27a64064215a34d3e787e8519f5e4384394",
+      "originalSha256": "c5d62801586e68fe2c8c321701f69a12d815adeee21cfd645ca2818794023aa4",
+      "edits": [
+        "Removed captured session identity and analytics",
+        "Relative original helper/favicon paths"
+      ]
+    },
+    {
+      "path": "audio/6megaice/sfx/gambleSounds.mp3",
+      "bytes": 161585,
+      "sha256": "0dcc2af702fc3ddd481444e5a0debe6caca6c81cc9fc82879e509f0c7d424605",
+      "originalSha256": "0dcc2af702fc3ddd481444e5a0debe6caca6c81cc9fc82879e509f0c7d424605",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/lineChangeSounds.mp3",
+      "bytes": 87188,
+      "sha256": "1042381d4c21c23a67c041e542de4e72e68087d7f002b9c374d061150664dd93",
+      "originalSha256": "1042381d4c21c23a67c041e542de4e72e68087d7f002b9c374d061150664dd93",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/mainSounds.mp3",
+      "bytes": 753908,
+      "sha256": "980cd13e24f063ff4388cfd1562df45a3adc1c8fa4b4471f257340f2c21bd17c",
+      "originalSha256": "980cd13e24f063ff4388cfd1562df45a3adc1c8fa4b4471f257340f2c21bd17c",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/shortSounds.mp3",
+      "bytes": 259451,
+      "sha256": "28af923b9ec7e197e75e42ace5f329917ecc6af9ab3d8fe17b5afd4bb378b855",
+      "originalSha256": "28af923b9ec7e197e75e42ace5f329917ecc6af9ab3d8fe17b5afd4bb378b855",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/shortSounds2.mp3",
+      "bytes": 236045,
+      "sha256": "0d328d4263c57c3370c466e56e01487c1e5002ff4a95b82f00a392075052c3c5",
+      "originalSha256": "0d328d4263c57c3370c466e56e01487c1e5002ff4a95b82f00a392075052c3c5",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/singleSounds.mp3",
+      "bytes": 683616,
+      "sha256": "823cfcd1164c8c1b0989bcbb4ae5e3615b4adc37fa2da864d288e128ff42d32b",
+      "originalSha256": "823cfcd1164c8c1b0989bcbb4ae5e3615b4adc37fa2da864d288e128ff42d32b",
+      "edits": []
+    },
+    {
+      "path": "audio/6megaice/sfx/winSounds.mp3",
+      "bytes": 434192,
+      "sha256": "04631cda0eabba0a10e457a01eefc3d0a3d7b328a6a6a09a29f3022e79dc36d2",
+      "originalSha256": "04631cda0eabba0a10e457a01eefc3d0a3d7b328a6a6a09a29f3022e79dc36d2",
+      "edits": []
+    },
+    {
+      "path": "audio/common/sfx/commonSounds.mp3",
+      "bytes": 1018465,
+      "sha256": "c9c486cda79cd2b1626472a8620e839db262a69662d51aae010cfba0f7384cb3",
+      "originalSha256": "c9c486cda79cd2b1626472a8620e839db262a69662d51aae010cfba0f7384cb3",
+      "edits": []
+    },
+    {
+      "path": "css/13309.otf",
+      "bytes": 58640,
+      "sha256": "03f5cd5ba07436d7033ddd2991505870b4a4a48c40c9a2d37b0595b482bd814b",
+      "originalSha256": "03f5cd5ba07436d7033ddd2991505870b4a4a48c40c9a2d37b0595b482bd814b",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/BebasNeue-Regular.ttf",
+      "bytes": 57624,
+      "sha256": "8c6b9d4587002e47891b0d7dd66e37b5ecb6c61d0d571144d9e7dce03b6661f2",
+      "originalSha256": "8c6b9d4587002e47891b0d7dd66e37b5ecb6c61d0d571144d9e7dce03b6661f2",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/changa/ChangaOne-Regular.ttf",
+      "bytes": 21364,
+      "sha256": "ba51131b36c7c254ad048ec6dae3e2c5f95bc2106e266d6cf8440fb505b7841a",
+      "originalSha256": "ba51131b36c7c254ad048ec6dae3e2c5f95bc2106e266d6cf8440fb505b7841a",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/changa/font.css",
+      "bytes": 156,
+      "sha256": "c136666f6f3b626bc1c7a0d50123af0caa2fec58e661b263eb3689b95e835d70",
+      "originalSha256": "c136666f6f3b626bc1c7a0d50123af0caa2fec58e661b263eb3689b95e835d70",
+      "edits": []
+    },
+    {
+      "path": "css/digital-dismay.regular.otf",
+      "bytes": 13928,
+      "sha256": "fb92c986c5b184a23c7535969d816b03bd780573d4073cde95dc26dd7a22ee00",
+      "originalSha256": "fb92c986c5b184a23c7535969d816b03bd780573d4073cde95dc26dd7a22ee00",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/jpfont.css",
+      "bytes": 3051,
+      "sha256": "b3b608448a705f184d5b97341c139d6e68dcd1cfb2006792d30754a482d2c103",
+      "originalSha256": "b3b608448a705f184d5b97341c139d6e68dcd1cfb2006792d30754a482d2c103",
+      "edits": []
+    },
+    {
+      "path": "css/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2",
+      "bytes": 30928,
+      "sha256": "ae919a7c9f25f0fd97fc18e398ae8e453fcaae487e4a4cb4f896e7fecde4a780",
+      "originalSha256": "ae919a7c9f25f0fd97fc18e398ae8e453fcaae487e4a4cb4f896e7fecde4a780",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/KFOlCnqEu92Fr1MmWUlfBBc4.woff2",
+      "bytes": 15860,
+      "sha256": "f5aebdfea35d1e7656ef4acc5db1f243209755ae3300943ef8fc6280f363c860",
+      "originalSha256": "f5aebdfea35d1e7656ef4acc5db1f243209755ae3300943ef8fc6280f363c860",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu4mxK.woff2",
+      "bytes": 15736,
+      "sha256": "48c3fa6f86c54f1d9bb519220713d4b0a1f8cd1a589a3c03b9fa82e98ecb13e3",
+      "originalSha256": "48c3fa6f86c54f1d9bb519220713d4b0a1f8cd1a589a3c03b9fa82e98ecb13e3",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu4WxKOzY.woff2",
+      "bytes": 7296,
+      "sha256": "a223f1cb930ff49e86d7a550fb70d89526b89358f5649efbf5d0589aac159357",
+      "originalSha256": "a223f1cb930ff49e86d7a550fb70d89526b89358f5649efbf5d0589aac159357",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/KFOmCnqEu92Fr1Mu5mxKOzY.woff2",
+      "bytes": 9900,
+      "sha256": "491158614c16e4a767df0f1ddbb82a8462b6ba308b8774c698b82e850a425291",
+      "originalSha256": "491158614c16e4a767df0f1ddbb82a8462b6ba308b8774c698b82e850a425291",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/LYjNdG7kmE0gfaN9pQlEpVsHVQ.woff2",
+      "bytes": 14964,
+      "sha256": "4a0ce7a531a41b6fb56b8027541951ffe1ad67ab9e49a12ee4816247178d5bca",
+      "originalSha256": "4a0ce7a531a41b6fb56b8027541951ffe1ad67ab9e49a12ee4816247178d5bca",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/promofont.css",
+      "bytes": 5053,
+      "sha256": "5299b5fdd0334fdcc67f6330ecf2d52902e56483ca328f924edb082ac6c2aac1",
+      "originalSha256": "5299b5fdd0334fdcc67f6330ecf2d52902e56483ca328f924edb082ac6c2aac1",
+      "edits": []
+    },
+    {
+      "path": "css/style.css",
+      "bytes": 5173,
+      "sha256": "14ff79bf0b0b57754d71dd35146a2dc501320285e7573517219c46ab9fafee5b",
+      "originalSha256": "14ff79bf0b0b57754d71dd35146a2dc501320285e7573517219c46ab9fafee5b",
+      "edits": []
+    },
+    {
+      "path": "css/u0400.woff",
+      "bytes": 177712,
+      "sha256": "fcb55c8449824aa58f2cfc5b4da1c0f40cff06132f000ad6a24683d42e479b5d",
+      "originalSha256": "fcb55c8449824aa58f2cfc5b4da1c0f40cff06132f000ad6a24683d42e479b5d",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "css/u2000.woff",
+      "bytes": 161712,
+      "sha256": "5fdc3dc9d970a215cc5488b36d8cd6a8c4c2b4beceed49d7b0ba73b4aab53f2e",
+      "originalSha256": "5fdc3dc9d970a215cc5488b36d8cd6a8c4c2b4beceed49d7b0ba73b4aab53f2e",
+      "edits": [
+        "Recovered same original AGT shared resource from existing packaged client"
+      ]
+    },
+    {
+      "path": "images/common/loading/one.webp",
+      "bytes": 3056,
+      "sha256": "da8aec0310777fecacf2afc11ed0c3cc59728ca02d1b87d2e51c983ec4308033",
+      "originalSha256": "da8aec0310777fecacf2afc11ed0c3cc59728ca02d1b87d2e51c983ec4308033",
+      "edits": []
+    },
+    {
+      "path": "images/common/loading/preload_bg.webp",
+      "bytes": 1036320,
+      "sha256": "5cc9e365c0ac7d6808c999098a4b67dd395c66d82c558230a2ddf615b500bc49",
+      "originalSha256": "5cc9e365c0ac7d6808c999098a4b67dd395c66d82c558230a2ddf615b500bc49",
+      "edits": []
+    },
+    {
+      "path": "images/common/loading/preload_elipse.webp",
+      "bytes": 163906,
+      "sha256": "9b313ceaa4000c2668eabb2c137b1fc5a352393d79cfa35d7dd53522f3e8da41",
+      "originalSha256": "9b313ceaa4000c2668eabb2c137b1fc5a352393d79cfa35d7dd53522f3e8da41",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/card0.webp",
+      "bytes": 5868,
+      "sha256": "27ca32653a2450395b3eceb8cb943a8cef55558cf0538843df9520509fc30cbf",
+      "originalSha256": "27ca32653a2450395b3eceb8cb943a8cef55558cf0538843df9520509fc30cbf",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/card1.webp",
+      "bytes": 5740,
+      "sha256": "a95cf4e285b1b494823224c1aaef661518a3ec16574e80e3881ff690ca03090c",
+      "originalSha256": "a95cf4e285b1b494823224c1aaef661518a3ec16574e80e3881ff690ca03090c",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/card2.webp",
+      "bytes": 5624,
+      "sha256": "fc9e84b481344d477f6a0020b6f721fd5993bb2f9f9dae910598109d691ba668",
+      "originalSha256": "fc9e84b481344d477f6a0020b6f721fd5993bb2f9f9dae910598109d691ba668",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/card3.webp",
+      "bytes": 5572,
+      "sha256": "50cb4a108181c3268e90bd9e50b104fe8c051b91088f74055ff6cf7baefdf3d5",
+      "originalSha256": "50cb4a108181c3268e90bd9e50b104fe8c051b91088f74055ff6cf7baefdf3d5",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/coin/Gold_Coin_24/coin.json",
+      "bytes": 5300,
+      "sha256": "4aff12b1604160127c57d309cb6b93dabada888c3b6c6df02fd5b0e34cf1542e",
+      "originalSha256": "4aff12b1604160127c57d309cb6b93dabada888c3b6c6df02fd5b0e34cf1542e",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/coin/Gold_Coin_24/coin.webp",
+      "bytes": 509360,
+      "sha256": "6562cde83637bddd4c0199a1151b6b629b4142be1a800040fa166456af0656b0",
+      "originalSha256": "6562cde83637bddd4c0199a1151b6b629b4142be1a800040fa166456af0656b0",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/coin/Silver_Coin_24/coin.json",
+      "bytes": 5348,
+      "sha256": "67b7bcc1db81f16e371fc5e9ab44d9bf31fd39aa240292c040b2fc544a420fe4",
+      "originalSha256": "67b7bcc1db81f16e371fc5e9ab44d9bf31fd39aa240292c040b2fc544a420fe4",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/coin/Silver_Coin_24/coin.webp",
+      "bytes": 539634,
+      "sha256": "226787eecd897a4009cffbcd7682cbcd996c2620ff0017357b520773ea5e2a50",
+      "originalSha256": "226787eecd897a4009cffbcd7682cbcd996c2620ff0017357b520773ea5e2a50",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/flags.json",
+      "bytes": 7353,
+      "sha256": "fbb414e5f2b4315380b8cc33588ff53c5a54e35062f81300b3d06ee4a2f33cd4",
+      "originalSha256": "fbb414e5f2b4315380b8cc33588ff53c5a54e35062f81300b3d06ee4a2f33cd4",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/flags.webp",
+      "bytes": 113632,
+      "sha256": "b6d438bb44c166c5d7874c7264b9dc8130a72299191e60b6a1632fe840801de0",
+      "originalSha256": "b6d438bb44c166c5d7874c7264b9dc8130a72299191e60b6a1632fe840801de0",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/fscongrat1.jpg",
+      "bytes": 506708,
+      "sha256": "2889f6798aee06c793155193b435da5bbc0d1ef498723e874e1a938e3659923c",
+      "originalSha256": "2889f6798aee06c793155193b435da5bbc0d1ef498723e874e1a938e3659923c",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/fscongrat2.jpg",
+      "bytes": 495392,
+      "sha256": "f8a8fa40f70cab47afd1aee31c4747f9623ff46b9b5777ff7d7b2c45a4c71047",
+      "originalSha256": "f8a8fa40f70cab47afd1aee31c4747f9623ff46b9b5777ff7d7b2c45a4c71047",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/fscongrat3.jpg",
+      "bytes": 367763,
+      "sha256": "7d88eca8b09da4f1ce973c9760100a8e3f5aa54418dbdf4522505adb175cd731",
+      "originalSha256": "7d88eca8b09da4f1ce973c9760100a8e3f5aa54418dbdf4522505adb175cd731",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/hand.json",
+      "bytes": 909,
+      "sha256": "7742f4027533cd40568189615a291e1386a7778b66e4257aa14a4119a96d5f47",
+      "originalSha256": "7742f4027533cd40568189615a291e1386a7778b66e4257aa14a4119a96d5f47",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/hand.webp",
+      "bytes": 2264,
+      "sha256": "7b674e01bfc572c7eb5a458ce643193a1304361b5704334de86aab799956c367",
+      "originalSha256": "7b674e01bfc572c7eb5a458ce643193a1304361b5704334de86aab799956c367",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/icons/main.json",
+      "bytes": 3795,
+      "sha256": "679a00fe38523e7d61fdadb662cdd555cf3ad59a51a78c4361644010e96efb93",
+      "originalSha256": "679a00fe38523e7d61fdadb662cdd555cf3ad59a51a78c4361644010e96efb93",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/icons/main.webp",
+      "bytes": 12870,
+      "sha256": "111fb417c72be09ba1b959c642b52b9a369fee10f10c11065e97844ed0e2340e",
+      "originalSha256": "111fb417c72be09ba1b959c642b52b9a369fee10f10c11065e97844ed0e2340e",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/logo.webp",
+      "bytes": 1716,
+      "sha256": "32aa2e29603a0c84f447a8c13bbace708c642badf5a8f1310b26f4c92a9d6f2e",
+      "originalSha256": "32aa2e29603a0c84f447a8c13bbace708c642badf5a8f1310b26f4c92a9d6f2e",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/logobig.webp",
+      "bytes": 5908,
+      "sha256": "a611c8e523dfac6e4b10aaf9d35ab5fe5e107f29dd07149550a761715d2ee74a",
+      "originalSha256": "a611c8e523dfac6e4b10aaf9d35ab5fe5e107f29dd07149550a761715d2ee74a",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/promobg.jpg",
+      "bytes": 131293,
+      "sha256": "4566a38ef53462e0ef870baf4ada613ad80e85e20bafa535825ddb0c17d71e30",
+      "originalSha256": "4566a38ef53462e0ef870baf4ada613ad80e85e20bafa535825ddb0c17d71e30",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/shine.webp",
+      "bytes": 505272,
+      "sha256": "6f0d85304f99ca6932e6e7e533912c27c10972e37959f3f3dfd07f0050c9fe19",
+      "originalSha256": "6f0d85304f99ca6932e6e7e533912c27c10972e37959f3f3dfd07f0050c9fe19",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/snow.webp",
+      "bytes": 1104,
+      "sha256": "3afdc65409a2a9dd2bd19ad900b50e48eb19853afe23283e5628e9ac7eb73534",
+      "originalSha256": "3afdc65409a2a9dd2bd19ad900b50e48eb19853afe23283e5628e9ac7eb73534",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/suit0.webp",
+      "bytes": 1220,
+      "sha256": "082e611f1b6f5c5453ce4cf49b0a258f387abd20db6ee036f50fe547fa955cee",
+      "originalSha256": "082e611f1b6f5c5453ce4cf49b0a258f387abd20db6ee036f50fe547fa955cee",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/suit1.webp",
+      "bytes": 1020,
+      "sha256": "dee9a4da96a049212a0909b77884811dea9ce1cd65c73e1189d4f4bae56a18fd",
+      "originalSha256": "dee9a4da96a049212a0909b77884811dea9ce1cd65c73e1189d4f4bae56a18fd",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/suit2.webp",
+      "bytes": 786,
+      "sha256": "183aa13a7b74e7e3862b21e61d91028983357b7974c6235203749ea68a92a181",
+      "originalSha256": "183aa13a7b74e7e3862b21e61d91028983357b7974c6235203749ea68a92a181",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/suit3.webp",
+      "bytes": 1006,
+      "sha256": "afeae8ff34356561e6cffb82f3fc89b95c11f09c5cb8fdbab1e4649c3b6ad174",
+      "originalSha256": "afeae8ff34356561e6cffb82f3fc89b95c11f09c5cb8fdbab1e4649c3b6ad174",
+      "edits": []
+    },
+    {
+      "path": "images/common/ui/syminfo.webp",
+      "bytes": 23602,
+      "sha256": "350fedc8188d512cf06aed6518df830ff02ceea2b75bf34fb1983a5036330abd",
+      "originalSha256": "350fedc8188d512cf06aed6518df830ff02ceea2b75bf34fb1983a5036330abd",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_0.json",
+      "bytes": 7753,
+      "sha256": "c61464d4fb72cb6ac0d146c17b0b97b76811f42bd67d950900f942db0175b942",
+      "originalSha256": "c61464d4fb72cb6ac0d146c17b0b97b76811f42bd67d950900f942db0175b942",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_0.webp",
+      "bytes": 858912,
+      "sha256": "d4736564befe5210344e8d41a6deec8b4f46989133197eae12595601eff9b2f6",
+      "originalSha256": "d4736564befe5210344e8d41a6deec8b4f46989133197eae12595601eff9b2f6",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_1.json",
+      "bytes": 7513,
+      "sha256": "e1227c4448b9dbab2611f9679b7a87485710430f7b7c3a4a48e97153fec8d91c",
+      "originalSha256": "e1227c4448b9dbab2611f9679b7a87485710430f7b7c3a4a48e97153fec8d91c",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_1.webp",
+      "bytes": 782080,
+      "sha256": "a7a2a434b4eb454785e4fb1ce86554952f9bf9023e577bf2e9153d0a580af707",
+      "originalSha256": "a7a2a434b4eb454785e4fb1ce86554952f9bf9023e577bf2e9153d0a580af707",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_2.json",
+      "bytes": 6446,
+      "sha256": "ddb41874b602d1429ed42e586b7ab812517112c687d55e010a7ae049a18a0809",
+      "originalSha256": "ddb41874b602d1429ed42e586b7ab812517112c687d55e010a7ae049a18a0809",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_2.webp",
+      "bytes": 830114,
+      "sha256": "f5562acba04ccf649bcb4d842f1a912575633b856ca7aeb4fc32e75ab1a4a025",
+      "originalSha256": "f5562acba04ccf649bcb4d842f1a912575633b856ca7aeb4fc32e75ab1a4a025",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_3.json",
+      "bytes": 7256,
+      "sha256": "b9be630ca0ececba0dc8a450ef32213cae2e0625a36793db01d7b44de0b6994e",
+      "originalSha256": "b9be630ca0ececba0dc8a450ef32213cae2e0625a36793db01d7b44de0b6994e",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_3.webp",
+      "bytes": 956810,
+      "sha256": "9ee29b2510390fcb1921790e1023fa211c25df59875c945d74519a587058744f",
+      "originalSha256": "9ee29b2510390fcb1921790e1023fa211c25df59875c945d74519a587058744f",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_4.json",
+      "bytes": 9783,
+      "sha256": "166065fe9ccc2b71c9d09221b112fe608ce3e64bf12e55765361a5fed6c6d8dc",
+      "originalSha256": "166065fe9ccc2b71c9d09221b112fe608ce3e64bf12e55765361a5fed6c6d8dc",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_4.webp",
+      "bytes": 1017306,
+      "sha256": "1e851a5c46a3ceccdb9c1140cd491ddbd0b25c3995db4b61a6870320a0c96dd3",
+      "originalSha256": "1e851a5c46a3ceccdb9c1140cd491ddbd0b25c3995db4b61a6870320a0c96dd3",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_5.json",
+      "bytes": 6290,
+      "sha256": "d8ec6e68ee5d84880043755e74c87a8943790b819b6803565c8ff9c0c40e0e8b",
+      "originalSha256": "d8ec6e68ee5d84880043755e74c87a8943790b819b6803565c8ff9c0c40e0e8b",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_5.webp",
+      "bytes": 731442,
+      "sha256": "b64fd81395e9625b689af7e7fb946d4dbe29dc95ec1e9066a1f359eacb99e7d7",
+      "originalSha256": "b64fd81395e9625b689af7e7fb946d4dbe29dc95ec1e9066a1f359eacb99e7d7",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_6.json",
+      "bytes": 7898,
+      "sha256": "1150e3691597e6aaa597c72760e3f2059fbdc58da173261107a8d83e66f4d7e8",
+      "originalSha256": "1150e3691597e6aaa597c72760e3f2059fbdc58da173261107a8d83e66f4d7e8",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_6.webp",
+      "bytes": 759948,
+      "sha256": "24113d74edcae762ac7876239ed7df185394a290a1a07a1de355be070e180f9f",
+      "originalSha256": "24113d74edcae762ac7876239ed7df185394a290a1a07a1de355be070e180f9f",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_7.json",
+      "bytes": 7628,
+      "sha256": "53887c0b791e33edf55d5b5bade290a8c5180d6f1752d64e5fbe64c9583ce72b",
+      "originalSha256": "53887c0b791e33edf55d5b5bade290a8c5180d6f1752d64e5fbe64c9583ce72b",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/icons/start_7.webp",
+      "bytes": 722542,
+      "sha256": "b2738494d5c2af3ada56f811170d6e55ea70149122e1422574f35115144389b4",
+      "originalSha256": "b2738494d5c2af3ada56f811170d6e55ea70149122e1422574f35115144389b4",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/reel/bt.json",
+      "bytes": 5385,
+      "sha256": "2b766cf20f9642933b44f59b3ef346c9052612685bb7a5120390e91ccfab986c",
+      "originalSha256": "2b766cf20f9642933b44f59b3ef346c9052612685bb7a5120390e91ccfab986c",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/reel/bt.webp",
+      "bytes": 976118,
+      "sha256": "62c599e3d4332477edfc52bb725a06d3cfc379406c0f9e6f2f7a90a15a22436a",
+      "originalSha256": "62c599e3d4332477edfc52bb725a06d3cfc379406c0f9e6f2f7a90a15a22436a",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/reel/ug.json",
+      "bytes": 12664,
+      "sha256": "94402d49efe093d004b0c439e195f6b9803bd6a0a853bbe0862add9201deef1a",
+      "originalSha256": "94402d49efe093d004b0c439e195f6b9803bd6a0a853bbe0862add9201deef1a",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/animations/reel/ug.webp",
+      "bytes": 1008282,
+      "sha256": "8bee7eb65e3eaffc912e9caeac613f2be469fdcfa7acdd6fc9ea1bf0dd82ce18",
+      "originalSha256": "8bee7eb65e3eaffc912e9caeac613f2be469fdcfa7acdd6fc9ea1bf0dd82ce18",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/icons/icons.json",
+      "bytes": 3340,
+      "sha256": "f81137e456784e715264779f491a9238424bc4bacdd742e369030b1297eb0b6b",
+      "originalSha256": "f81137e456784e715264779f491a9238424bc4bacdd742e369030b1297eb0b6b",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/icons/icons.webp",
+      "bytes": 733070,
+      "sha256": "186cd17b80be357d98907bee2f7f4baa106c199c52efa3ed6018da65f93afcea",
+      "originalSha256": "186cd17b80be357d98907bee2f7f4baa106c199c52efa3ed6018da65f93afcea",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/coin.webp",
+      "bytes": 1530,
+      "sha256": "0b0364d51c3ff0694496a6e3ec8f1edb25f8d6fb2b558097f9b1f9c7e67874ba",
+      "originalSha256": "0b0364d51c3ff0694496a6e3ec8f1edb25f8d6fb2b558097f9b1f9c7e67874ba",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/emptyback.jpg",
+      "bytes": 206474,
+      "sha256": "3d3221dec2342f47637a9e76e1d2d6ca4c5c0b2c186344a81a2e3fe086dbfb78",
+      "originalSha256": "3d3221dec2342f47637a9e76e1d2d6ca4c5c0b2c186344a81a2e3fe086dbfb78",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/gamble_card_back.webp",
+      "bytes": 51946,
+      "sha256": "d7872e0e904d110069d1155badb1963339c39ec760a8c5320a1e69469cb138de",
+      "originalSha256": "d7872e0e904d110069d1155badb1963339c39ec760a8c5320a1e69469cb138de",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/gamble_card_back2.webp",
+      "bytes": 50016,
+      "sha256": "edbc4319973c918c862c76e9ab30b0654a13fa379baf89c4ac413a2a70c825a7",
+      "originalSha256": "edbc4319973c918c862c76e9ab30b0654a13fa379baf89c4ac413a2a70c825a7",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/gamble.webp",
+      "bytes": 446560,
+      "sha256": "c3d6d523191970aca48c366efdf25907b34e940ccb0a3edca4e0be40506527c5",
+      "originalSha256": "c3d6d523191970aca48c366efdf25907b34e940ccb0a3edca4e0be40506527c5",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/page0.webp",
+      "bytes": 910986,
+      "sha256": "9a28325c2a98eb7ac03449ee0171f0637a09399405230e238e7a335124e977fa",
+      "originalSha256": "9a28325c2a98eb7ac03449ee0171f0637a09399405230e238e7a335124e977fa",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/page1.webp",
+      "bytes": 446560,
+      "sha256": "c3d6d523191970aca48c366efdf25907b34e940ccb0a3edca4e0be40506527c5",
+      "originalSha256": "c3d6d523191970aca48c366efdf25907b34e940ccb0a3edca4e0be40506527c5",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/page2.webp",
+      "bytes": 452898,
+      "sha256": "b75315c16f3f1ff4b5fe0b6313244d8417cfed191dacebb6e00788ee508d1b13",
+      "originalSha256": "b75315c16f3f1ff4b5fe0b6313244d8417cfed191dacebb6e00788ee508d1b13",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/reels.webp",
+      "bytes": 59786,
+      "sha256": "a60f7a2e7cd940d3a5ebe31ad4d78fe2ede0e0f12918d440975be78c927ac444",
+      "originalSha256": "a60f7a2e7cd940d3a5ebe31ad4d78fe2ede0e0f12918d440975be78c927ac444",
+      "edits": []
+    },
+    {
+      "path": "images/games/6megaice/ui/top.webp",
+      "bytes": 65196,
+      "sha256": "9849ec584002cc23216a4b1f702b6e9db725f2dbc41b73bff6d0483d4c0cd460",
+      "originalSha256": "9849ec584002cc23216a4b1f702b6e9db725f2dbc41b73bff6d0483d4c0cd460",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_big_btn.json",
+      "bytes": 962,
+      "sha256": "e2894e6b2378d58437f5520c43de79833f6a32b72ad72d104f908a88bdf09a7a",
+      "originalSha256": "e2894e6b2378d58437f5520c43de79833f6a32b72ad72d104f908a88bdf09a7a",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_big_btn.webp",
+      "bytes": 23906,
+      "sha256": "5a1098b4865cbcb9d668bc64d5fd8812903de4bafd1cdbb9d0bfd970131a7ead",
+      "originalSha256": "5a1098b4865cbcb9d668bc64d5fd8812903de4bafd1cdbb9d0bfd970131a7ead",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_small_btn.json",
+      "bytes": 970,
+      "sha256": "647868f92fb0273b6ae7810ff589fe83df0b9b2aa51294d150b19b4d2a2bfb1a",
+      "originalSha256": "647868f92fb0273b6ae7810ff589fe83df0b9b2aa51294d150b19b4d2a2bfb1a",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/black_small_btn.webp",
+      "bytes": 10784,
+      "sha256": "be065ad63033898e6eaaed1991276dcb9ea50ed1b382158786489e419e472caf",
+      "originalSha256": "be065ad63033898e6eaaed1991276dcb9ea50ed1b382158786489e419e472caf",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_big_btn.json",
+      "bytes": 954,
+      "sha256": "f054b6ebddc3a6abb2a5abcbf4b943515b394bd6ab546bdef346ac2561d1c219",
+      "originalSha256": "f054b6ebddc3a6abb2a5abcbf4b943515b394bd6ab546bdef346ac2561d1c219",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_big_btn.webp",
+      "bytes": 21572,
+      "sha256": "7b0546e6273a33984af5c1106ffada7b302bea8573345fe2e1bfd8809073c20a",
+      "originalSha256": "7b0546e6273a33984af5c1106ffada7b302bea8573345fe2e1bfd8809073c20a",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_small_btn.json",
+      "bytes": 926,
+      "sha256": "a03a23f410f81de3b72102bd94d35822c2769c110b0c4978fd927afd79192c6b",
+      "originalSha256": "a03a23f410f81de3b72102bd94d35822c2769c110b0c4978fd927afd79192c6b",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/red_small_btn.webp",
+      "bytes": 10364,
+      "sha256": "ce6625672bf34de6751b943892ad9cfcb159e4c9ed26b9c50fcdec8eabb5c59d",
+      "originalSha256": "ce6625672bf34de6751b943892ad9cfcb159e4c9ed26b9c50fcdec8eabb5c59d",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/suits.json",
+      "bytes": 903,
+      "sha256": "79d9cf8ec744c0017798e7d69e5c68cdea67acc68ce3fe422da726df16f37ce5",
+      "originalSha256": "79d9cf8ec744c0017798e7d69e5c68cdea67acc68ce3fe422da726df16f37ce5",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/gamble/suits.webp",
+      "bytes": 12752,
+      "sha256": "d303a6a5ef7a4348866194d703f5c5ca20251a671c797a6fcea5e1a2fcb4b391",
+      "originalSha256": "d303a6a5ef7a4348866194d703f5c5ca20251a671c797a6fcea5e1a2fcb4b391",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/info/next.webp",
+      "bytes": 2300,
+      "sha256": "b4add77b6c26c5cf40efdc865b05f926159a4e55dbb95d0d440621912ee71302",
+      "originalSha256": "b4add77b6c26c5cf40efdc865b05f926159a4e55dbb95d0d440621912ee71302",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/main/buttons.json",
+      "bytes": 1260,
+      "sha256": "3c6cccc09a89a14bfc1bc02c6a624a62cdec12b0c3d536a11fb38ba7503a6561",
+      "originalSha256": "3c6cccc09a89a14bfc1bc02c6a624a62cdec12b0c3d536a11fb38ba7503a6561",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/main/buttons.webp",
+      "bytes": 14798,
+      "sha256": "694270588ad53d8b9a8067aad819f632c4263d5216bdeb2aa78bf2d918a0f8a4",
+      "originalSha256": "694270588ad53d8b9a8067aad819f632c4263d5216bdeb2aa78bf2d918a0f8a4",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/v2/main.json",
+      "bytes": 727,
+      "sha256": "eee86d4133466fb2a2a8466e4a1020033b9713b47cb75e685ca43fb4926df234",
+      "originalSha256": "eee86d4133466fb2a2a8466e4a1020033b9713b47cb75e685ca43fb4926df234",
+      "edits": []
+    },
+    {
+      "path": "images/themes/blue/buttons/v2/main.webp",
+      "bytes": 13896,
+      "sha256": "9dbfc33903a85f07afb785b368e50406ba3b69219895cf9b49adfa48b92f65ee",
+      "originalSha256": "9dbfc33903a85f07afb785b368e50406ba3b69219895cf9b49adfa48b92f65ee",
+      "edits": []
+    },
+    {
+      "path": "js/agtunique.js",
+      "bytes": 10983,
+      "sha256": "5c6bca2f690024f724d36907dce0dcd413038bec8c70c93782d28251a594d3f0",
+      "originalSha256": "5c6bca2f690024f724d36907dce0dcd413038bec8c70c93782d28251a594d3f0",
+      "edits": []
+    },
+    {
+      "path": "js/effects/snow.js",
+      "bytes": 3495,
+      "sha256": "e8abc2a05b5ec5d5f5242abab4a7cc31e75a7ab1558721f0c8a220cb07fee442",
+      "originalSha256": "e8abc2a05b5ec5d5f5242abab4a7cc31e75a7ab1558721f0c8a220cb07fee442",
+      "edits": []
+    },
+    {
+      "path": "js/lib/phaser-nocache.min.js",
+      "bytes": 1015,
+      "sha256": "5f0f7b2bd37a22ca9b88ed66d1e74fa72723abf6473ba94a69dd69bea601f432",
+      "originalSha256": "5f0f7b2bd37a22ca9b88ed66d1e74fa72723abf6473ba94a69dd69bea601f432",
+      "edits": []
+    },
+    {
+      "path": "js/lib/phaser-spine3.8.js",
+      "bytes": 608361,
+      "sha256": "43a51f6dd2cbc0c8dbe7625c4259a0190aabc5fc3956283f6e1915cfde7e9b85",
+      "originalSha256": "43a51f6dd2cbc0c8dbe7625c4259a0190aabc5fc3956283f6e1915cfde7e9b85",
+      "edits": []
+    },
+    {
+      "path": "js/lib/phaser2.20.min.js",
+      "bytes": 1262220,
+      "sha256": "83865f561ea8a5b629383ef6ab593e68ff3d1ca0c9dd7afd1da19da13c3138c3",
+      "originalSha256": "83865f561ea8a5b629383ef6ab593e68ff3d1ca0c9dd7afd1da19da13c3138c3",
+      "edits": []
+    },
+    {
+      "path": "js/lib/webfont.js",
+      "bytes": 28010,
+      "sha256": "1b1b0bf1c1d3c7dd9ceea07bb2cafc569ee4d032bf19a8a51b80cf972154e184",
+      "originalSha256": "1b1b0bf1c1d3c7dd9ceea07bb2cafc569ee4d032bf19a8a51b80cf972154e184",
+      "edits": []
+    },
+    {
+      "path": "js/lib/zepto.min.js",
+      "bytes": 49141,
+      "sha256": "6564731c29bfa80a95bdb828d0c76908c0c4d156659dafa22e0bc7a5d29be163",
+      "originalSha256": "6564731c29bfa80a95bdb828d0c76908c0c4d156659dafa22e0bc7a5d29be163",
+      "edits": []
+    },
+    {
+      "path": "jsmin/6megaice.js",
+      "bytes": 962647,
+      "sha256": "d97714ae571518964d649b2555501edbb1ea5a7bf72d026901cf26a29517ad2f",
+      "originalSha256": "a5fbc33cce1e8436c6a8c1db49c7cb91a0ee11164d7cd47e6b391e6938f08abc",
+      "edits": [
+        "Same-origin wallet transport endpoint",
+        "Rejoined optional chaining tokens split by captured-source formatter"
+      ]
+    }
+  ]
+}

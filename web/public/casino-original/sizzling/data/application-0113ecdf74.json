@@ -1,0 +1,40 @@
+{
+  "name": "sizzlinghotdeluxe",
+  "vendor": "novomatic",
+  "title": "Sizzling Hot Deluxe",
+  "canvas": {
+    "id": "slotCanvas",
+    "desktop": {
+      "designSize": {
+        "width": 1920,
+        "height": 1080
+      },
+      "minSize": {
+        "width": 1540,
+        "height": 1080
+      },
+      "innerScale": 1,
+      "outerScale": 1
+    },
+    "mobile": {
+      "designSize": {
+        "width": 960,
+        "height": 540
+      },
+      "minSize": {
+        "width": 760,
+        "height": 540
+      }
+    }
+  },
+  "metaData": {
+    "version": "3.0.5",
+    "deployDate": "2019-3-12 13:04:59",
+    "gameMode": "defaultMode"
+  },
+  "responsibleList": {
+    "content": "Starflower",
+    "client": "",
+    "qa": ""
+  }
+}

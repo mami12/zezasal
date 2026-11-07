@@ -1,0 +1,40 @@
+{
+  "name": "bookofradeluxe",
+  "vendor": "novomatic",
+  "title": "Book of Ra Deluxe",
+  "canvas": {
+    "id": "slotCanvas",
+    "desktop": {
+      "designSize": {
+        "width": 1920,
+        "height": 1080
+      },
+      "minSize": {
+        "width": 1600,
+        "height": 1080
+      },
+      "innerScale": 1,
+      "outerScale": 1
+    },
+    "mobile": {
+      "designSize": {
+        "width": 960,
+        "height": 590
+      },
+      "minSize": {
+        "width": 860,
+        "height": 590
+      }
+    }
+  },
+  "metaData": {
+    "version": "3.0.8",
+    "deployDate": "2019-2-11 18:52:15",
+    "gameMode": "defaultMode"
+  },
+  "responsibleList": {
+    "content": "Liquorice",
+    "client": "Freya",
+    "qa": ""
+  }
+}
