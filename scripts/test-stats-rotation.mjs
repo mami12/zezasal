@@ -99,7 +99,7 @@ try{
  // Opening a single detail opts that match into shared enrichment without a bet.
  {const h=await harness();h.service.warm(row());await h.service.warmStatistics(row());assert.ok(h.calls.length>0);const count=h.calls.length;h.service.warm(row());await h.service.warmStatistics(row());assert.equal(h.calls.length,count,'repeat viewers share the ten-minute cache');h.advance(tenMinutes);h.service.warm(row());await h.service.warmStatistics(row());assert.ok(h.calls.length>count,'viewed fixture refreshes after ten minutes');h.verify();}
  // Three concurrent viewed fixtures are queued, never silently dropped by the two-job limit.
- {const rows=[row(),row(102),row(103)],h=await harness({rows});for(const r of rows)h.service.warm(r);await Promise.all(rows.map(r=>h.service.warmStatistics(r)));for(const r of rows)assert.equal(h.stats(h.service,r).home.fouls,7);assert.equal(h.calls.filter(c=>c.path.endsWith('/plays')).length,3);h.verify();}
+ {const rows=[row(),row(102),row(103)],h=await harness({rows});for(const r of rows)h.service.warm(r);await Promise.all(rows.map(r=>h.service.warmStatistics(r)));for(const r of rows)assert.equal(h.stats(h.service,r).home.fouls,7);assert.equal(h.calls.filter(c=>c.path.endsWith('/plays')).length,0,'No auxiliary goal-minute API calls for viewed LIVE fixtures');h.verify();}
  {const r=row(101,{service:'PREMATCH'}),h=await harness({rows:[r]});h.service.warm(r);await h.service.warmStatistics(r);assert.ok(h.calls.length>0,'opening prematch also starts enrichment');const count=h.calls.length;h.advance(12*60000+1);await h.service.tick();assert.equal(h.calls.length,count,'closed unbet view stops background polling after interest expires');h.verify();}
  // A non-viewed detail, a prematch bet, a closed parent and a settled line spend nothing.
  {
@@ -119,14 +119,14 @@ try{
   const h=await harness({stats:()=>({...totals,home:{...totals.home,shotsOnTarget:count}})});
   await h.bet(101);await h.bet(101,'another-bet');
   await Promise.all([h.service.tick(),h.service.warmStatistics(row()),h.service.warmStatistics(row())]);
-  assert.equal(h.calls.length,2,'catalog and events are shared; no duplicate scoreboard request');
+  assert.equal(h.calls.length,1,'A single scoreboard stats request, no auxiliary goal play-by-play');
   assert.equal(h.stats(h.service).home.shotsOnTarget,4);
-  h.advance(tenMinutes-1);await h.service.tick();assert.equal(h.calls.length,2);
-  const restarted=h.create();await restarted.tick();assert.equal(h.calls.length,2,'restart keeps the next refresh');
+  h.advance(tenMinutes-1);await h.service.tick();assert.equal(h.calls.length,1);
+  const restarted=h.create();await restarted.tick();assert.equal(h.calls.length,1,'restart keeps the next refresh');
   h.advance(1);count=7;await restarted.tick();assert.equal(h.stats(restarted).home.shotsOnTarget,7,'non-null totals actually refresh');
-  assert.equal(h.calls.length,4,'mapped fixture skips another discovery');
+  assert.equal(h.calls.length,2,'mapped fixture skips another discovery');
   await database.query("update app_ticket set status='CASHED_OUT'");h.advance(tenMinutes);await restarted.tick();await restarted.warmStatistics(row());
-  assert.equal(h.calls.length,4,'closing all tickets stops provider HTTP');h.verify();
+  assert.equal(h.calls.length,2,'closing all tickets stops provider HTTP');h.verify();
  }
  // Finished rows often retain service=LIVE. Neither that nor reopening details restarts polling.
  {
@@ -234,14 +234,14 @@ try{
  // A new timeline is collected every cycle; cards and missed penalties are never goals.
  {
   const h=await harness({rows:[row(101,{home_score:1,away_score:0})],env:{BSD_API_KEY:'test-key'},events:provider=>provider==='worldcup26'?[{id:'g',scoringPlay:true,clock:{displayValue:"15'"},period:{number:1},team:{source_id:'h101'}}]:[]});await h.bet(101);
-  await h.service.tick();assert.equal(h.service.displayGoalIntervalStats(row())[0].home,1,'empty provider events cannot contradict a known live goal');h.verify();
+  await h.service.tick();assert.equal(h.service.displayGoalIntervalStats(row()),null,'Auxiliary event timelines cannot replace a missing confirmed Zizobet goal history');h.verify();
  }
  {
   let scored=false;
   const h=await harness({env:{BSD_API_KEY:'test-key'},events:()=>scored?[{id:'goal',type:'goal',is_home:true,minute:15},{id:'card',type:'card',is_home:true,minute:18}]:[]});await h.bet(101);
-  await h.service.tick();assert.equal(h.service.displayGoalIntervalStats(row())[0].home,0);
+  await h.service.tick();assert.equal(h.service.displayGoalIntervalStats(row()),null,'Do not infer intervals from foreign event feeds without Zizobet confirmation');
   scored=true;h.advance(tenMinutes);await h.service.tick();h.advance(tenMinutes);await h.service.tick();
-  assert.equal(h.service.displayGoalIntervalStats(row())[0].home,1);assert.equal(h.service.displayGoalIntervalStats(row())[1].home,0);h.verify();
+  assert.equal(h.service.displayGoalIntervalStats(row()),null,'Changing secondary play-by-play never replaces primary minutes');h.verify();
  }
  assert.equal(displayGoalIntervals('bsd',{incidents:[{id:'card',type:'card',minute:2,is_home:true},{id:'missed',type:'penalty_missed',minute:3,is_home:true}]},{}).reduce((sum,x)=>sum+x.home+x.away,0),0);
  assert.equal(displayGoalIntervals('sportapi',{data:[{id:'g',event_type:'goal',team_side:'home',minute:"55'"}]},{} )[3].home,1);
