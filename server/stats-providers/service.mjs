@@ -1,4 +1,5 @@
 import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
+import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
 import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
@@ -254,10 +255,39 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    if(old?.version===2&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
    const entry={version:2,identity,values:{},goalIntervals:null,sources:{},at:now()};
+   // Zizobet's independently reconfirmed event history is the authority for
+   // goals, clock windows and minute buckets. Other services supply only
+   // missing scorer labels/statistics and never replace these incidents.
+   let primaryFacts=[],primaryGoal=null;
+   try{
+    const coverage=(await runQuery(
+      "select through_minute,count_home,count_away,confirmed_at "+
+      "from app_match_event_coverage where match_id=$1 and provider='zizobet' and kind='goal'",
+      [Number(id)])).rows[0];
+    if(coverage){
+     primaryFacts=(await runQuery(
+       "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified "+
+       "from app_match_event_fact where match_id=$1 and provider='zizobet' and kind='goal' and active=true",
+       [Number(id)])).rows;
+     primaryGoal=primaryGoalDisplay(coverage,primaryFacts,row);
+     if(primaryGoal){
+      entry.goalIntervals=primaryGoal.goalIntervals;
+      entry.scorers=primaryGoal.scorers;
+      entry.sources.goals='zizobet';
+     }
+    }
+   }catch{
+    // On new installations the fact table may not exist yet. Never invent
+    // Zizobet coverage or block ordinary scoreboard/statistics rendering.
+   }
    const observations=[],attempted=[],unavailable={};
    if(final&&result)observations.push({provider:'primary',final:true,observedAt:new Date(now()).toISOString(),values:{...(result.statistics??{}),corners:{home:result.corners_home,away:result.corners_away},cards:{home:result.cards_home,away:result.cards_away}}});
    const state=await read('match:'+id),mapping={...(state?.identity===identity?state.mapping??{}:{}),...(old?.identity===identity?old.mapping??{}:{})};
-   for(const provider of await providerOrder('statistics')){
+   // Avoid using daily-limited APIs for goal minutes already supplied by
+   // Zizobet. For LIVE matches, rotate only if the primary lacks other
+   // required statistics. FT independent audit remains unchanged.
+   for(const provider of (final||!statsReady(entry))?
+     await providerOrder('statistics'):[]){
     if(specs[provider].env&&!env[specs[provider].env])continue;
     if(final)attempted.push(provider);
     try{
@@ -296,7 +326,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        }catch{}
       }
      }
-     if(!entry.goalIntervals){
+     if(final&&!entry.goalIntervals){
       try{
        let payload;
        if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',displayTtl);
@@ -347,23 +377,26 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        if(matchesScore){entry.goalIntervals=intervals;entry.sources.goals=provider;}
       }catch(e){health.providers[provider]={...(health.providers[provider]??{}),lastError:/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE'};}
      }
-     if(!final&&statsReady(entry)&&entry.goalIntervals)break;
+     if(!final&&statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
-   if (!entry.scorers?.length || !statsReady(entry)) {
+   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
      const dates = candidateDateStrings(targetDate);
-     const fm = await findFotMobFixture(row.home, row.away, dates);
+     const fm = await findFotMobFixture(row.home, row.away, dates,
+       row.start_at??row.startAt);
      if (fm && fm.match) {
       const details = await fetchFotMobDetails(fm.match.id);
       const parsed = parseFotMobPayload(fm.match, details);
-      if (!entry.scorers?.length && parsed.goalEvents.length) {
-       entry.scorers = parsed.goalEvents.filter(e=>e.player).map(e => ({
-         minute: e.minute,
-         team: e.team,
-         player: e.player
-       }));
+      if (primaryGoal?.hasGoals && parsed.goalEvents.length) {
+       // FotMob names can fill only one-to-one Zizobet scorer slots.
+       // Missing or conflicting goals are never imported as primary events.
+       const matched=matchedSupplementalScorers(primaryFacts,
+        parsed.goalEvents.map(e=>({minute:e.minute,team:e.team,player:e.player})));
+       const used=new Set((entry.scorers??[]).map(e=>e.team+'|'+e.minute));
+       entry.scorers=[...(entry.scorers??[]),
+        ...matched.filter(e=>!used.has(e.team+'|'+e.minute))];
       }
       const fmValues = {
        possession: parsed.statistics.possession,
