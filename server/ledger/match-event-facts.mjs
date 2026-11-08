@@ -155,7 +155,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-parity','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -261,6 +261,34 @@ export function gradeHalfEventFacts(contract,facts,{complete=false}={}){
   if(counts[event.team]===contract.target)return decided(event.team);
  }
  return noEvent();
+}
+/** A 1H or 2H corner odd/even bet is graded only from a FULL timeline
+ * with explicit phase for 45+ incidents. Retakes are deduplicated at ingestion.
+ * Missing phase is not an excuse to classify second-half incidents by minute.
+ */
+export function gradeHalfParityFacts(contract,facts,{complete=false}={}){
+ if(!complete||contract?.kind!=='half-parity'||contract.event!=='corner'||
+    ![1,2].includes(contract.half)||!['odd','even'].includes(contract.choice)||
+    contract.side!=null&&!['home','away'].includes(contract.side)||
+    !Array.isArray(facts))return null;
+ const first=new Set(['1','h1','1h','1sthalf','firsthalf','half1','firstperiod','1stperiod','period1']);
+ const second=new Set(['2','h2','2h','2ndhalf','secondhalf','half2','secondperiod','2ndperiod','period2']);
+ let count=0;
+ for(const e of facts){
+  const minute=Number(e?.minute),seconds=e?.seconds==null?null:Number(e.seconds);
+  if(!Number.isSafeInteger(minute)||minute<0||minute>130||
+     seconds!==null&&(!Number.isFinite(seconds)||seconds<0)||
+     !['home','away'].includes(e?.team))return null;
+  const raw=String(e?.phase??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  let phase;
+  if(first.has(raw)){if(minute>75)return null;phase=1;}
+  else if(second.has(raw)){if(minute<45)return null;phase=2;}
+  else if(raw)return null;
+  else if(minute<45)phase=1;
+  else return null;
+  if(phase===contract.half&&(contract.side==null||e.team===contract.side))count++;
+ }
+ return (count%2===(contract.choice==='even'?0:1))?'WON':'LOST';
 }
 /** Period-sensitive totals require the FULL reconciled event chronology.
  * 45+/90+ incidents belong to the recorded half, not a numeric <=45/<=90
@@ -435,6 +463,13 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
  const through=Number(data.through_minute);
+ if(c.kind==='half-parity'){
+  if(!full||c.event!=='corner')return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase
+    from app_match_event_fact where match_id=$1 and provider=$2
+      and kind='corner' and active=true`,[line.match_id,provider]);
+  return gradeHalfParityFacts(c,facts,{complete:true});
+ }
  if(c.kind==='half-total'){
   if(!full||!['corner','card'].includes(c.event))return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase,card_color
