@@ -1,0 +1,63 @@
+name: Market settlement and web checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "scripts/**"
+      - "web/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/market-and-speed-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sportsbook-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned backend dependencies
+        run: npm ci --ignore-scripts
+      - name: Market acceptance and grading tests
+        run: npm run test:markets
+      - name: Settlement and provider-history tests
+        run: |
+          node scripts/test-settlement-results.mjs
+          npm run test:historical-settlement
+      - name: Database provider/statistics contract checks
+        run: npm run test:statistics
+      - name: Board subscription and caching checks
+        run: |
+          npm run test:feed-route
+          npm run test:scoped-socket
+          node scripts/test-static-cache.mjs
+          node scripts/test-board-speed.mjs
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned frontend dependencies
+        run: npm --prefix web ci --ignore-scripts
+      - name: Type-check frontend
+        run: npm --prefix web run typecheck --if-present
+      - name: Build production bundle
+        run: npm --prefix web run build
