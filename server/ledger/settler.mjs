@@ -535,13 +535,18 @@ export async function settleVerifiedEventFacts({
  const cap=Math.max(1,Math.min(300,Number(limit)||120));
  const {rows}=await runQuery(`select l.* from app_ticket_line l
    join app_ticket t on t.id=l.ticket_id
-   join app_match_event_coverage e on e.match_id=l.match_id
-     and e.kind=l.live_contract->>'event' and e.provider='zizobet'
    where l.status='PENDING' and t.status='PENDING'
      and l.live_contract is not null
      and (l.market_key like 'zz%@%' or l.accepted_contract->>'providerMarketKey' like 'zz%@%')
      and not exists(select 1 from app_settlement_override o where o.line_id=l.id)
-   order by e.observed_at desc,l.match_id,l.id
+     and exists(select 1 from app_match_event_coverage e
+       where e.match_id=l.match_id and e.kind=l.live_contract->>'event'
+         and (e.provider='zizobet'
+           or (e.provider in ('fotmob','apifootball','sportapi','goalapi','bsd','worldcup26')
+             and e.complete=true and e.confirmed_at is not null
+             and exists(select 1 from app_match_result r where r.match_id=l.match_id
+               and r.home_score is not null and r.away_score is not null))))
+   order by t.placed_at,l.match_id,l.id
    limit $1`,[cap]);
  if(!rows.length)return {examined:0,graded:0,closed:[]};
  const ids=[...new Set(rows.map(l=>l.match_id))];
