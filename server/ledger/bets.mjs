@@ -47,6 +47,7 @@ import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
+import {isPlayerGoalSpecial,parsePlayerGoalSpecial} from './player-goal-specials.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
@@ -189,6 +190,26 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw err;
   }
 
+  // Player goals in a specific half and 2+/3+ goals belong to the quoted
+  // actor. Require a frozen identity instead of accepting an anonymous 'Yes'.
+  let playerGoalSpecial=null;
+  if(isPlayerGoalSpecial(row)){
+    playerGoalSpecial=parsePlayerGoalSpecial(row);
+    if(!playerGoalSpecial)
+      throw Object.assign(badRequest('Mungon emri i lojtarit ose limiti i saktë i golave.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    if(String(match.service??'').toUpperCase()==='LIVE'&&
+       playerGoalSpecial.mode==='period'){
+      const now=Date.now(),stamp=Date.parse(match.clock_at??'');
+      const phase=String(match.feed_status??match.phase??'').toLowerCase();
+      const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
+      const firstEnded=/^(?:ht|halftime|half time|2h|second half|2nd half|ft|finished|full time)\b/.test(phase);
+      if(!Number.isFinite(stamp)||now-stamp>45000||stamp-now>5000||
+         !Number.isFinite(clock)||playerGoalSpecial.half===1&&firstEnded)
+        throw Object.assign(badRequest('Pjesa e zgjedhur nuk ka të dhëna LIVE të verifikuara.'),{
+          code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+    }
+  }
   // A combination is a single provider quote, not a fabricated product.
   // The 1H and 2H variants must be evaluated from their own scoreboards.
   let halfComboContract=null;
@@ -378,6 +399,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
+    if(playerGoalSpecial)contract=playerGoalSpecial;
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
