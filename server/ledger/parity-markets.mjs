@@ -6,6 +6,7 @@
  */
 const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
  .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+export const isParityLikeMarket=line=>/\b(?:odd\s*(?:or\s*)?even|even\s*(?:or\s*)?odd)\b/i.test(normalize(line?.market_name??line?.marketName??line?.name));
 const integer=value=>value!=null&&value!==''&&Number.isSafeInteger(Number(value))&&Number(value)>=0?Number(value):null;
 export function parseParityMarket(line){
  let name=normalize(line?.market_name??line?.marketName??line?.name);
@@ -38,7 +39,7 @@ export function parseParityMarket(line){
   side=last;name=name.slice(0,-suffix[0].length).trim();
  }
  name=name.replace(/^(?:total )/,'').replace(/ (?:total)$/,'').trim();
- const event=/^goals?$/.test(name)?'goal':/^corners?$/.test(name)?'corner':null;
+ const event=/^goals?$/.test(name)||name===''?'goal':/^corners?$/.test(name)?'corner':null;
  if(!event)return null;
  const explicit=Number(line?.period??0);
  if(!Number.isInteger(explicit)||![0,1,2].includes(explicit)||half!==null&&explicit!==0&&explicit!==half)return null;
