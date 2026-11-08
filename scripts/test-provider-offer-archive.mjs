@@ -100,6 +100,18 @@ try{
   'Asynchronous retry must not replace raw source name with its display label');
  assert.equal(queued.native_quote.seq,1,'Asynchronous retry retains the raw source quote');
  assert.equal(queued.native_parameters.seq,1,'Asynchronous retry retains native numbered market parameters');
+ // Frequent unchanged MQTT/REST snapshots must not rerun every
+ // provider contract regex, but price and suspension still create history.
+ archive.observe([{...novel,updatedAt:'2026-11-08T13:31:00Z'}]);
+ await archive.flush();
+ assert.ok(archive.status().skippedUnchanged>0,
+  'Identical price/contract/suspension snapshots skip re-normalization');
+ const changedAgain={...novel,price:4.35,updatedAt:'2026-11-08T13:31:30Z'};
+ archive.observe([changedAgain]);
+ await archive.flush();
+ assert.equal(Number((await execute('select price from app_provider_offer_current where market_key=$1',
+  [novel.marketKey])).rows[0].price),4.35,
+  'A genuine price update is never hidden by raw quote deduplication');
  assert.equal(Number((await execute('select balance from app_user where id=$1',[user])).rows[0].balance),1000,
   'Archiving odds cannot change wallet balances');
  console.log('PASS PostgreSQL provider-offer archive: original quote IDs, English market names, exact minutes, prices, suspended history, dedupe and retry');
