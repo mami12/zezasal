@@ -43,6 +43,7 @@ jobs:
         run: |
           npm run test:feed-route
           npm run test:scoped-socket
+          npm run test:quote-dedup
           node scripts/test-static-cache.mjs
           node scripts/test-board-speed.mjs
   frontend:
