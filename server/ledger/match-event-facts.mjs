@@ -3,6 +3,7 @@ import {gradeMultiCornerFacts} from './multi-corners.mjs';
 import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
 import {gradeHandicapContract,gradeHalfCornerHandicapFacts} from './handicap-contracts.mjs';
 import {gradePlayerOrdinalScorerFacts} from './player-ordinal-scorer.mjs';
+import {gradePlayerGoalSpecial} from './player-goal-specials.mjs';
 import {gradeHalfCombination} from './half-combinations.mjs';
 /**
  * Persistent PRIMARY-feed football incidents. Provider IDs and player names are
@@ -160,7 +161,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-ordinal-goal','player-card','half-combo','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','score-handicap','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-ordinal-goal','player-goal-special','player-card','half-combo','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','score-handicap','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -601,6 +602,14 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   // Simultaneous or minute-only indistinguishable milestones require review.
   if(h!==null&&a!==null&&h===a)return null;
   return decision(c.side===(h!==null&&(a===null||h<a)?'home':'away'));
+ }
+ if(c.kind==='player-goal-special'){
+  if(!full||c.event!=='goal')return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase,player_id,
+    player_name,aiscore_player_id,aiscore_player_name,aiscore_verified,own_goal
+    from app_match_event_fact where match_id=$1 and provider=$2
+      and kind='goal' and active=true`,[line.match_id,provider]);
+  return gradePlayerGoalSpecial(c,facts,{complete:true});
  }
  if(c.kind==='player-ordinal-goal'){
   if(!full||c.event!=='goal')return null;
