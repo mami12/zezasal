@@ -9,6 +9,7 @@
 import { query } from '../db.mjs';
 import { teamsMatch, canonical } from './adapters.mjs';
 import { settleMatch } from '../ledger/settler.mjs';
+import {persistHistoricalGoalFacts,validateHistoricalGoals} from '../ledger/historical-event-facts.mjs';
 
 const fotmobDailyCache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -263,10 +264,26 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
 
   // Check if an existing complete result is already recorded
   const existing = await runQuery('select * from app_match_result where match_id = $1', [id]);
-  if (existing.rows.length && existing.rows[0].home_score != null && existing.rows[0].away_score != null) {
-    // Result exists, settle directly
-    const outcome = await settleMatch(id);
-    return { recovered: true, source: 'EXISTING_RESULT', outcome };
+  const priorResult=existing.rows[0];
+  const alreadyHasFt=priorResult?.home_score!=null&&priorResult?.away_score!=null;
+  if(alreadyHasFt){
+    // First migrate complete historical event snapshots written by older
+    // releases into the frozen-contract grading tables without new API calls.
+    try{
+      const saved=(await runQuery('select payload from app_match_event_evidence where match_id=$1',[id])).rows[0]?.payload;
+      if(saved?.complete===true&&saved?.goalsAvailable===true){
+        const old={...saved,final:saved.final??true};
+        if(validateHistoricalGoals(old))await persistHistoricalGoalFacts(id,old);
+      }
+    }catch(error){console.warn('[recovery] prior goal history backfill:',error.message);}
+    const hasVerified=(await runQuery(`select 1 from app_match_event_coverage
+      where match_id=$1 and kind='goal' and complete=true and confirmed_at is not null
+        and count_home=$2 and count_away=$3 limit 1`,
+      [id,Number(priorResult.home_score),Number(priorResult.away_score)])).rows.length>0;
+    if(hasVerified){
+      const outcome=await settleMatch(id);
+      return {recovered:true,source:'EXISTING_VERIFIED_GOAL_FACTS',outcome};
+    }
   }
 
   // Look up fixture data
@@ -316,6 +333,9 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
   }
   if(!parsed)return {recovered:false,reason:'MATCH_NOT_FINISHED_OR_FOUND'};
   const {homeScore,awayScore}=parsed;
+  if(alreadyHasFt&&(Number(priorResult.home_score)!==homeScore||
+    Number(priorResult.away_score)!==awayScore))
+    return {recovered:false,reason:'HISTORICAL_SCORE_DISAGREEMENT'};
   if(![homeScore,awayScore].every(value=>Number.isSafeInteger(value)&&value>=0&&value<=99))
     return {recovered:false,reason:'UNVERIFIED_FINAL_SCORE'};
 
@@ -354,11 +374,15 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     const evidencePayload={source,complete:true,final:true,homeScore,awayScore,
       goalsAvailable:true,events:goals,observedAt:new Date().toISOString()};
     try{
-      // Do not overwrite a previously collected primary-provider timeline.
+      // Durable historical incidents use their real provider name, never
+      // pretend to be Zizobet. Coverage and gaps are written atomically.
+      await persistHistoricalGoalFacts(id,evidencePayload);
+      // Keep read-only history for player display without overwriting the
+      // original provider's event evidence.
       await runQuery(`insert into app_match_event_evidence(match_id,payload)
         values($1,$2::jsonb) on conflict(match_id) do nothing`,
         [id,JSON.stringify(evidencePayload)]);
-    }catch(error){console.warn('[recovery] historical goal evidence unavailable:',error.message);}
+    }catch(error){console.warn('[recovery] historical incident verification:',error.message);}
   }
   const outcome=await settleMatch(id);
   return {recovered:true,source:source.toUpperCase(),score:`${homeScore}-${awayScore}`,
@@ -377,9 +401,23 @@ export async function recoverAllPendingMatches({ runQuery = query } = {}) {
       from app_ticket_line l
       join app_ticket t on t.id=l.ticket_id
      where l.status='PENDING' and t.status='PENDING'
-       and not exists (
-         select 1 from app_match_result r where r.match_id=l.match_id
-           and r.home_score is not null and r.away_score is not null
+       and (
+         not exists (
+           select 1 from app_match_result r where r.match_id=l.match_id
+             and r.home_score is not null and r.away_score is not null
+         )
+         or (
+           l.live_contract->>'event'='goal'
+           and exists(select 1 from app_match_result r where r.match_id=l.match_id
+             and r.home_score is not null and r.away_score is not null)
+           and not exists (
+             select 1 from app_match_event_coverage e
+             join app_match_result r on r.match_id=e.match_id
+             where e.match_id=l.match_id and e.kind='goal'
+               and e.complete=true and e.confirmed_at is not null
+               and e.count_home=r.home_score and e.count_away=r.away_score
+           )
+         )
        )
      group by l.match_id
      order by min(t.placed_at),l.match_id
