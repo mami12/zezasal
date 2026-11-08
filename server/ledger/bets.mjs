@@ -178,7 +178,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
   const raceNoneOffered=isRace&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
-    /^(?:none|neither|asnj[eë]ra|asnje skuader|x|draw)$/i.test(
+    /^(?:none|neither|no team|no one|asnj[eë]ra|asnje skuader|x|draw)$/i.test(
       String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
   // Cards cannot use the goal scoreboard or a guessed yellow+red sum.
   // Only a confirmed, recent primary card incident coverage can establish
