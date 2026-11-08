@@ -9,7 +9,7 @@ const validCount=value=>value!==null&&value!==undefined&&value!==''&&
  Number.isSafeInteger(Number(value))&&Number(value)>=0?Number(value):null;
 
 export function primaryGoalDisplay(coverage,facts,row){
- if(!coverage||!Array.isArray(facts)||!row)return null;
+ if(!coverage||!Array.isArray(facts)||!row||coverage.confirmed_at==null)return null;
  const home=validCount(coverage.count_home),away=validCount(coverage.count_away);
  if(home===null||away===null||facts.length!==home+away)return null;
  const scoreHome=validCount(row.home_score),scoreAway=validCount(row.away_score);
