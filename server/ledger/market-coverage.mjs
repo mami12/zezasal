@@ -53,7 +53,9 @@ export function auditQuotedMarket(raw){
 export function summarizeMarketCoverage(definitions=[],quotes=[]){
  const groups=new Map();
  const get=(id,name,scope)=>{
-  const key=clean(id)||'name:'+norm(name);
+  // Native numeric IDs may be reused across PREMATCH and LIVE with
+  // different definitions. Never merge two different native titles.
+  const key=(clean(id)||'anonymous')+'|'+norm(name);
   if(!groups.has(key))groups.set(key,{
    nativeMarketId:clean(id)||null,name:clean(name),scopes:new Set(),
    quotedOutcomes:0,ruleMapped:0,unmapped:0,ruleTypes:new Set(),
