@@ -175,6 +175,40 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // selection. Two-way races keep their original VOID rule when X is never
   // reached; three-way races pay Neither and lose on 1/2 instead.
   const raceName=String(row.market_name??row.marketName??'');
+  // A rest-of-match score must be anchored to the exact verified primary
+  // scoreboard when purchased. Otherwise a stale quote changes the contract.
+  const correctRest=raceName.match(/^correct score rest of match\s*\(from\s*(\d{1,2})\s*:\s*(\d{1,2})\)$/i);
+  if(correctRest){
+    const baseHome=Number(correctRest[1]),baseAway=Number(correctRest[2]);
+    if(String(match.service??'').toUpperCase()==='LIVE'){
+      const currentHome=match.home_score==null?null:Number(match.home_score);
+      const currentAway=match.away_score==null?null:Number(match.away_score);
+      const stamp=Date.parse(match.score_at??match.scoreAt??'');
+      if(currentHome!==baseHome||currentAway!==baseAway||
+         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)
+        throw Object.assign(badRequest('Rezultati ka ndryshuar. Rifresko koeficientin për këtë treg.'),{
+          code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+    }else if(baseHome!==0||baseAway!==0){
+      throw Object.assign(badRequest('Kjo kuotë kërkon një rezultat LIVE të verifikuar.'),{
+        code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+    }
+  }
+  // "Other Score" is the complement of the ACTUAL provider quote grid,
+  // never a hard-coded 0:0..4:4 grid that might overpay or underpay.
+  const correctScoreMarket=/^(?:(?:1st|first|2nd|second) half\s*[-:.]\s*)?correct score$|^correct score rest of match\s*\(from\s*\d+:\d+\)$/i.test(raceName);
+  const otherScore=/^(?:any\s+)?other(?:\s+score|\s+(?:home|away)\s+win|\s+draw)?$/i.test(String(row.outcome_name??'').trim());
+  let correctScoreGrid=null;
+  if(correctScoreMarket&&otherScore){
+    const grid=quotedOffers.filter(o=>
+      o.market_key===row.market_key&&String(o.line??'')===String(row.line??''))
+      .map(o=>String(o.outcome_name??'').trim().match(/^(\d{1,2})\s*[:\-]\s*(\d{1,2})$/))
+      .filter(Boolean).map(m=>[Number(m[1]),Number(m[2])]);
+    if(!grid.length||grid.length>500)
+      throw Object.assign(badRequest('Mungon lista e rezultateve të këtij tregu.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    correctScoreGrid=grid;
+  }
+
   const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
   const isLast=/^(?:(?:which|what) team (?:will )?(?:score|take|receive) (?:the )?)?last (?:goal|corner|card)$|^(?:last (?:goal|corner|card) (?:by|scored by|taken by)|team (?:to )?(?:score|take|receive) (?:the )?last (?:goal|corner|card))$/i.test(raceName);
   const lastNoneOffered=isLast&&quotedOffers.some(o=>
@@ -203,6 +237,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
       raceNoneOffered,lastNoneOffered,raceCardSnapshot},match);
+    if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
