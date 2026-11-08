@@ -4,6 +4,9 @@ import {createSourceReopenTracker} from './sourceReopen';
 import {setCatalogRows,setCategoryPolicies,setScopeBlocks} from '../../../server/market-catalog.mjs';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import {useLocation} from 'react-router-dom';
+import {useAuth} from '../context/AuthContext';
+import {shouldConnectSportsFeed} from '../../../server/feed-route-interest.mjs';
 import type { Match, MatchEvent, OddsDelta } from '../types';
 import { frozenSelectionPrice } from '../../../server/ledger/system-columns.mjs';
 import { mergeMatchFacts, snapshotTime, timestamp } from './matchSync';
@@ -121,6 +124,9 @@ const cardsOf = (stats: any) => {
 };
 
 export function LiveFeedProvider({ children }: { children: ReactNode }) {
+  const {isAuthenticated}=useAuth();
+  const {pathname}=useLocation();
+  const needsSportsFeed=shouldConnectSportsFeed(pathname,isAuthenticated);
   const outcomeStore=useRef(createOutcomeStore());
   const [oddsDeltas, setOddsDeltas] = useState<Record<string, OddsDelta>>({});
   const [livePatches, setLivePatches] = useState<Record<string, LivePatch>>({});
@@ -233,6 +239,9 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // The casino, transactions and login routes must not wake the global
+    // match feed or subscribe to odds. Reconnect when a user opens sports.
+    if(!needsSportsFeed){setConnected(false);return;}
     const socket: Socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
     const unbindScope=bindFeedScope(socket);
 
@@ -477,7 +486,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
       if(reopenTimer)clearTimeout(reopenTimer);reopenedMatches.clear();reopenRefresh.current=()=>{};
       unbindScope();socket.close();
     };
-  }, []);
+  }, [needsSportsFeed]);
 
   const value = useMemo<LiveFeedValue>(
     () => ({ oddsDeltas, livePatches, matchEvents, connected, feedMode,
