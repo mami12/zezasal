@@ -381,9 +381,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   * Reuse the configured provider identities, verified kickoff matching, quota
   * accounting and HTTP timeouts. No other match's data may grade this fixture.
   */
- async function recoverHistoricalMatch(row){
+ async function recoverHistoricalMatch(row,{neededKinds=[]}={}){
   if(!enabled()||!row?.home||!row?.away||!Number.isFinite(Date.parse(row.start_at??row.startAt)))return null;
   await init();
+  let best=null,bestCoverage=-1;
   for(const provider of await providerOrder('historical-result')){
    try{
     const fixture=await discover(provider,row);
@@ -411,18 +412,32 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     const cards=yellow&&red?{home:yellow.home+red.home,away:yellow.away+red.away}:null;
     const statistics=Object.fromEntries(['shots','shotsOnTarget','fouls','possession']
       .map(field=>[field,validPair(field)]).filter(([,pair])=>pair));
-    return {source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),
+    const candidate={source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),
       cornersHome:corners?.home??null,cornersAway:corners?.away??null,
       cardsHome:cards?.home??null,cardsAway:cards?.away??null,statistics,evidence,
       cornerEvents:evidence.cornerEvents??[],cardEvents:evidence.cardEvents??[],
       cornerTimelineAvailable:evidence.cornerTimelineAvailable===true,
       cardTimelineAvailable:evidence.cardTimelineAvailable===true};
+    const covers=kind=>{
+      if(kind==='goal')return evidence.goalsAvailable===true&&
+        evidence.events.filter(e=>e.type==='goal'&&!e.shootout).length===
+        candidate.homeScore+candidate.awayScore;
+      const prefix=kind==='corner'?'corner':'card',
+       h=candidate[prefix==='corner'?'cornersHome':'cardsHome'],
+       a=candidate[prefix==='corner'?'cornersAway':'cardsAway'],
+       list=candidate[prefix+'Events'];
+      return candidate[prefix+'TimelineAvailable']===true&&h!=null&&a!=null&&
+        list.length===h+a;
+    };
+    const coverage=neededKinds.filter(covers).length;
+    if(coverage>bestCoverage){best=candidate;bestCoverage=coverage;}
+    if(coverage===neededKinds.length)break;
    }catch(error){
     health.providers[provider]={...(health.providers[provider]??{}),
       lastError:/^STATS_[A-Z_0-9]+$/.test(error.message)?error.message:'STATS_UNAVAILABLE'};
    }
   }
-  return null;
+  return best;
  }
  function displayScorers(row){
    const entry=displayCache.get(String(row.match_id??row.id));
