@@ -10,7 +10,7 @@ for(const [market,outcome,amount,event,side,kind] of [
  ['Team 1 Total Corners','Over','2.5','corner','home','over'],
  ['Team 2 Total Cards','Under','3.5','card','away','under'],
  ['Full time - Home team Total Cards (3.5)','Over','3.5','card','home','over'],
- ['Home Team Total Goals','Over','1.5','goal','home','over'],
+ ['Home Team Total Goals','Over','1.5','goal','home','team-total-goals'],
  ['Home Team Total Fouls','2+','','foul','home','atLeast']
 ]){
  const quote=line(market,outcome,amount);
@@ -22,6 +22,11 @@ for(const [market,outcome,amount,event,side,kind] of [
  assert.equal(contract?.event,event,market+' event');
  assert.equal(contract?.side,side,market+' side');
  assert.equal(contract?.kind,kind,market+' kind');
+ if(event==='goal'){
+  assert.equal(contract.choice,'over','Team goal contract preserves the quoted Over direction');
+  assert.equal(contract.threshold,1.5,'Team goal contract preserves the quoted 1.5 line');
+ }
+
 }
 for(const input of [
  line('Home Team Total Corners','Over','2.25'),
@@ -32,6 +37,13 @@ for(const input of [
 ])assert.equal(parseTeamCountMarket(input),null,
  'Unsupported or inconsistent quote must not become an aggregate count: '+input.market_name);
 
+const teamGoals=liveContract(line('Home Team Total Goals','Over','1.5'));
+assert.equal(gradeLiveContract(teamGoals,{clock:65,
+ teams:{goal:{home:1,away:5}}}),null,
+ 'Five away goals must not settle a home Over 1.5 market');
+assert.equal(gradeLiveContract(teamGoals,{clock:66,
+ teams:{goal:{home:2,away:5}}}),'WON',
+ 'Home Over 1.5 wins when two confirmed home goals exist');
 const home=liveContract(line('Home Team Total Corners','Over','2.5'));
 const frame={clock:45,counts:{corner:10},teams:{corner:{home:1,away:9}}};
 assert.equal(gradeLiveContract(home,frame),null,'Nine away corners cannot win a HOME corner line');
