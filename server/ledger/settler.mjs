@@ -26,6 +26,7 @@ import {isParityLikeMarket,gradeParityMarket} from './parity-markets.mjs';
 import {isHandicapMarket,parseHandicapContract,gradeHandicapContract} from './handicap-contracts.mjs';
 import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
+import {isHalfComboFamily,parseHalfCombination,gradeHalfCombination} from './half-combinations.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
@@ -96,6 +97,7 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
+  if(isHalfComboFamily(line))return gradeHalfCombination(parseHalfCombination(line,result),result)!==null;
   if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
   if(isHandicapMarket(line))return legacyHandicapResult(line,result)!==null;
   // A final aggregate card count cannot tell red from yellow cards.
@@ -167,6 +169,8 @@ export function gradeLine(line, result) {
     return gradeParityMarket(line,result);
   if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
     return gradeScoringPropMarket(line,result);
+  if(!Array.isArray(line.builder_legs)&&isHalfComboFamily(line))
+    return gradeHalfCombination(parseHalfCombination(line,result),result);
   if(needsEvents(line)&&!Array.isArray(line.builder_legs))return gradeEventLine(line,result)??null;
   if (line.builder_legs !== null && line.builder_legs !== undefined) {
     const legs = line.builder_legs;
