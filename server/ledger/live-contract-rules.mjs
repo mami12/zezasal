@@ -189,6 +189,31 @@ export function parseIntervalCount(line) {
  return null;
 }
 
+/** Provider clock-window totals: accept ONLY complete, minute-aligned intervals.
+ * For example 30:00–39:59 equals the closed buckets 30..39. Do not interpret
+ * 45+ or 90+ as a numeric end: injury time requires separately verified phase
+ * attribution and cannot safely be reconstructed from absolute minute counts.
+ */
+export function parseClockWindowTotal(line){
+ const name=norm(line.market_name??line.marketName??line.name);
+ const m=name.match(/^(\d{1,3}):([0-5]\d)\s*[-–]\s*(\d{1,3}):([0-5]\d)\s*min\.?\s*[-–]\s*(?:total\s+)?(goals?|corners?|cards?)\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
+ if(!m||m[2]!=='00'||m[4]!=='59')return null;
+ const from=Number(m[1]),to=Number(m[3]);
+ // 45+ first-half injury time can overlap ordinary absolute minute 45;
+ // no reliable period attribution currently exists for this market family.
+ if(from<0||to<from||to>=45)return null;
+ const event=typeOf(m[5]),label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
+ if(!event||!['goal','corner','card'].includes(event))return null;
+ const over=label.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ const under=label.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ if(!over&&!under)return null;
+ const named=(over??under)[1],raw=line.line??line.specifier;
+ const threshold=number(String(named??raw??m[6]??'').replace(',','.'));
+ const inTitle=number(String(m[6]??'').replace(',','.'));
+ if(threshold===null||threshold<0||threshold>300||!Number.isInteger(threshold*2)||
+    (inTitle!==null&&inTitle!==threshold))return null;
+ return {version:1,kind:'window-total',event,from,to,choice:over?'over':'under',threshold};
+}
 /** Explicit full-match yellow/red card totals. The two colors never share a
  * counter when freezing the wager or grading it in PostgreSQL. */
 export function parseColorCardCount(line) {
@@ -275,7 +300,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  if((yellow&&red)||ambiguous)return null;
  const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
-  parseEventWindow(line,clock)??parseIntervalCount(line)??
+  parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseColorCardCount(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseCountMarket(line);
  if(!contract)return null;
