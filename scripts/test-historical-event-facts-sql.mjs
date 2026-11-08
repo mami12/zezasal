@@ -54,6 +54,12 @@ try{
  assert.equal(await judge('interval-leader',{from:10,to:20,side:'home'}),'WON');
  assert.equal(await judge('race',{target:1,side:'home'}),'WON');
  assert.equal(await judge('race',{target:2,side:'home'}),'VOID','Neither team reached 2');
+ assert.equal(await judge('player-goal',{playerName:'Home Scorer',choice:true}),'WON',
+  'Confirmed historical scorer proves the named player scored');
+ assert.equal(await judge('player-goal',{playerName:'Home Scorer',choice:false}),'LOST',
+  'Verified historical goal disproves no-goal selection');
+ assert.equal(await judge('player-goal',{playerName:'Unused Bench Player',choice:true}),null,
+  'No scorer entry is not proof of participation or absence');
  assert.equal(await gradeStoredEventContract(
   {...line('window',{from:10,to:20,choice:true}),live_contract:{
     version:1,kind:'window',event:'corner',from:10,to:20,choice:true}},
