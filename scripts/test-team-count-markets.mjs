@@ -13,7 +13,12 @@ for(const [market,outcome,amount,event,side,kind] of [
  ['Home Team Total Goals','Over','1.5','goal','home','over'],
  ['Home Team Total Fouls','2+','','foul','home','atLeast']
 ]){
- const contract=liveContract(line(market,outcome,amount));
+ const quote=line(market,outcome,amount);
+ const contract=event==='foul'?parseTeamCountMarket(quote):liveContract(quote);
+ // Final-match fouls use certified statistics, not a fictitious live
+ // foul-incident chronology. Their raw team/line grammar still parses.
+ if(event==='foul')assert.equal(liveContract(quote),null,
+  'Fouls must never be accepted as verified live event contracts');
  assert.equal(contract?.event,event,market+' event');
  assert.equal(contract?.side,side,market+' side');
  assert.equal(contract?.kind,kind,market+' kind');
