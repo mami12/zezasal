@@ -112,8 +112,12 @@ export async function findFotMobFixture(home,away,targetDates,expectedKickoff=nu
 export function parseFotMobPayload(summary, details = null) {
   const header = details?.header;
   const status = header?.status || summary?.status;
-  const isFinished = status?.finished === true ||
-    /^(?:ft|ended|finished|aet|pen)/i.test(status?.reason?.short || status?.reason?.shortKey || '');
+  const completionLabel=String(status?.reason?.short??status?.reason?.shortKey??'').trim();
+  // 1X2/goal totals usually settle at 90 minutes. A final scoreboard after
+  // extra time or a penalty shoot-out is not a verified regulation FT result.
+  const extended=/\b(?:aet|after\s*extra\s*time|extra\s*time|after\s*et|pens?|penalties|penalty\s*shootout)\b/i.test(completionLabel);
+  const isFinished=!extended&&(status?.finished===true||
+    /^(?:ft|ended|finished)/i.test(completionLabel));
 
   // Number('') is zero: never manufacture a 0-0 when FotMob omits its score.
   const scoreStr = header?.status?.scoreStr || summary?.status?.scoreStr || null;
