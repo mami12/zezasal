@@ -90,6 +90,13 @@ export function hasRequiredSettlementEvidence(line, result) {
   if (family === 'HT_FT' && (result.half_home_score == null || result.half_away_score == null)) return false;
   if (family === 'BANDS_EXACT') {
     const isCorner = /corner/i.test(marketName);
+    // The legacy BANDS_EXACT grader uses MATCH totals. A team/period-scoped
+    // exact-corner market must never be graded from that combined FT total.
+    if(isCorner&&/\b(?:home|away|team\s*[12]|1st|first|2nd|second|half|period|minutes?|interval|player)\b/i.test(marketName))
+      return false;
+    // Likewise, an exact team GOAL band is not the match goal count.
+    if(!isCorner&&/\b(?:home|away|team\s*[12]|player|scorer)\b/i.test(marketName))
+      return false;
     if (isCorner && (result.corners_home == null || result.corners_away == null)) return false;
   }
   if (family === 'CORNERS') {
@@ -98,7 +105,15 @@ export function hasRequiredSettlementEvidence(line, result) {
     if ((contract.scope !== 'away' && result.corners_home == null) ||
         (contract.scope !== 'home' && result.corners_away == null)) return false;
   }
-  if (family === 'CARDS' && (result.cards_home == null || result.cards_away == null)) return false;
+  if (family === 'CARDS') {
+    // Total match cards alone can use final home+away card counters. The old
+    // generic path would incorrectly count BOTH teams for a team/half total.
+    const scope=marketName.toLowerCase().replace(/\s+/g,' ').trim();
+    if(Number(line?.period??0)!==0||
+       !/^(?:(?:full time|match)\s+)?(?:total\s+)?cards?(?:\s+(?:total|over\s*\/?\s*under))?$/.test(scope))
+      return false;
+    if(result.cards_home == null||result.cards_away == null)return false;
+  }
   // Early-payout promotions depend on event history, not only the final score.
   if (/early\s*payout/i.test(marketName)) return false;
   return true;
