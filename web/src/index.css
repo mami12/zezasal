@@ -42,7 +42,7 @@
     visibility: hidden !important;
   }
 
-  body > #root:has(+ .ticket-print-overlay) {
+  body:has(> .ticket-print-overlay) > #root {
     display: none !important;
   }
 
