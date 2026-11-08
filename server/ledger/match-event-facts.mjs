@@ -426,7 +426,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    const cursor=new Date(data.second_poll_at).getTime();
    if(!Number.isFinite(cursor)||stored!==cursor)return null;
  }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
-   !['goal','corner','card'].includes(c.event)||!full||c.kind==='player-goal')return null;
+   !['goal','corner','card'].includes(c.event)||!full)return null;
  // No exact-second interval or rolling window may use a minute-only timestamp
  // as though it were a true second. Fixed inclusive minute bands remain valid.
  if(provider!=='zizobet'&&data.minute_only===true&&
