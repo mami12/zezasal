@@ -56,7 +56,7 @@ export function classify(marketName = '') {
   if (/corner/.test(s)) return 'CORNERS';
   if (/\bcards?\b|booking|yellow|red/.test(s)) return 'CARDS';
   if (/both teams to score|\bbtts\b/.test(s)) return 'BTTS';
-  if (isFirstHalfLine(s) && /\b(?:result|winner|1x2)\b/.test(s)) return '1X2';
+  if ((isFirstHalfLine(s) || isSecondHalfLine(s)) && /\b(?:result|winner|1x2)\b/.test(s)) return '1X2';
   if (/double chance/.test(s)) return 'DC';
   if (/handicap|fora|asian/.test(s)) return 'HANDICAP';
   if (/full time result|1 ?x ?2|match result|winner|moneyline/.test(s)) return '1X2';
@@ -84,7 +84,16 @@ export function hasRequiredSettlementEvidence(line, result) {
   if (needsEvents(line)) return ['WON','LOST','VOID'].includes(gradeEventLine(line,result));
   if (isStatisticMarket(line)) return hasStatisticEvidence(line,result);
   const marketName = String(line.market_name ?? '');
-  if (isFirstHalfLine(marketName) && (result.half_home_score == null || result.half_away_score == null)) return false;
+  if ((isFirstHalfLine(marketName) || isSecondHalfLine(marketName)) &&
+      (result.half_home_score == null || result.half_away_score == null)) return false;
+  if (isSecondHalfLine(marketName)) {
+    // The 2H goals are FT minus the verified HT score. Never use this
+    // subtraction for 2H corners/cards/players, which need period evidence.
+    if (/\b(?:corners?|cards?|bookings?|fouls?|shots?|players?)\b/i.test(marketName)) return false;
+    const h=Number(result.home_score)-Number(result.half_home_score);
+    const a=Number(result.away_score)-Number(result.half_away_score);
+    if (!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0) return false;
+  }
   const family = goalTotalContract(line,result)?'TOTAL':classify(marketName);
   if (family === 'CORNER_1X2' && (result.corners_home == null || result.corners_away == null)) return false;
   if (family === 'HT_FT' && (result.half_home_score == null || result.half_away_score == null)) return false;
@@ -137,10 +146,12 @@ export function gradeLine(line, result) {
   // original ticket contract is snapshotted in market_name.
   if (!hasRequiredSettlementEvidence(line, result)) return null;
   if (isStatisticMarket(line)) return gradeStatisticLine(line,result);
-  if (isSecondHalfLine(line.market_name)) return null; // no 2H score snapshot
   const half = isFirstHalfLine(line.market_name);
-  const home = Number(half ? result.half_home_score : result.home_score);
-  const away = Number(half ? result.half_away_score : result.away_score);
+  const secondHalf = isSecondHalfLine(line.market_name);
+  const home = secondHalf ? Number(result.home_score)-Number(result.half_home_score)
+    : Number(half ? result.half_home_score : result.home_score);
+  const away = secondHalf ? Number(result.away_score)-Number(result.half_away_score)
+    : Number(half ? result.half_away_score : result.away_score);
   const totalGoals = home + away;
   const homeWin = home > away;
   const awayWin = away > home;
