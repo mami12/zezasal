@@ -293,6 +293,31 @@ export function parseFirstHalfCorner(line) {
  * chronology. A quoted Neither is an actual third outcome; without one,
  * zero events do not turn a two-way proposition into a losing bet.
  */
+/** Half-specific races and ordinal events never use whole-match cumulative
+ * counts. The PostgreSQL fact grader filters by the recorded match period.
+ * Live half-races need period baselines and are held until that evidence exists.
+ */
+export function parseHalfEventContract(line){
+ const name=norm(line.market_name??line.marketName??line.name);
+ const m=name.match(/^(1st|first|2nd|second) half\s*[-–.:]?\s*(?:(?:which team wins )?race to (\d{1,3}) (goals?|corners?|cards?)|(first|last) (goal|corner|card))$/);
+ if(!m)return null;
+ const half=/^(?:1st|first)$/.test(m[1])?1:2;
+ if(line.period!=null&&Number(line.period)!==0&&Number(line.period)!==half)return null;
+ const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
+ if(!side)return null;
+ if(m[2]){
+  const target=Number(m[2]);
+  if(!Number.isSafeInteger(target)||target<1||target>100)return null;
+  const event=typeOf(m[3]);
+  if(!event||!['goal','corner','card'].includes(event))return null;
+  return {version:1,kind:'half-race',event,half,side,target,
+   noneOffered:side==='none'||line.raceNoneOffered===true};
+ }
+ const event=typeOf(m[5]);
+ if(!event||!['goal','corner','card'].includes(event))return null;
+ return {version:1,kind:m[4]==='first'?'half-first-event':'half-last-event',
+  event,half,side,noneOffered:side==='none'||line.lastNoneOffered===true};
+}
 export function parseLastEvent(line){
  const title=norm(line.market_name??line.marketName??line.name);
  if(Number(line.period??0)!==0)return null;
@@ -375,7 +400,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
-  parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
+  parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseCountMarket(line);
  if(!contract)return null;
  if(yellow||red){
