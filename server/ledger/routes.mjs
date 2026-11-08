@@ -340,7 +340,9 @@ ledgerRouter.get(
       q: q ? String(q) : null,
     });
 
-    const board = req.query.view === 'board';
+    // A multi-fixture list must never pull full odds for every game.
+    // All markets are delivered only by /matches/:id on explicit demand.
+    const board = true;
     const serialized = await withOdds(rows,Date.now(),{board});
     const matches = (board?toClientMatches(projectBoardMatches(serialized)):toClientMatches(serialized));
     // Board cards show base odds; build the complete automatic menu when a
@@ -421,7 +423,7 @@ ledgerRouter.get(
   guard(async (req, res) => {
     if (String(req.params.sportId) !== '18') return res.json([]);
     const selected=await publishedBoard();const rows=filterPublishedRows(selected.rows,{sportId:req.params.sportId});
-    const board = req.query.view === 'board';
+    const board = true;
     const serialized = await withOdds(rows,Date.now(),{board});
     const matches = (board?toClientMatches(projectBoardMatches(serialized)):toClientMatches(serialized));
     return res.json(!board&&ledger.isLedgerReady() ? await builders.decorateMatches(matches,{includeAutomatic:false}) : matches);
