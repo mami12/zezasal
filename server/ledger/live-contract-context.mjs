@@ -84,7 +84,8 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   if(current?.home==null||current?.away==null)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
  }
- if(live&&(contract.kind==='half-total'||contract.kind==='half-parity')){
+ if(live&&(contract.kind==='half-total'||contract.kind==='half-parity'||
+  (contract.kind==='corner-comparison'&&contract.mode==='period-result'))){
   const clockAt=time(match.clock_at);
   const phase=norm(match.feed_status??match.phase??'');
   // Half totals may be offered while that half is underway. They must not
@@ -99,6 +100,9 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  // race/ordinal baseline. Do not sell a half market on a guessed history.
  if(live&&(contract.kind==='half-race'||contract.kind==='half-last-event'))
   throw fail('Kërkohet historik i konfirmuar sipas pjesës për këtë treg LIVE.');
+ if(live&&contract.kind==='corner-comparison'&&contract.mode==='wins-both'&&
+    clock!==null&&clock>=45)
+  throw fail('Ky treg LIVE kërkon verifikimin e rezultatit të kornerave në pjesën e parë.');
  if(live&&contract.kind==='half-first-event'){
   if(contract.half!==1)
    throw fail('Mungon numëruesi i verifikuar i ngjarjeve të pjesës së dytë LIVE.');
