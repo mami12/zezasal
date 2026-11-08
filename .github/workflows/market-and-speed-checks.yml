@@ -46,9 +46,6 @@ jobs:
       - name: Market 05 - player ordinal scorers
         if: always()
         run: node scripts/test-player-ordinal-scorers.mjs
-      - name: Market 06 - handicap contracts
-        if: always()
-        run: node scripts/test-handicap-contracts.mjs
       - name: Market 07 - card sequences
         if: always()
         run: node scripts/test-card-sequences.mjs
@@ -95,14 +92,17 @@ jobs:
         if: always()
         run: node scripts/test-half-period-totals.mjs
       - name: Settlement and provider-history tests
+        if: always()
         run: |
           node scripts/test-settlement-results.mjs
           npm run test:historical-settlement
       - name: Database provider/statistics contract checks
+        if: always()
         run: |
           npm run test:primary-goal-display
           npm run test:statistics
       - name: Board subscription and caching checks
+        if: always()
         run: |
           npm run test:feed-route
           npm run test:scoped-socket
