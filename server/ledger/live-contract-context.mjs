@@ -97,7 +97,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   if(current?.home==null||current?.away==null)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
  }
- if(live&&(contract.kind==='half-total'||contract.kind==='half-parity'||
+ if(live&&(contract.kind==='half-total'||contract.kind==='half-exact-count'||contract.kind==='half-parity'||
   (contract.kind==='corner-comparison'&&contract.mode==='period-result'))){
   const clockAt=time(match.clock_at);
   const phase=norm(match.feed_status??match.phase??'');
