@@ -145,7 +145,9 @@ export function gradePlayerGoalSpecial(contract,facts,{complete=false,participat
  else if(contract.choice==='over'&&positive)return 'WON';
  else if(contract.choice==='under'&&!positive&&count>contract.threshold)return 'LOST';
  else if(contract.choice==='exact'&&count>contract.threshold)return 'LOST';
- if(!complete||ambiguous||!participationVerified)return null;
+ // A verified scored goal itself proves the player's participation; a
+ // zero-goal tally does NOT prove they stepped on the pitch.
+ if(!complete||ambiguous||!(participationVerified||count>0))return null;
  if(contract.mode==='period'||typeof contract.choice==='boolean')
   return positive===contract.choice?'WON':'LOST';
  if(Number.isInteger(contract.threshold)&&contract.threshold===count)return contract.choice==='exact'?'WON':
