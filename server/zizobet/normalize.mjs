@@ -13,9 +13,9 @@ export function resolveMarketTitle(raw,q,{intervalWidth}={}){
  let name=text(raw).replace(/^\*\s*/,'');
  // Race-to-X is a quote parameter, NOT the literal letter X. Refuse an
  // ambiguous offer instead of showing a misleading threshold on the ticket.
- const race=name.match(/^((?:(?:1st|first|2nd|second) half\s*[-–.:]\s*)?)(?:(?:which team wins (?:the )?)?race to x (corners?|goals?)\??)$/i);
+ const race=name.match(/^((?:(?:1st|first|2nd|second) half\s*[-–.:]\s*)?)(?:(?:which team wins (?:the )?)?race to x (corners?|goals?|cards?)\??)$/i);
  if(race){
-  const kind=/goals?/i.test(race[2])?'goals':'corners';
+  const kind=/goals?/i.test(race[2])?'goals':/cards?/i.test(race[2])?'cards':'corners';
   const rawVals=[q.h,q.p3,q.p1,q.p2,q.total,q.handicap,q.line];
   const validVals=rawVals
     .filter(v=>v!==null&&v!==undefined&&String(v).trim()!=='')
