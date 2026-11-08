@@ -324,6 +324,7 @@ const toClientLine = (l) => ({
   matchName: l.match_name,
   oddsAtPlacement: Number(l.odds_at_placement),
   status: l.status,
+  settlementReason: l.status === 'PENDING' ? (l.settlement_reason ?? null) : null,
 });
 
 /** the shape the app expects (numbers, not the strings numeric columns arrive as) */
