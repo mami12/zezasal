@@ -236,6 +236,17 @@ export function parseColorCardCount(line) {
  return null;
 }
 
+/** First corner IN THE FIRST HALF, not the first corner of the match.
+ * A "None" offer wins only when verified first-half corner absence is proven.
+ * Never reuse the match-wide ordinal, especially when the first corner is 2H.
+ */
+export function parseFirstHalfCorner(line) {
+ const name=norm(line.market_name??line.marketName??line.name);
+ if(!/^(?:1st|first)\s+half\s*[-–:.]\s*first\s+corner$/.test(name))return null;
+ const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
+ if(!['home','away','none'].includes(side))return null;
+ return {version:1,kind:'half-first-event',event:'corner',half:1,side};
+}
 export function parseSequenceBet(line,counts={}) {
  const name=norm(line.market_name??line.marketName??line.name);
  // An event numbered inside a time band is not the same as the Nth event of the match.
@@ -302,7 +313,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
-  parseColorCardCount(line)??parseSequenceBet(line,counts)??
+  parseColorCardCount(line)??parseFirstHalfCorner(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseCountMarket(line);
  if(!contract)return null;
  if(yellow||red){
