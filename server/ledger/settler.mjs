@@ -28,6 +28,7 @@ import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {isHalfComboFamily,parseHalfCombination,gradeHalfCombination} from './half-combinations.mjs';
 import {isPeriodGoalTotal,parsePeriodGoalTotal,gradePeriodGoalTotal} from './period-goal-totals.mjs';
+import {isHalfExactMarketFamily} from './half-exact-markets.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
@@ -98,6 +99,7 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
+  if(isHalfExactMarketFamily(line))return false; // FT counts are not 1H/2H corner/card facts
   if(isHalfComboFamily(line))return gradeHalfCombination(parseHalfCombination(line,result),result)!==null;
   if(isPeriodGoalTotal(line))return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result)!==null;
   if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
@@ -165,6 +167,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
   if(!Array.isArray(line.builder_legs)&&isParityLikeMarket(line))
