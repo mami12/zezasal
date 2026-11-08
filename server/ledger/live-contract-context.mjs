@@ -59,6 +59,16 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
       (observedAt!==null&&(at-observedAt>90000||observedAt-at>5000)))throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
  }
+ if(live&&contract.kind==='player-ordinal-goal'){
+  const scoreAt=time(match.score_at),clockAt=time(match.clock_at);
+  if(clock===null||goals.home===null||goals.away===null||
+     scoreAt===null||clockAt===null||scoreAt>at+5000||
+     at-scoreAt>90000||clockAt>at+5000||at-clockAt>45000)
+    throw fail('Mungon ora ose rezultati LIVE i konfirmuar për golashënuesin.');
+  if(contract.position==='first'&&goals.home+goals.away>0)
+    throw Object.assign(new Error('Goli i parë ka ndodhur tashmë.'),{
+      status:400,code:'MARKET_DECIDED'});
+ }
  if(live&&contract.kind==='player-card'){
   const snapshot=line.playerCardSnapshot;
   const observed=time(snapshot?.observed_at),confirmed=time(snapshot?.confirmed_at);
