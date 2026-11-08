@@ -1,5 +1,6 @@
 import {matchOverride} from './overrides.mjs';
 import {statsProviders} from '../stats-providers/index.mjs';
+import {footballInformation} from '../stats-providers/football-information.mjs';
 import {filterFixtureRowsByDay} from '../fixture-dates.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 /**
@@ -375,6 +376,8 @@ ledgerRouter.get(
     // cards, every total) on the next subscribe cycle, instead of base markets only
     boostMatch(row.match_id);
     statsProviders.warm(row);
+    // A selected match can request supplementary scorer names once per minute.
+    void footballInformation.warm(matchId).catch(error=>console.warn('[aiscore] selected match:',error.message));
     await req.app.locals.loadMatchDetail?.(row.match_id);
     row=await getMatchRow(Number(req.params.id))??row;
     const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
