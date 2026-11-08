@@ -1,6 +1,6 @@
 import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
-import {isHandicapMarket,parseHandicapContract,gradeHandicapContract} from '../server/ledger/handicap-contracts.mjs';
+import {isHandicapMarket,parseHandicapContract,gradeHandicapContract,gradeHalfCornerHandicapFacts} from '../server/ledger/handicap-contracts.mjs';
 import {gradeLine} from '../server/ledger/settler.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 
@@ -30,8 +30,42 @@ for(const [ticket,expected]of [
 assert.equal(parseHandicapContract(quote('Asian Handicap','1','-0.25')),null,
  'Quarter ball needs split-stake accounting: never pay it as a full WIN or LOSS');
 assert.equal(parseHandicapContract(quote('Asian Handicap','1','-0.75')),null);
-assert.equal(parseHandicapContract(quote('1st Half Corner Handicap','1','-0.5')),null,
- 'Half-corner handicap needs a verified half-corner count');
+const firstHalf=quote('1st Half Corner Handicap','1','-0.5');
+const firstContract=parseHandicapContract(firstHalf);
+assert.equal(firstContract?.half,1,'A first-half corner handicap is distinct from FT');
+const secondContract=parseHandicapContract(quote('2nd Half Corner Handicap','2','0.5'));
+assert.equal(secondContract?.half,2);
+const firstEvents=[
+ {minute:13,team:'home',phase:'H1'}, {minute:23,team:'home',phase:'H1'},
+ {minute:40,team:'away',phase:'H1'}, {minute:45,team:'home',phase:'H1'},
+ {minute:60,team:'away',phase:'H2'}, {minute:77,team:'away',phase:'H2'},
+ {minute:83,team:'home',phase:'H2'}
+];
+assert.equal(gradeHalfCornerHandicapFacts(firstContract,firstEvents,{complete:true}),'WON',
+ '3-1 first-half corners adjusted by -0.5 wins');
+assert.equal(gradeHalfCornerHandicapFacts(secondContract,firstEvents,{complete:true}),'WON',
+ 'Away 2-1 in second-half corners adjusted by +0.5 wins');
+assert.equal(gradeHalfCornerHandicapFacts(firstContract,firstEvents,{complete:false}),null);
+assert.equal(gradeHalfCornerHandicapFacts(firstContract,
+ [...firstEvents,{minute:45,team:'home',phase:null}],{complete:true}),null,
+ 'Unlabelled 45+ corner cannot be allocated to a half');
+const halfExecute=async(sql)=>{
+ if(sql.startsWith('with covered as'))return {rows:[{
+  home:4,away:3,total:7,count_home:4,count_away:3,
+  complete:true,through_minute:92,open_recovery_gap:false,
+  observed_at:'2026-11-08T13:30:00Z',
+  confirmed_at:'2026-11-08T13:30:00Z',
+  second_poll_at:'2026-11-08T13:30:00Z'
+ }]};
+ if(sql.includes('select minute,seconds,team,phase'))return {rows:firstEvents};
+ throw Error('Unexpected SQL query: '+sql.slice(0,90));
+};
+assert.equal(await gradeStoredEventContract({
+ id:'00000000-0000-4000-8000-000000000111',match_id:144,
+ live_contract:firstContract},
+ {home_score:0,away_score:0,corners_home:4,corners_away:3},
+ {execute:halfExecute}),'WON',
+ 'Frozen first half handicap must be settled from verified PostgreSQL corner chronology');
 assert.equal(parseHandicapContract(quote('Asian Handicap Yellow Cards','1','-0.5')),null);
 assert.equal(gradeLine(quote('Generic Handicap','1','-1'),result),null,
  'Historical ambiguous 2-way vs 3-way handicaps remain ungraded');
