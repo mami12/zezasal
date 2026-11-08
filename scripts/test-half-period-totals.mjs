@@ -12,6 +12,25 @@ assert.equal(liveContract(away)?.side,'away');
 assert.equal(liveContract(bet('1st half - Total corners (3.5)','Over','3.5'))?.side,undefined);
 assert.equal(liveContract(bet('2nd half - Corners Away team (1.5)','Under','1.5',2))?.half,2);
 assert.equal(liveContract(bet('1st half - Yellow cards Home team (1.5)','Over','1.5'))?.cardColor,'yellow');
+for(const [title,half,kind,side,color] of [
+ ['1st Half Total Corners',1,'corner',null,null],
+ ['2nd Half Corners',2,'corner',null,null],
+ ['First Half Home Team Corners',1,'corner','home',null],
+ ['2nd Half Yellow Cards',2,'card',null,'yellow'],
+ ['1st Half Corners (2.5)',1,'corner',null,null],
+ ['2nd Half Team 2 Cards',2,'card','away',null],
+ ['1st Half Cards Team 1',1,'card','home',null]
+]){
+ const contract=liveContract({market_name:title,outcome_name:'Over',line:'2.5',period:half});
+ assert.equal(contract?.kind,'half-total',title);
+ assert.equal(contract.half,half);
+ assert.equal(contract.event,kind);
+ assert.equal(contract.side??null,side);
+ assert.equal(contract.cardColor??null,color);
+}
+assert.equal(liveContract({market_name:'2nd Half Corners',outcome_name:'Over',
+ line:'2.5',period:1}),null,'A contradictory period cannot be settled');
+
 for(const impossible of [
  bet('1st half - Total corners Home team Away team (2.5)'),
  bet('1st half - Total corners Home team (2.5)','Over','3.5'),
