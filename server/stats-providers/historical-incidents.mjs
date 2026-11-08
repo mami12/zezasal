@@ -45,9 +45,22 @@ const map=(entries,adapt)=>{
  return {cornerEvents:corner,cardEvents:card,
   cornerTimelineAvailable:corner.length>0,cardTimelineAvailable:card.length>0};
 };
+/** Optional actor identity is provenance, not proof of participation or
+ * culpability. Never replace a missing player with the team or an assist.
+ */
+const playerOf=e=>{
+ const raw=e?.player??e?.athlete??e?.actor??null;
+ const id=raw?.id??e?.playerId??e?.player_id??null;
+ const name=typeof raw==='string'?raw:
+  raw?.name??raw?.displayName??e?.player_name??e?.playerName??e?.nameStr??null;
+ return {
+  playerId:id==null||String(id).trim()===''?null:String(id).slice(0,150),
+  playerName:typeof name==='string'&&name.trim()?name.trim().slice(0,200):null
+ };
+};
 const make=(event,index,type,team,minute,injury,color=null,detail='')=>({
  id:idOf(event,type,team,minute,color,index),
- type,team,minute,injury,cardColor:color,detail:String(detail??''),
+ type,team,minute,injury,cardColor:color,detail:String(detail??''),...playerOf(event),
  disabled:event?.disabled===true||event?.cancelled===true||event?.canceled===true,
  shootout:event?.shootout===true,
  phase:event?.phase??event?.scoreInfoTime??event?.period??null
