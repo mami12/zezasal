@@ -7,7 +7,7 @@ export {isZizoId};
 export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
  const state={provider:'ZIZOBET',transport:'MQTT cache invalidations + HTTP snapshots',running:false,cycles:0,syncedAt:null,lastError:null,received:0,kept:0,paused:false,pauses:0,resumes:0};
- const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),transitions=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
+ const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
  const queue=fn=>{const p=work.then(()=>stopped||state.paused?undefined:fn());work=p.catch(e=>{state.lastError=e.message;});return p;};
  const mainQuotes=(quotes,live)=>(quotes??[]).filter(q=>{const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);const name=(live&&id===602)||(!live&&id===448)?'Full Time Result':(live&&id===603)||(!live&&id===537)?'Total Goals':def?.Name??def?.name??'';return isBoardOddsRow({market_name:name,period:/\b(?:half|period)\b/i.test(name)?1:0});});
  async function publish(row,game,rows,{complete=false,startedAt=++revision}={}){
@@ -133,7 +133,9 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
   if(inflight.has(Number(id))){await inflight.get(Number(id));if(full&&now()-(fullObserved.get(Number(id))??-Infinity)>=3000)return refresh(id,{probeLive,full});return;}
   const task=(async()=>{
    const startedAt=++revision;
-   full=full||focused.get(Number(id))>now()||[...await getWatchedIds()].some(value=>Number(value)-OFFSET===Number(id));
+   // Pending tickets need the complete incident snapshot, not every quote.
+   const needsTicketEvidence=[...await getWatchedIds()].some(value=>Number(value)-OFFSET===Number(id));
+   full=full||focused.get(Number(id))>now();
    let entry=games.get(Number(id)),recovered;
    if(!entry){recovered=await request(CACHE+'live/gamenew/'+Number(id));if(Number(recovered?.Match?.GameID)!==Number(id))throw Error('Pending result snapshot unavailable');const row=rowOf(recovered.Match,meta,true);if(!row)throw Error('Pending match metadata unavailable');entry=games.get(Number(id))??{row,raw:recovered.Match,live:true};games.set(Number(id),entry);}
    if(entry&&!entry.live&&!probeLive&&!full)return refreshPrematchBoard([Number(id)]);
@@ -145,7 +147,7 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
    if(entry.live||recovered){const data=recovered??await request(CACHE+'live/gamenew/'+Number(id));if(!data?.Match||!Array.isArray(data.gmk))throw Error('Missing live game snapshot');if(Number(data.Match.GameID)!==Number(id))throw Error('Zizobet live identity mismatch');for(const m of data.mk??[])meta.liveMarkets.set(Number(m.ID),m);
     if(entry.row.status==='ended'&&Number(data.Match.EventStatus)!==40)return;
     const game={...entry.raw,...data.Match,...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row={...entry.row,service:'LIVE',status:entry.row.status==='ended'||Number(game.EventStatus)===40?'ended':'live'};
-    if(autoStart&&full)void collectEventEvidence(row,{...data,Match:game}).catch(()=>{});
+    if(autoStart&&(full||needsTicketEvidence))void collectEventEvidence(row,{...data,Match:game}).catch(()=>{});
     await queue(async()=>{const published=await publish(row,game,oddsOf(row,full?data.gmk:mainQuotes(data.gmk,true),meta,true,game.LiveBetStatus!==false&&row.status!=='ended'),{complete:full,startedAt});if(startedAt>=(versions.get(row.match_id)??0)){const promoted=!entry.live;entry.live=true;entry.row=published??row;entry.raw=game;entry.verifiedAt=now();transitions.delete(Number(id));delete entry.transitionAt;if(full)fullObserved.set(Number(id),now());if(promoted){const ids=liveIds();state.live=ids.length;mqtt?.setLiveIds(ids);await onCycle?.(state);}}});
    }else{const result=await request(META+'prematch/getprematchgamefull/319/'+Number(id));const g=decode(result?.game);if(Number(g?.id)!==Number(id))throw Error('Zizobet prematch identity mismatch');
     const quotes=[];for(const[mid,list]of Object.entries(g.ev??{}))for(const[id,q]of Object.entries(list??{}))quotes.push({...q,id,mid});const disabled=new Set((Array.isArray(result.disableMarkets)?result.disableMarkets:[]).map(Number));
@@ -160,7 +162,12 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
   if(topics.includes('prematch/games'))try{const data=await request(CACHE+'prematch/games');for(const r of data?.UpdateList??[])if(games.has(Number(r.GameId))&&!games.get(Number(r.GameId)).live)pendingPre.push(Number(r.GameId));for(const value of data?.DeleteList??[]){const id=Number(value?.GameId??value),e=games.get(id);if(e&&!e.live){transition(id,e);await queue(()=>suspend(e));dirty.add('live/headerformobilenew/en');}}}catch(e){state.lastError=e.message;dirty.add('prematch/games');}
   const ids=new Set(topics.filter(t=>/^live\/gamenew\/\d+$/.test(t)).map(t=>Number(t.split('/').at(-1))));
   for(const[id,until]of focused){if(until<now())focused.delete(id);else if(now()-(fullObserved.get(id)??-Infinity)>=3000)ids.add(id);}
-  const watched=new Set();for(const id of await getWatchedIds())if(isZizoId(id)){ids.add(Number(id)-OFFSET);watched.add(Number(id)-OFFSET);}
+  const watched=new Set();for(const id of await getWatchedIds())if(isZizoId(id)){
+    const native=Number(id)-OFFSET;watched.add(native);
+    // One pending ticket must not cause full odds/timeline downloads every 3s.
+    if(now()-(watchedSnapshotAt.get(native)??-Infinity)>=15000){ids.add(native);watchedSnapshotAt.set(native,now());}
+  }
+  for(const native of watchedSnapshotAt.keys())if(!watched.has(native))watchedSnapshotAt.delete(native);
   for(const[id,t]of transitions){if(now()-t.at>=retentionMs){transitions.delete(id);continue;}if(t.next<=now())ids.add(id);}
   const pending=[...new Set(pendingPre.splice(0,160))],board=[];
   for(const id of pending){if(focused.get(id)>now()||watched.has(id))ids.add(id);else if(games.has(id)&&!games.get(id).live)board.push(id);}
