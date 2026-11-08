@@ -10,6 +10,8 @@ import { query } from '../db.mjs';
 import { teamsMatch, canonical } from './adapters.mjs';
 import { settleMatch } from '../ledger/settler.mjs';
 import {persistHistoricalGoalFacts,validateHistoricalGoals} from '../ledger/historical-event-facts.mjs';
+import {persistHistoricalTimedEvents} from '../ledger/historical-timed-events.mjs';
+import {fotMobTimedIncidents} from './historical-incidents.mjs';
 
 const fotmobDailyCache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -140,7 +142,8 @@ export function parseFotMobPayload(summary, details = null) {
 
   const rawEvents = details?.content?.matchFacts?.events?.events;
   const events = Array.isArray(rawEvents)?rawEvents:[];
-  let cardTotalsVerified=false;
+  const timed=fotMobTimedIncidents(rawEvents);
+  let yellowVerified=false,redVerified=false;
   for (const ev of events) {
     if (ev.type === 'Half' && (ev.halfStrShort === 'HT' || ev.time === 45)) {
       if (Number.isInteger(ev.homeScore)) halfHome = ev.homeScore;
@@ -179,9 +182,9 @@ export function parseFotMobPayload(summary, details = null) {
         if (Number.isFinite(s0)) possessionH = s0;
         if (Number.isFinite(s1)) possessionA = s1;
       } else if (/yellow card/i.test(title)) {
-        if (s0!==null&&s1!==null){yellowH=s0;yellowA=s1;cardTotalsVerified=true;}
+        if (s0!==null&&s1!==null){yellowH=s0;yellowA=s1;yellowVerified=true;}
       } else if (/red card/i.test(title)) {
-        if (s0!==null&&s1!==null){redH=s0;redA=s1;cardTotalsVerified=true;}
+        if (s0!==null&&s1!==null){redH=s0;redA=s1;redVerified=true;}
       }
     }
   }
@@ -218,8 +221,8 @@ export function parseFotMobPayload(summary, details = null) {
     halfAwayScore: halfAway,
     cornersHome: cornersH,
     cornersAway: cornersA,
-    cardsHome: cardTotalsVerified ? totalCardsH : null,
-    cardsAway: cardTotalsVerified ? totalCardsA : null,
+    cardsHome: yellowVerified&&redVerified ? totalCardsH : null,
+    cardsAway: yellowVerified&&redVerified ? totalCardsA : null,
     statistics: {
       shots: (shotsH != null && shotsA != null) ? { home: shotsH, away: shotsA } : {},
       shotsOnTarget: (sOnTargetH != null && sOnTargetA != null) ? { home: sOnTargetH, away: sOnTargetA } : {},
@@ -227,6 +230,7 @@ export function parseFotMobPayload(summary, details = null) {
       possession: (possessionH != null && possessionA != null) ? { home: possessionH, away: possessionA } : {}
     },
     goalEvents,
+    ...timed,
     goalTimelineAvailable: Array.isArray(rawEvents)
   };
 }
@@ -278,13 +282,28 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
         if(validateHistoricalGoals(old))await persistHistoricalGoalFacts(id,old);
       }
     }catch(error){console.warn('[recovery] prior goal history backfill:',error.message);}
-    const hasVerified=(await runQuery(`select 1 from app_match_event_coverage
-      where match_id=$1 and kind='goal' and complete=true and confirmed_at is not null
-        and count_home=$2 and count_away=$3 limit 1`,
-      [id,Number(priorResult.home_score),Number(priorResult.away_score)])).rows.length>0;
-    if(hasVerified){
+    // An existing FT score is not enough for corner/card contracts. Retry
+    // historical incident lookup until each PENDING kind has confirmed facts.
+    const needed=(await runQuery(`select distinct l.live_contract->>'event' as kind
+      from app_ticket_line l join app_ticket t on t.id=l.ticket_id
+      where l.match_id=$1 and l.status='PENDING' and t.status='PENDING'
+        and l.live_contract->>'event' in ('goal','corner','card')`,[id]))
+      .rows.map(row=>row.kind);
+    let allVerified=true;
+    for(const kind of needed){
+      const prefix=kind==='corner'?'corners_':kind==='card'?'cards_':'';
+      const home=kind==='goal'?priorResult.home_score:priorResult[prefix+'home'];
+      const away=kind==='goal'?priorResult.away_score:priorResult[prefix+'away'];
+      if(home==null||away==null){allVerified=false;break;}
+      const confirmed=(await runQuery(`select 1 from app_match_event_coverage
+        where match_id=$1 and kind=$2 and complete=true and confirmed_at is not null
+          and count_home=$3 and count_away=$4 limit 1`,
+        [id,kind,Number(home),Number(away)])).rows.length>0;
+      if(!confirmed){allVerified=false;break;}
+    }
+    if(allVerified){
       const outcome=await settleMatch(id);
-      return {recovered:true,source:'EXISTING_VERIFIED_GOAL_FACTS',outcome};
+      return {recovered:true,source:'EXISTING_VERIFIED_EVENT_FACTS',outcome};
     }
   }
 
@@ -327,6 +346,9 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
           cornersHome:backup.cornersHome,cornersAway:backup.cornersAway,
           cardsHome:backup.cardsHome,cardsAway:backup.cardsAway,
           statistics:backup.statistics??{},
+          cornerEvents:backup.cornerEvents??[],cardEvents:backup.cardEvents??[],
+          cornerTimelineAvailable:backup.cornerTimelineAvailable===true,
+          cardTimelineAvailable:backup.cardTimelineAvailable===true,
           goalEvents:backup.evidence.events.filter(event=>event.type==='goal'&&!event.shootout),
           goalTimelineAvailable:backup.evidence.complete===true&&backup.evidence.goalsAvailable===true};
         source=backup.source;
@@ -386,6 +408,19 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
         [id,JSON.stringify(evidencePayload)]);
     }catch(error){console.warn('[recovery] historical incident verification:',error.message);}
   }
+  // Only a provider's FULL dated incident chronology agreeing with its
+  // independently reported team totals may grade corner/card contracts.
+  for(const [kind,eventKey,flag,prefix] of [
+    ['corner','cornerEvents','cornerTimelineAvailable','corners'],
+    ['card','cardEvents','cardTimelineAvailable','cards']
+  ]){
+    const homeCount=parsed[prefix+'Home'],awayCount=parsed[prefix+'Away'];
+    if(parsed[flag]!==true||homeCount==null||awayCount==null)continue;
+    try{
+      await persistHistoricalTimedEvents(id,{source,kind,final:true,complete:true,
+        timelineAvailable:true,homeCount,awayCount,events:parsed[eventKey]??[]});
+    }catch(error){console.warn('[recovery] timed',kind,'verification:',error.message);}
+  }
   const outcome=await settleMatch(id);
   return {recovered:true,source:source.toUpperCase(),score:`${homeScore}-${awayScore}`,
     settled:outcome.settled,tickets:outcome.tickets?.length??0};
@@ -409,15 +444,20 @@ export async function recoverAllPendingMatches({ runQuery = query } = {}) {
              and r.home_score is not null and r.away_score is not null
          )
          or (
-           l.live_contract->>'event'='goal'
+           l.live_contract->>'event' in ('goal','corner','card')
            and exists(select 1 from app_match_result r where r.match_id=l.match_id
              and r.home_score is not null and r.away_score is not null)
            and not exists (
              select 1 from app_match_event_coverage e
              join app_match_result r on r.match_id=e.match_id
-             where e.match_id=l.match_id and e.kind='goal'
+             where e.match_id=l.match_id and e.kind=l.live_contract->>'event'
                and e.complete=true and e.confirmed_at is not null
-               and e.count_home=r.home_score and e.count_away=r.away_score
+               and e.count_home=case l.live_contract->>'event'
+                 when 'goal' then r.home_score when 'corner' then r.corners_home
+                 when 'card' then r.cards_home end
+               and e.count_away=case l.live_contract->>'event'
+                 when 'goal' then r.away_score when 'corner' then r.corners_away
+                 when 'card' then r.cards_away end
            )
          )
        )
