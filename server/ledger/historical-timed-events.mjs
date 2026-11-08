@@ -46,7 +46,7 @@ export function validateHistoricalTimedEvents(payload){
   if(kind==='card'&&/second.?yellow|yellow.?red|two.?yellow/i.test(String(event.detail??'')))
    return null;
   facts.push({id:key,kind,team:event.team,minute:time,seconds,
-   cardColor:color});
+   cardColor:color,phase:event.phase==null?null:String(event.phase)});
  }
  if(facts.filter(e=>e.team==='home').length!==home||
     facts.filter(e=>e.team==='away').length!==away)return null;
@@ -79,10 +79,10 @@ export async function persistHistoricalTimedEvents(matchId,payload,{database=poo
    return {stored:false,reason:previous.sample_signature===data.signature?'ALREADY_VERIFIED':'TIMELINE_CHANGED'};
   }
   for(const f of data.facts)await client.query(`insert into app_match_event_fact
-     (match_id,provider,provider_event_id,kind,team,minute,seconds,card_color,active)
-     values($1,$2,$3,$4,$5,$6,$7,$8,true)
+     (match_id,provider,provider_event_id,kind,team,minute,seconds,card_color,phase,active)
+     values($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
      on conflict(match_id,provider,provider_event_id,kind) do nothing`,
-     [id,data.source,f.id,data.kind,f.team,f.minute,f.seconds,f.cardColor]);
+     [id,data.source,f.id,data.kind,f.team,f.minute,f.seconds,f.cardColor,f.phase]);
   const now=new Date();
   const inserted=await client.query(`insert into app_match_event_coverage
      (match_id,provider,kind,through_minute,count_home,count_away,
