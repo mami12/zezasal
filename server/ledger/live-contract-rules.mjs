@@ -289,6 +289,22 @@ export function parseFirstHalfCorner(line) {
  if(!['home','away','none'].includes(side))return null;
  return {version:1,kind:'half-first-event',event:'corner',half:1,side};
 }
+/** The last goal/corner/card can be determined only from a complete FT
+ * chronology. A quoted Neither is an actual third outcome; without one,
+ * zero events do not turn a two-way proposition into a losing bet.
+ */
+export function parseLastEvent(line){
+ const title=norm(line.market_name??line.marketName??line.name);
+ if(Number(line.period??0)!==0)return null;
+ if(!/^(?:(?:which|what) team (?:will )?(?:score|take|receive) (?:the )?)?last (?:goal|corner|card)$/.test(title)&&
+    !/^(?:last (?:goal|corner|card) (?:by|scored by|taken by)|team (?:to )?(?:score|take|receive) (?:the )?last (?:goal|corner|card))$/.test(title))return null;
+ const event=typeOf(title);
+ if(!['goal','corner','card'].includes(event))return null;
+ const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
+ if(!side)return null;
+ return {version:1,kind:'last-event',event,side,
+  noneOffered:side==='none'||line.lastNoneOffered===true};
+}
 export function parseSequenceBet(line,counts={}) {
  const name=norm(line.market_name??line.marketName??line.name);
  // An event numbered inside a time band is not the same as the Nth event of the match.
@@ -359,7 +375,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
-  parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseSequenceBet(line,counts)??
+  parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseCountMarket(line);
  if(!contract)return null;
  if(yellow||red){
@@ -392,7 +408,7 @@ const fullCoverage=(evidence,event,through)=>{
  * 'ended' requires a confirmed terminal feed phase, not wall-clock time.
  */
 export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=false}={}){
- if(!contract||!['interval-result','team-total-goals','window','sequence','race','over','under','exact','range','atLeast'].includes(contract.kind))return null;
+ if(!contract||!['interval-result','team-total-goals','window','sequence','race','last-event','over','under','exact','range','atLeast'].includes(contract.kind))return null;
  const {event}=contract;
  const ordered=sortEvents(Array.isArray(evidence.events)?evidence.events:[],event);
  const clock=number(evidence.clock),count=number(eventCount(evidence.counts,event));
@@ -456,6 +472,12 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
   // An abandoned/early-closed match is not proof that a scheduled window elapsed.
   if(clock!==null&&clock>contract.to&&fullCoverage(evidence,event,contract.to))return contract.choice?'LOST':'WON';
   return null;
+ }
+ if(contract.kind==='last-event'){
+  if(!ended||!ordered?.orderKnown||clock===null||!fullCoverage(evidence,event,clock))return null;
+  const last=ordered.events.at(-1);
+  if(last)return contract.side===last.team?'WON':'LOST';
+  return contract.noneOffered===true?(contract.side==='none'?'WON':'LOST'):'VOID';
  }
  if(contract.kind==='sequence'||contract.kind==='race'){
   if(!ordered?.orderKnown||clock===null||!fullCoverage(evidence,event,clock))return null;
