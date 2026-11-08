@@ -30,6 +30,22 @@ export function resolveMarketTitle(raw,q,{intervalWidth}={}){
   const width=explicit??intervalWidth;
   return 'When will goal '+q.p3+' be scored'+(width?' ('+width+'-minute intervals)':'');
  }
+ // Zizobet publishes the same fixed-minute totals for BOTH teams and for
+ // a single home/away team. Preserve the subject explicitly; otherwise a
+ // home-only Over bet could be incorrectly paid from both teams' corners.
+ const teamInterval=name.match(/^Total\s+\[total\]\s+(?:(home\s*team|away\s*team)\s+)?(corners?|goals?|cards?)\s*(?:(home\s*team|away\s*team))?\s+in\s+(\d+)\s+minutes?\s+interval\s+\[from\]-\[to\]$/i);
+ if(teamInterval&&(teamInterval[1]||teamInterval[3])){
+  const side=teamInterval[1]??teamInterval[3];
+  const from=Number(q.p1),to=Number(q.p2),width=Number(teamInterval[4]),value=Number(q.h);
+  if((teamInterval[1]&&teamInterval[3])||q.p1==null||q.p2==null||
+     q.h==null||!Number.isFinite(value)||value<0||value>300||
+     !Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<0||to<from||
+     to>130||to-from+1!==width)return null;
+  const kind=teamInterval[2].toLowerCase();
+  const canonicalSide=/^home/i.test(side)?'home team':'away team';
+  return 'Total '+value+' '+canonicalSide+' '+kind+' in minutes '+from+'-'+to+
+    ' ('+width+'-minute interval)';
+ }
  const interval=name.match(/^(Who scores most goals|Who takes most Corners|Total \[total\](?: Corners)?|Who scores the \[goal!\] goal) in (\d+) minutes interval \[from\]-\[to\]$/i);
  if(interval){
   const from=Number(q.p1),to=Number(q.p2);
