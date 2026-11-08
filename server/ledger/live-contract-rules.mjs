@@ -382,12 +382,14 @@ export function parseTeamCountMarket(line){
  if(line.period!=null&&Number(line.period)!==0)return null;
  if(/\b(?:asian|handicap|half|minutes?|interval|player|scorer|penalty|both|each)\b|[&+]/.test(name))return null;
  name=name.replace(/^(?:full time|match)\s*[-–.:]?\s*/,'');
- const m=name.match(/^(?:total\s+)?(home|away)(?: team)?\s+(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/) ??
-  name.match(/^(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)\s+(home|away)(?: team)?(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/);
+ const m=name.match(/^(?:total\s+)?(home(?: team)?|away(?: team)?|team [12])\s+(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/) ??
+  name.match(/^(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)\s+(home(?: team)?|away(?: team)?|team [12])(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/);
  if(!m)return null;
- const first=/^(?:home|away)$/.test(m[1]);
- const side=first?m[1]:m[3],color=first?m[2]:m[1],
-  event=typeOf(first?m[3]:m[2]),title=first?m[4]:m[4];
+ const first=/^(?:home|away)(?: team)?$|^team [12]$/.test(m[1]);
+ const rawSide=first?m[1]:m[3];
+ const side=/^(?:home|team 1)\b/.test(rawSide)?'home':
+   /^(?:away|team 2)\b/.test(rawSide)?'away':null;
+ const color=first?m[2]:m[1],event=typeOf(first?m[3]:m[2]),title=m[4];
  if(!['home','away'].includes(side)||!['goal','corner','card','foul'].includes(event)||
     (color&&event!=='card'))return null;
  const selection=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
