@@ -48,6 +48,7 @@ import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
 import {isPlayerGoalSpecial,parsePlayerGoalSpecial} from './player-goal-specials.mjs';
+import {isPeriodGoalTotal,parsePeriodGoalTotal} from './period-goal-totals.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
@@ -207,6 +208,23 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       if(!Number.isFinite(stamp)||now-stamp>45000||stamp-now>5000||
          !Number.isFinite(clock)||playerGoalSpecial.half===1&&firstEnded)
         throw Object.assign(badRequest('Pjesa e zgjedhur nuk ka të dhëna LIVE të verifikuara.'),{
+          code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+    }
+  }
+  // Exactly scored half/team totals use the true HT/FT result, and the
+  // quoted period is frozen at purchase rather than reconstructed later.
+  let periodGoalContract=null;
+  if(isPeriodGoalTotal(row)){
+    periodGoalContract=parsePeriodGoalTotal(row,{home:match.home,away:match.away});
+    if(!periodGoalContract)
+      throw Object.assign(badRequest('Tregu i golave ka limit ose pjesë të paidentifikuar.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    if(String(match.service??'').toUpperCase()==='LIVE'&&periodGoalContract.half===1){
+      const phase=String(match.feed_status??match.phase??'').toLowerCase();
+      const clockAt=Date.parse(match.clock_at??'');
+      if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
+         /^(?:ht|half time|halftime|2h|second half|2nd half|ft|full time|finished)\b/.test(phase))
+        throw Object.assign(badRequest('Pjesa e parë ka përfunduar për këtë treg golash.'),{
           code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
     }
   }
@@ -400,6 +418,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
     if(playerGoalSpecial)contract=playerGoalSpecial;
+    if(periodGoalContract)contract=periodGoalContract;
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
