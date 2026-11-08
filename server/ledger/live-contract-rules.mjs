@@ -163,32 +163,46 @@ export function parseIntervalLeader(line) {
  */
 export function parseIntervalCount(line) {
  const name=norm(line.market_name??line.marketName??line.name);
- const event=typeOf(name);
- if(!event||/\b(?:which|who|race|next|first|last|winner|result|player|scorer|asian|handicap)\b|[&+]/.test(name))return null;
- const m=name.match(/\bin\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})\b/);
- if(!m)return null;
- const from=Number(m[1]),to=Number(m[2]);
- if(from<0||to<from||to>130)return null;
+ // Only fixed absolute match-minute totals. No half-relative, player or
+ // compound market can silently become a full-match total.
+ if(Number(line.period??0)!==0||/[&+]/.test(name)||
+    /\b(?:which|who|race|next|first|last|winner|result|player|scorer|asian|handicap|penalty|extra time)\b/.test(name))return null;
+ // Accept a complete grammar, not a substring: discarding "home team"
+ // would pay a home-only bet from the away team's corners.
+ const usual=name.match(/^(?:total\s+)?(?:(\d+(?:[.,]\d+)?)\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?)\s*(?:(home|away)\s+team)?\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
+ const leading=name.match(/^(home|away)\s+team\s+(?:total\s+)?(goals?|corners?|cards?)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
+ if(!usual&&!leading)return null;
+ const titleLine=usual?.[1]??null,preSide=usual?.[2]??leading?.[1]??null;
+ const eventName=usual?.[3]??leading?.[2],postSide=usual?.[4]??null;
+ if(preSide&&postSide)return null;
+ const side=preSide??postSide;
+ const from=Number(usual?.[5]??leading?.[3]),to=Number(usual?.[6]??leading?.[4]);
+ const width=usual?.[7]??leading?.[5];
+ if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<0||to<from||to>130||
+    (width!=null&&to-from+1!==Number(width)))return null;
+ const event=typeOf(eventName);
+ if(!['goal','corner','card'].includes(event))return null;
  const label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
- const raw=line.line??line.specifier;
- const n=number(raw);
+ const rawLine=number(line.line??line.specifier),inTitle=number(titleLine?.replace(',','.'));
  const over=label.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
  const under=label.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ const sidePart=side?{side}:{};
  if(over||under){
-  const threshold=number(String((over??under)[1]??n??'').replace(',','.'));
-  if(threshold===null||threshold<0||threshold>300)return null;
-  return {version:1,kind:'window-total',event,from,to,
-   choice:over?'over':'under',threshold};
+  const named=number((over??under)[1]?.replace(',','.'));
+  const supplied=[named,rawLine,inTitle].filter(x=>x!==null);
+  if(!supplied.length||supplied.some(x=>x!==supplied[0])||
+     supplied[0]<0||supplied[0]>300||!Number.isInteger(supplied[0]*2))return null;
+  return {version:1,kind:'window-total',event,...sidePart,from,to,
+   choice:over?'over':'under',threshold:supplied[0]};
  }
  const exact=label.match(/^(?:exact(?:ly)?\s+)?(\d{1,3})$/);
- if(exact)return {version:1,kind:'window-total',event,from,to,
+ if(exact)return {version:1,kind:'window-total',event,...sidePart,from,to,
   choice:'exact',target:Number(exact[1])};
  const atLeast=label.match(/^(\d{1,3})\s*(?:\+|or more)$/);
- if(atLeast)return {version:1,kind:'window-total',event,from,to,
+ if(atLeast)return {version:1,kind:'window-total',event,...sidePart,from,to,
   choice:'atLeast',target:Number(atLeast[1])};
  return null;
 }
-
 /** Provider clock-window totals: accept ONLY complete, minute-aligned intervals.
  * For example 30:00–39:59 equals the closed buckets 30..39. Do not interpret
  * 45+ or 90+ as a numeric end: injury time requires separately verified phase
@@ -196,24 +210,24 @@ export function parseIntervalCount(line) {
  */
 export function parseClockWindowTotal(line){
  const name=norm(line.market_name??line.marketName??line.name);
- const m=name.match(/^(\d{1,3}):([0-5]\d)\s*[-–]\s*(\d{1,3}):([0-5]\d)\s*min\.?\s*[-–]\s*(?:total\s+)?(goals?|corners?|cards?)\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
- if(!m||m[2]!=='00'||m[4]!=='59')return null;
+ const m=name.match(/^(\d{1,3}):([0-5]\d)\s*[-–]\s*(\d{1,3}):([0-5]\d)\s*min\.?\s*[-–]\s*(?:total\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?)(?:\s+(home|away)\s+team)?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
+ if(!m||m[2]!=='00'||m[4]!=='59'||(m[5]&&m[7]))return null;
  const from=Number(m[1]),to=Number(m[3]);
  // 45+ first-half injury time can overlap ordinary absolute minute 45;
  // no reliable period attribution currently exists for this market family.
  if(from<0||to<from||to>=45)return null;
- const event=typeOf(m[5]),label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
+ const event=typeOf(m[6]),side=m[5]??m[7],label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
  if(!event||!['goal','corner','card'].includes(event))return null;
  const over=label.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
  const under=label.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
  if(!over&&!under)return null;
  const named=(over??under)[1],raw=line.line??line.specifier;
  const supplied=raw!=null&&String(raw).trim()!==''?raw:null;
- const threshold=number(String(named??supplied??m[6]??'').replace(',','.'));
- const inTitle=number(String(m[6]??'').replace(',','.'));
+ const threshold=number(String(named??supplied??m[8]??'').replace(',','.'));
+ const inTitle=number(String(m[8]??'').replace(',','.'));
  if(threshold===null||threshold<0||threshold>300||!Number.isInteger(threshold*2)||
     (inTitle!==null&&inTitle!==threshold))return null;
- return {version:1,kind:'window-total',event,from,to,choice:over?'over':'under',threshold};
+ return {version:1,kind:'window-total',event,...(side?{side}:{}),from,to,choice:over?'over':'under',threshold};
 }
 /** Explicit full-match yellow/red card totals. The two colors never share a
  * counter when freezing the wager or grading it in PostgreSQL. */
