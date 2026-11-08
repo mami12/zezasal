@@ -92,3 +92,14 @@ export function gradeHalfExactFacts(contract,facts,{complete=false,cardColorsVer
     min>=0&&max<=150&&max>=min)return count>=min&&count<=max?'WON':'LOST';
  return null;
 }
+
+/** A legacy bet without a frozen period/incident contract must never
+ * be graded from the full-time aggregate for a half-specific exact quote.
+ */
+export function isHalfExactMarketFamily(line){
+ const base={...line,period:0,line:null,specifier:null,
+  outcome_name:'2',outcomeName:'2',outcome_key:'2',outcomeKey:'2'};
+ return !!(parseHalfExactMarket(base)||
+   parseHalfExactMarket({...base,outcome_name:'Yes',outcomeName:'Yes',
+    outcome_key:'Yes',outcomeKey:'Yes'}));
+}
