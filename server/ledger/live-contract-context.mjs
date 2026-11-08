@@ -3,7 +3,7 @@ import {teamStatisticsFromRow} from '../match-statistics.mjs';
 const safe=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0?Number(v):null;
 const time=v=>v!=null&&Number.isFinite(new Date(v).getTime())?new Date(v).getTime():null;
 const fail=message=>Object.assign(new Error(message),{status:400,code:'MARKET_EVIDENCE_UNSUPPORTED'});
-const eventish=name=>/\b(?:next|race to|reaches\s+\d+|(?:first|last|[1-9]\d*(?:st|nd|rd|th))\s+(?:goal|corner)|minutes?|mins?|within|before|after)\b|\b(?:yellow|red)\s+cards?\b|\b(?:second\s+yellow|yellow\s+red)\b|\b(?:goalscorer|goal\s+scorer)s?\b|\bplayer\s+to\s+score\b/i.test(name);
+const eventish=name=>/\b(?:next|race to|reaches\s+\d+|(?:first|last|[1-9]\d*(?:st|nd|rd|th))\s+(?:goal|corner)|minutes?|mins?|within|before|after)\b|\b(?:yellow|red)\s+cards?\b|\b(?:second\s+yellow|yellow\s+red)\b|\b(?:goalscorer|goal\s+scorer)s?\b|\bplayer\s+to\s+score\b|\b(?:1st|first|2nd|second)\s+half\b.*\b(?:corners?|cards?)\b/i.test(name);
 /** Freeze what was actually offered at purchase, never derive a live target
  * from the scoreboard when the bet is paid or the page is refreshed.
  */
@@ -71,6 +71,17 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   }
   if(current?.home==null||current?.away==null)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
+ }
+ if(live&&contract.kind==='half-total'){
+  const clockAt=time(match.clock_at);
+  const phase=norm(match.feed_status??match.phase??'');
+  // Half totals may be offered while that half is underway. They must not
+  // remain for sale after the verified HT/2H/FT transition.
+  const finished=/^(?:ft|full time|finished|ended|result pending|cancelled|abandoned)\b/.test(phase);
+  const firstEnded=/^(?:ht|half time|halftime|break time|2h|2nd half|second half)\b/.test(phase);
+  if(clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
+     !phase||finished||(contract.half===1&&firstEnded))
+   throw fail('Periudha e marketit nuk është e hapur ose ora LIVE nuk është e konfirmuar.');
  }
  if(live&&contract.kind==='half-first-event'){
   // The first-half first corner is already decided after ANY corner in 1H.
