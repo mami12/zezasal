@@ -40,6 +40,7 @@ import { assertDistinctSelectionMarkets } from './selection-market.mjs';
 import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
+import {parsePlayerCardContract} from './live-contract-rules.mjs';
 
 const MIN_STAKE = 100; // LEK
 // Prematch prices are refreshed hourly (SUBSCRIBE/PREMATCH_REFRESH_MS) unless the fixture is
@@ -232,11 +233,42 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
           and confirmed_at is not null limit 1`,[matchId])).rows?.[0]??null;
     }catch{raceCardSnapshot=null;}
   }
+  // Player booking quotes use a real, verified card chronology at the
+  // acceptance instant. A missing timeline may not turn a pre-existing card
+  // into a wager on a future event.
+  let playerCardSnapshot=null;
+  const playerCard=parsePlayerCardContract(row);
+  if(playerCard&&String(match.service??'').toUpperCase()==='LIVE'){
+    try{
+      const {rows:coverage}=await executor(
+        "select through_minute,observed_at,confirmed_at from app_match_event_coverage "+
+        "where match_id=$1 and provider='zizobet' and kind='card' and confirmed_at is not null",
+        [matchId]);
+      if(coverage.length){
+        const {rows:actors}=await executor(
+          "select player_id,player_name from app_match_event_fact "+
+          "where match_id=$1 and provider='zizobet' and kind='card' and active=true",
+          [matchId]);
+        const person=v=>{
+          const raw=String(v??'').trim();
+          const parts=raw.includes(',')?raw.split(',').reverse().map(x=>x.trim()):[raw];
+          return parts.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+            .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+        };
+        const expected=person(playerCard.playerName);
+        const booked=actors.some(actor=>
+          (playerCard.playerId!=null&&actor.player_id!=null?
+            String(playerCard.playerId)===String(actor.player_id):
+            !!expected&&person(actor.player_name)===expected));
+        playerCardSnapshot={...coverage[0],booked};
+      }
+    }catch{playerCardSnapshot=null;}
+  }
   let contract;
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,lastNoneOffered,raceCardSnapshot},match);
+      raceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
