@@ -42,6 +42,7 @@ import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
+import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
@@ -309,12 +310,42 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     quotedOffers.some(o=>o.market_key===row.market_key&&
       String(o.line??'')===String(row.line??'')&&
       /^(?:x|draw|tie|barazim)$/i.test(String(o.outcome_name??o.outcome_key??'').trim()));
+  // Asian 2-way, European 1X2 and corner handicaps differ. Freeze the
+  // actual native third draw selection before any money is debited.
+  const handicapDrawOffered=isHandicapMarket(row)&&quotedOffers.some(o=>
+    o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
+    /^(?:x|draw|tie|barazim)$/i.test(String(o.outcome_name??o.outcome_key??'').trim()));
+  let handicapContract=null;
+  if(isHandicapMarket(row)){
+    handicapContract=parseHandicapContract(row,{teams:match,drawOffered:handicapDrawOffered});
+    if(!handicapContract)
+      throw Object.assign(badRequest('Handikapi nuk ka opsion të qartë ose kërkon pagesë pjesore 0.25/0.75.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    const liveHandicap=String(match.service??'').toUpperCase()==='LIVE';
+    if(liveHandicap){
+      // Live Asian Handicap often means goals AFTER acceptance, whereas
+      // corner spreads/other providers may use the entire match. Only an
+      // explicitly labelled remaining-match market has unambiguous scope.
+      if(!handicapContract.rest||handicapContract.event!=='goal'||handicapContract.half!==0)
+        throw Object.assign(badRequest('Mungon rregulli i furnizuesit për handikapin LIVE.'),{
+          code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+      const stamp=Date.parse(match.score_at??'');
+      const h=match.home_score==null?null:Number(match.home_score);
+      const a=match.away_score==null?null:Number(match.away_score);
+      if(!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0||
+         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)
+        throw Object.assign(badRequest('Rezultati LIVE nuk është i konfirmuar për handikapin.'),{
+          code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+      handicapContract={...handicapContract,baseline:{home:h,away:a}};
+    }
+  }
   let contract;
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
       raceNoneOffered,sequenceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
+    if(handicapContract)contract=handicapContract;
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
