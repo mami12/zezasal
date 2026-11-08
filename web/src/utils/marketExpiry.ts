@@ -11,6 +11,7 @@ import { isImpossibleLiveCombination } from '../../../server/ledger/combo-feasib
 import { isDecidedLiveMarket, isDecidedLiveOutcome, isYbetsNativeOffer } from '../../../server/ledger/decided-markets.mjs';
 import { isExcludedOfferMarket } from '../../../server/market-policy.mjs';
 import { eventMarketRequirement } from '../../../server/ledger/event-market-policy.mjs';
+import { parseFirstHalfCorner } from '../../../server/ledger/live-contract-rules.mjs';
 import { statisticMarketContract } from '../../../server/ledger/statistic-markets.mjs';
 import { repairDisplayText } from './repairDisplayText';
 type Score = { home: number; away: number };
@@ -40,6 +41,19 @@ export const isMarketOfferSupported = (market: MarketLike,match?:MatchLike): boo
   if(isExcludedOfferMarket(market)||!marketIsEnabled(market,match))return false;
   if(marketDiagnosticAll())return true;
   if(isYbetsNativeOffer(market,match))return true;
+  const title=String(market.name??'').trim();
+  if(/^(?:1st|first)\s+half\s*[-–:.]\s*first\s+corner$/i.test(title)){
+    // Expose only an offer whose EVERY position can be frozen by the server.
+    // Team names are converted to their exact fixture side, never guessed.
+    const items=market.outcomes??[];
+    const normalize=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+    const home=normalize(match?.homeTeam),away=normalize(match?.awayTeam);
+    return items.length>0&&items.every(outcome=>{
+      const label=normalize(outcome.name);
+      const mapped=home&&label===home?'1':away&&label===away?'2':outcome.name;
+      return !!parseFirstHalfCorner({market_name:title,outcome_name:mapped,outcome_key:outcome.code});
+    });
+  }
   const statsContract=statisticMarketContract(market);
   return !eventMarketRequirement(market,match)&&(!statsContract||statsContract.supported);
 };
