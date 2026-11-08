@@ -203,6 +203,8 @@ export interface PitchState {
 
 export interface MatchEvent {
   id?:string;
+  /** Verified scorer from the provider or a matched supplementary feed. */
+  player?: string;
   minuteLabel?:string;
   matchId: string;
   type: string;
