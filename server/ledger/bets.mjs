@@ -85,7 +85,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw badRequest('Ndeshja ka përfunduar ose është anuluar.');
   }
 
-  const row = (await loadOdds(matchId,executor)).find(
+  const quotedOffers = await loadOdds(matchId,executor);
+  const row = quotedOffers.find(
     (o) => o.market_key === parsed.marketKey && String(o.line ?? '') === String(parsed.line ?? '') && o.outcome_key === parsed.outcomeKey,
   );
   if (!row) throw badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.');
@@ -170,10 +171,33 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw err;
   }
 
+  // Freeze whether the actual quoted market includes a third "Neither"
+  // selection. Two-way races keep their original VOID rule when X is never
+  // reached; three-way races pay Neither and lose on 1/2 instead.
+  const raceName=String(row.market_name??row.marketName??'');
+  const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
+  const raceNoneOffered=isRace&&quotedOffers.some(o=>
+    o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
+    /^(?:none|neither|asnj[eë]ra|asnje skuader|x|draw)$/i.test(
+      String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
+  // Cards cannot use the goal scoreboard or a guessed yellow+red sum.
+  // Only a confirmed, recent primary card incident coverage can establish
+  // whether Race to X Cards has already ended at LIVE placement.
+  let raceCardSnapshot=null;
+  if(isRace&&/\brace to \d+ cards?\b/i.test(raceName)&&
+     String(match.service??'').toUpperCase()==='LIVE'){
+    try{
+      raceCardSnapshot=(await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at
+        from app_match_event_coverage
+        where match_id=$1 and provider='zizobet' and kind='card'
+          and confirmed_at is not null limit 1`,[matchId])).rows?.[0]??null;
+    }catch{raceCardSnapshot=null;}
+  }
   let contract;
   try {
-    contract=frozenLiveContract({...row,market_name:row.market_name??row.marketName??parsed.marketKey,
-      outcome_name:row.outcome_name??parsed.outcomeKey},match);
+    contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
+      outcome_name:row.outcome_name??parsed.outcomeKey,
+      raceNoneOffered,raceCardSnapshot},match);
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
