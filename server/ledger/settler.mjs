@@ -23,6 +23,7 @@ import { isStatisticMarket, hasStatisticEvidence, gradeStatisticLine } from './s
 import {goalTotalContract} from './goal-total-contract.mjs';
 import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
 import {isParityLikeMarket,gradeParityMarket} from './parity-markets.mjs';
+import {isHandicapMarket,parseHandicapContract,gradeHandicapContract} from './handicap-contracts.mjs';
 import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
@@ -31,6 +32,12 @@ import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
 import {gradeStoredEventContract,SUPPORTED_FACT_KINDS} from './match-event-facts.mjs';
 import {backfillPendingTeamGoalContracts} from './live-contract-backfill.mjs';
 import {settleVerifiedLiveProposals} from './verified-live-settlement.mjs';
+
+const legacyHandicapResult=(line,result)=>{
+ const c=line?.live_contract?.kind==='score-handicap'?line.live_contract:
+  parseHandicapContract(line,{teams:{home:result?.home_team,away:result?.away_team}});
+ return gradeHandicapContract(c,result);
+};
 
 const round = (n) => Number(Number(n).toFixed(2));
 
@@ -85,6 +92,7 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Do not send these through the old general event/total fallback.
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
   if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
+  if(isHandicapMarket(line))return legacyHandicapResult(line,result)!==null;
   // A final aggregate card count cannot tell red from yellow cards.
   if(/\b(?:yellow|red)\s+cards?\b/i.test(String(line?.market_name??'')))return false;
   if(statisticsNeedReview(line,result))return false;
@@ -148,6 +156,8 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
+    return legacyHandicapResult(line,result);
   if(!Array.isArray(line.builder_legs)&&isParityLikeMarket(line))
     return gradeParityMarket(line,result);
   if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
@@ -580,7 +590,8 @@ export async function settleMatch(matchId) {
       status=gradeLine(line,result);
       // Only a proved two-way integer push is refundable on the legacy path.
       // Unsupported parsing remains PENDING.
-      if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result))status=null;
+      if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result)&&
+         !(isHandicapMarket(line)&&legacyHandicapResult(line,result)==='VOID'))status=null;
     }
     if(!['WON','LOST','VOID'].includes(status)){
       if(line.live_contract)unresolved.push({line,result});
