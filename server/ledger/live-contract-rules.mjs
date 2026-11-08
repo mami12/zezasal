@@ -212,10 +212,17 @@ export function parseIntervalCount(line) {
  const eventName=usual?.[3]??leading?.[2],postSide=usual?.[4]??null;
  if(preSide&&postSide)return null;
  const side=preSide??postSide;
- const from=Number(usual?.[5]??leading?.[3]),to=Number(usual?.[6]??leading?.[4]);
+ const from=Number(usual?.[5]??leading?.[3]),quotedEnd=Number(usual?.[6]??leading?.[4]);
  const width=usual?.[7]??leading?.[5];
- if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<0||to<from||to>130||
-    (width!=null&&to-from+1!==Number(width)))return null;
+ if(!Number.isSafeInteger(from)||!Number.isSafeInteger(quotedEnd)||
+    from<0||quotedEnd<from||quotedEnd>130)return null;
+ // "30-45 (15-minute interval)" denotes 30:00..44:59. Some feeds
+ // instead quote "1-15 (15-minute interval)", which is inclusive.
+ // Normalize both conventions to the confirmed closed minute buckets.
+ const length=width==null?null:Number(width);
+ const exclusive=length!=null&&quotedEnd-from===length;
+ if(length!=null&&!exclusive&&quotedEnd-from+1!==length)return null;
+ const to=exclusive?quotedEnd-1:quotedEnd;
  const event=typeOf(eventName);
  if(!['goal','corner','card'].includes(event))return null;
  const label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
