@@ -34,8 +34,13 @@ import {backfillPendingTeamGoalContracts} from './live-contract-backfill.mjs';
 import {settleVerifiedLiveProposals} from './verified-live-settlement.mjs';
 
 const legacyHandicapResult=(line,result)=>{
- const c=line?.live_contract?.kind==='score-handicap'?line.live_contract:
-  parseHandicapContract(line,{teams:{home:result?.home_team,away:result?.away_team}});
+ const saved=line?.live_contract?.kind==='score-handicap'?line.live_contract:null;
+ // Historical generic "Handicap" rows contain no proof whether a draw
+ // was offered. Do not reconstruct an uncertain 2-way vs 3-way payout.
+ if(!saved&&!/\b(?:asian|european|1x2|2[\s-]*way|3[\s-]*way|corner spread)\b/i.test(
+     String(line?.market_name??'')))return null;
+ const c=saved??parseHandicapContract(line,{
+  teams:{home:result?.home_team,away:result?.away_team}});
  return gradeHandicapContract(c,result);
 };
 
