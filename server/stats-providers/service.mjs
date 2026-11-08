@@ -375,6 +375,29 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   }
   return stats;
  }
+ /** Historical lookup is opt-in and never infers FT from a live clock.
+  * Reuse the configured provider identities, verified kickoff matching, quota
+  * accounting and HTTP timeouts. No other match's data may grade this fixture.
+  */
+ async function recoverHistoricalMatch(row){
+  if(!enabled()||!row?.home||!row?.away||!Number.isFinite(Date.parse(row.start_at??row.startAt)))return null;
+  await init();
+  for(const provider of await providerOrder('historical-result')){
+   try{
+    const fixture=await discover(provider,row);
+    if(!fixture||!(await finalFixture(provider,fixture)))continue;
+    const evidence=await collect(provider,fixture);
+    const validScore=value=>value!=null&&value!==''&&Number.isSafeInteger(Number(value))&&Number(value)>=0&&Number(value)<=99;
+    if(evidence.final!==true||evidence.complete!==true||
+       !validScore(evidence.homeScore)||!validScore(evidence.awayScore))continue;
+    return {source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),evidence};
+   }catch(error){
+    health.providers[provider]={...(health.providers[provider]??{}),
+      lastError:/^STATS_[A-Z_0-9]+$/.test(error.message)?error.message:'STATS_UNAVAILABLE'};
+   }
+  }
+  return null;
+ }
  function displayScorers(row){
    const entry=displayCache.get(String(row.match_id??row.id));
    return entry?.scorers ?? [];
@@ -402,7 +425,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    }
   }catch{health.lastError='STATS_UNAVAILABLE';}finally{busy=false;}
  }
- return {warm,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,update,tick,enabled,health:()=>({...health,enabled:enabled(),cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:refreshMs}),allows(id,market){
+ return {warm,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,recoverHistoricalMatch,update,tick,enabled,health:()=>({...health,enabled:enabled(),cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:refreshMs}),allows(id,market){
   if(!enabled())return false;const s=offers.get(String(id));if(!s?.offer||s.expires<=now())return false;
   const name=String(market.market_name??market.name??'');
   if(!supportedContract(market)||!eventSelectionSupported(market))return false;
