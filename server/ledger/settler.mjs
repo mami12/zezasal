@@ -22,7 +22,7 @@ import { eventMarketRequirement } from './event-market-policy.mjs';
 import { isStatisticMarket, hasStatisticEvidence, gradeStatisticLine } from './statistic-markets.mjs';
 import {goalTotalContract} from './goal-total-contract.mjs';
 import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
-import {parseParityMarket,gradeParityMarket} from './parity-markets.mjs';
+import {isParityLikeMarket,gradeParityMarket} from './parity-markets.mjs';
 import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
@@ -84,7 +84,7 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
-  if(parseParityMarket(line))return gradeParityMarket(line,result)!==null;
+  if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
   // A final aggregate card count cannot tell red from yellow cards.
   if(/\b(?:yellow|red)\s+cards?\b/i.test(String(line?.market_name??'')))return false;
   if(statisticsNeedReview(line,result))return false;
@@ -148,7 +148,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
-  if(!Array.isArray(line.builder_legs)&&parseParityMarket(line))
+  if(!Array.isArray(line.builder_legs)&&isParityLikeMarket(line))
     return gradeParityMarket(line,result);
   if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
     return gradeScoringPropMarket(line,result);
