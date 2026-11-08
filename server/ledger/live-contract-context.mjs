@@ -69,6 +69,17 @@ export function frozenLiveContract(line,match={},at=Date.now()){
     contract.target<=current.home+current.away)throw fail('Goli i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='race'&&current?.home!=null&&current?.away!=null&&
     (current.home>=contract.target||current.away>=contract.target))throw fail('Gara e golave/kornerave ka përfunduar.');
+ // Fixed interval totals/leader/result cannot be bought after their
+ // opening minute: the customer may already know some or all incidents.
+ // Unlike PREMATCH, LIVE requires a recent, confirmed match clock.
+ if(live&&['window-total','interval-leader','interval-result'].includes(contract.kind)){
+  const clockAt=time(match.clock_at);
+  if(clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000)
+   throw fail('Mungon ora live e freskët për intervalin.');
+  const from=contract.kind==='interval-result'?contract.fromSeconds/60:contract.from;
+  if(!Number.isFinite(from)||clock>=from)
+   throw fail('Intervali ka nisur; nuk mund të pranohet bast për ngjarje të kaluara.');
+ }
  if(contract.kind==='window'&&clock!=null&&clock>contract.to)throw fail('Intervali i këtij tregu ka përfunduar.');
  // A fixed interval already in progress may contain events before purchase.
  // Without a verified acceptance-time incident baseline, accepting it would
