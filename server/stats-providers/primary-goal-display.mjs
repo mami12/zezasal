@@ -53,15 +53,16 @@ export function matchedSupplementalScorers(primaryFacts,candidates){
   const slot=team+'|'+minute;
   slots.set(slot,slots.has(slot)?null:item);
  }
- const matched=[];
+ const proposed=new Map();
  for(const item of candidates){
   const minute=Number(item.minute),team=item.team;
   const player=String(item.player??'').trim();
   if(!Number.isSafeInteger(minute)||!['home','away'].includes(team)||
-     !player||player.length>200)continue;
+     !player||player.length>200||item.own===true)continue;
   const slot=team+'|'+minute;
-  if(slots.get(slot)&&!matched.some(x=>x.team===team&&x.minute===minute))
-   matched.push({minute,team,player});
+  if(!slots.get(slot))continue;
+  if(!proposed.has(slot))proposed.set(slot,{minute,team,player});
+  else if(proposed.get(slot)?.player!==player)proposed.set(slot,null);
  }
- return matched;
+ return [...proposed.values()].filter(Boolean);
 }
