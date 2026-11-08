@@ -35,8 +35,10 @@ export async function setSocketScope(socket,value){
  return scope;
 }
 export function emitScopedOdds(io,payload,boardKeys=new Set()){
- const markets=(payload.markets??[]).filter(m=>offeredMarket(m,payload)),full={...payload,markets};
- if(markets.length)io.to('feed:legacy').emit('odds:update',full);
+ // Never broadcast all markets for all fixtures to every connected visitor.
+ // Board viewers get only board rows; detail and betslip viewers get their
+ // individually scoped market/selection updates below.
+ const markets=(payload.markets??[]).filter(m=>offeredMarket(m,payload));
  const board=markets.filter(m=>boardKeys.has(m.key+'|'+(m.line??'')));if(board.length)io.to('feed:board:'+payload.matchId).emit('odds:update',{...payload,markets:board});
  for(const category of CATEGORIES){const selected=category==='all'?markets:markets.filter(m=>deliveryCategory(m)===category);if(selected.length)io.to('feed:detail:'+payload.matchId+':'+category).emit('odds:update',{...payload,markets:selected});}
  for(const socketId of io.sockets.adapter.rooms.get('feed:slip:'+payload.matchId)??[]){const socket=io.sockets.sockets.get(socketId),ids=new Set(socket?.data.feedScope?.selectionIds??[]);const selected=markets.map(m=>({...m,outcomes:(m.outcomes??[]).filter(o=>ids.has(`${payload.matchId}|${m.key}|${m.line??''}|${o.key}`))})).filter(m=>m.outcomes.length);if(selected.length)socket.emit('odds:update',{...payload,markets:selected});}
