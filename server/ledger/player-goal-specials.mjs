@@ -125,6 +125,13 @@ export function gradePlayerGoalSpecial(contract,facts,{complete=false,participat
     String(contract.playerId)===String(scorerId):scorer===requiredName;
   if(!same)continue;
   const inHalf=phaseOf(fact);
+  if(contract.mode==='count'&&!contract.half){
+    // Full-match player goals do not require a phase, only a verified scorer
+    // and a complete 90-minute goal list.
+    count++;
+    if(inHalf===1)firstHalf++;else if(inHalf===2)secondHalf++;
+    continue;
+  }
   if(inHalf===null){ambiguous=true;continue;}
   if(contract.mode==='count'&&contract.half&&inHalf!==contract.half)continue;
   count++;
