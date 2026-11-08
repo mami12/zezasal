@@ -21,6 +21,7 @@ import { systemColumnPayout } from './system-columns.mjs';
 import { eventMarketRequirement } from './event-market-policy.mjs';
 import { isStatisticMarket, hasStatisticEvidence, gradeStatisticLine } from './statistic-markets.mjs';
 import {goalTotalContract} from './goal-total-contract.mjs';
+import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
@@ -77,6 +78,9 @@ const isSecondHalfLine = (marketName = '') =>
  */
 export function hasRequiredSettlementEvidence(line, result) {
   if (!result) return false;
+  // Explicit team/half propositions use only verified HT and FT scoreboards.
+  // Do not send these through the old general event/total fallback.
+  if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
   // A final aggregate card count cannot tell red from yellow cards.
   if(/\b(?:yellow|red)\s+cards?\b/i.test(String(line?.market_name??'')))return false;
   if(statisticsNeedReview(line,result))return false;
@@ -134,6 +138,8 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
+    return gradeScoringPropMarket(line,result);
   if(needsEvents(line)&&!Array.isArray(line.builder_legs))return gradeEventLine(line,result)??null;
   if (line.builder_legs !== null && line.builder_legs !== undefined) {
     const legs = line.builder_legs;
