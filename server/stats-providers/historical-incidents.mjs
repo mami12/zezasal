@@ -49,7 +49,8 @@ const make=(event,index,type,team,minute,injury,color=null,detail='')=>({
  id:idOf(event,type,team,minute,color,index),
  type,team,minute,injury,cardColor:color,detail:String(detail??''),
  disabled:event?.disabled===true||event?.cancelled===true||event?.canceled===true,
- shootout:event?.shootout===true,phase:event?.phase??null
+ shootout:event?.shootout===true,
+ phase:event?.phase??event?.scoreInfoTime??event?.period??null
 });
 
 export function fotMobTimedIncidents(rawEvents){
