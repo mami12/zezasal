@@ -41,6 +41,7 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
+import {parseCornerComparison} from './corner-comparisons.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
@@ -294,11 +295,18 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       }
     }catch{playerCardSnapshot=null;}
   }
+  // Most Corners can be a two-way or a 1X2 quote. Freeze whether the
+  // provider actually offered a draw; a tie cannot be presumed a loser.
+  const quotedCornerComparison=parseCornerComparison(row);
+  const cornerDrawOffered=quotedCornerComparison?.mode==='period-result'&&
+    quotedOffers.some(o=>o.market_key===row.market_key&&
+      String(o.line??'')===String(row.line??'')&&
+      /^(?:x|draw|tie|barazim)$/i.test(String(o.outcome_name??o.outcome_key??'').trim()));
   let contract;
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot},match);
+      raceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
