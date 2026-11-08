@@ -30,7 +30,7 @@ export function parseHandicapContract(line,{teams={},drawOffered=false}={}){
  if(![0,1,2].includes(explicit)||explicit&&first&&explicit!==1||
     explicit&&second&&explicit!==2)return null;
  const half=first?1:second?2:explicit;
- if(event==='corner'&&half)return null; // needs fully verified half-corner snapshots
+ // Half-corner handicaps are graded later from complete period-labelled facts.
  const is3way=/\b(?:european|3\s*way|three\s*way|1x2)\b/.test(name)||
   drawOffered===true||line.handicapDrawOffered===true;
  const label=String(line.outcome_name??line.outcomeName??'').trim();
@@ -95,4 +95,32 @@ export function gradeHandicapContract(contract,result){
  if(contract.side==='none')return null;
  if(delta===0)return 'VOID';
  return delta>0?'WON':'LOST';
+}
+
+/** A half-specific corner handicap can only be calculated from chronologically
+ * complete official incidents. Injury-time minute 45 without explicit phase
+ * is ambiguous and cannot be placed into 1H or 2H by guessing.
+ */
+export function gradeHalfCornerHandicapFacts(contract,facts,{complete=false}={}){
+ if(!complete||contract?.kind!=='score-handicap'||contract.event!=='corner'||
+    ![1,2].includes(contract.half)||!Array.isArray(facts)||contract.rest)return null;
+ const first=new Set(['1','h1','1h','1sthalf','firsthalf','half1','firstperiod','1stperiod','period1']);
+ const second=new Set(['2','h2','2h','2ndhalf','secondhalf','half2','secondperiod','2ndperiod','period2']);
+ const counts={home:0,away:0};
+ for(const fact of facts){
+  const minute=Number(fact?.minute),seconds=fact?.seconds==null?null:Number(fact.seconds);
+  if(!Number.isSafeInteger(minute)||minute<0||minute>130||
+     seconds!==null&&(!Number.isFinite(seconds)||seconds<0)||
+     !['home','away'].includes(fact?.team))return null;
+  const phase=String(fact.phase??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  let half;
+  if(first.has(phase)){if(minute>75)return null;half=1;}
+  else if(second.has(phase)){if(minute<45)return null;half=2;}
+  else if(phase)return null;
+  else if(minute<45)half=1;
+  else return null;
+  if(half===contract.half)counts[fact.team]++;
+ }
+ return gradeHandicapContract({...contract,half:0},
+  {corners_home:counts.home,corners_away:counts.away});
 }
