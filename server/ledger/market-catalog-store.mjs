@@ -29,11 +29,17 @@ export async function refreshMarketCatalog({initialize=false,database=pool}={}){
 // Used during NEW wager validation only. Historical settlement keeps its saved contract.
 export async function assertMarketEnabled(m,executor=query,match){
  const f=marketFamily(m);if(!f)return;
- const r=await executor('select enabled from app_market_catalog where key=$1',[f.key]);
- const policies=await executor('select category from app_market_category_policy where enabled=false and category=any($1::text[])',[marketCategories(f.name)]);
- let scopeDenied=false;
- if(match){const scopes=await executor('select country,league,categories,families from app_market_scope_policy');scopeDenied=marketScopeBlocked(m,match,scopes.rows);}
- if(r.rows[0]?.enabled===false||policies.rows.length||scopeDenied)throw Object.assign(new Error('Ky treg nuk ofrohet.'),{status:400,code:'MARKET_NOT_OFFERED'});
+ // One database round-trip per validation instead of three, while keeping
+ // all policy reads on the supplied transaction connection.
+ const policy=await executor(`select
+   exists(select 1 from app_market_catalog where key=$1 and enabled=false) as market_disabled,
+   exists(select 1 from app_market_category_policy where enabled=false and category=any($2::text[])) as category_disabled,
+   case when $3::boolean then
+     (select coalesce(jsonb_agg(jsonb_build_object('country',country,'league',league,'categories',categories,'families',families)),'[]'::jsonb) from app_market_scope_policy)
+   else '[]'::jsonb end as scopes`,[f.key,marketCategories(f.name),Boolean(match)]);
+ const state=policy.rows[0]??{};
+ const scopeDenied=Boolean(match)&&marketScopeBlocked(m,match,state.scopes??[]);
+ if(state.market_disabled||state.category_disabled||scopeDenied)throw Object.assign(new Error('Ky treg nuk ofrohet.'),{status:400,code:'MARKET_NOT_OFFERED'});
 }
 export async function saveMarketPolicy(input,actor,{database=pool}={}){
  const {key,keys,category,enabled,position}=input??{};
