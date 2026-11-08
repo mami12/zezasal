@@ -99,6 +99,19 @@ assert.equal(gradeLine({market_name:'2nd Half - Both Teams to Score',outcome_key
 assert.equal(gradeLine(secondHalfTotal,{...resolved,half_home_score:null}),null);
 assert.equal(gradeLine(secondHalfTotal,{...resolved,half_home_score:4}),null,'FT below HT is contradictory');
 assert.equal(gradeLine({market_name:'2nd Half - Total Corners',outcome_key:'Over',outcome_name:'Over',line:'2.5'},resolved),null);
+const restScore={market_name:'Correct score rest of match (from 1:0)',outcome_name:'1:1',
+ outcome_key:'z100',builder_legs:null};
+assert.equal(gradeLine(restScore,resolved),'WON','Rest-score 1:1 equals FT 2:1 minus accepted 1:0');
+assert.equal(gradeLine({...restScore,outcome_name:'2:1'},resolved),'LOST');
+assert.equal(gradeLine({...restScore,market_name:'Correct score rest of match (from 4:0)'},resolved),null,
+ 'A provider baseline exceeding FT is contradictory evidence');
+const otherScore={...restScore,outcome_name:'Other',live_contract:{
+ version:1,kind:'correct-score-grid',grid:[[0,0],[1,1],[2,0]]
+}};
+assert.equal(gradeLine(otherScore,resolved),'LOST','The result is included in the actual quoted grid');
+assert.equal(gradeLine({...otherScore,live_contract:{version:1,kind:'correct-score-grid',grid:[[0,0],[2,0]]}},resolved),'WON');
+assert.equal(gradeLine({...otherScore,live_contract:null},resolved),null,'Unknown Other grid remains PENDING');
+assert.equal(gradeLine({market_name:'2nd Half - Correct Score',outcome_name:'1:1',builder_legs:null},resolved),'WON');
 assert.equal(hasRequiredSettlementEvidence(firstHalfTotal,resolved),true);
 assert.equal(hasRequiredSettlementEvidence(firstHalfTotal,{...resolved,half_home_score:null}),false,
   'wait for authoritative half-time score before grading');
