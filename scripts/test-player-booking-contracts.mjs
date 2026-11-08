@@ -42,6 +42,7 @@ const execute=(actors,verified=true)=>async(sql,args)=>{
   second_poll_at:'2026-11-08T13:30:00Z'
  }]};
  if(sql.includes('select player_id,player_name,card_color'))return {rows:actors};
+ if(sql.includes('select 1 from app_match_event_coverage'))return {rows:[{exists:1}]};
  throw Error('Unexpected SQL '+sql.slice(0,80));
 };
 const accepted=(choice,market='Player to be booked')=>({
