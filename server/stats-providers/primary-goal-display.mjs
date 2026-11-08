@@ -44,6 +44,7 @@ export function primaryGoalDisplay(coverage,facts,row){
     events.filter(x=>x.team==='away').length!==away)return null;
  const intervals=groupGoalsIntoIntervals(events);
  if(!intervals)return null;
+ scorers.sort((a,b)=>a.minute-b.minute||a.team.localeCompare(b.team));
  return {goalIntervals:intervals,scorers,
    missingScorers:scorers.length<events.length,
    hasGoals:events.length>0,source:'zizobet'};
