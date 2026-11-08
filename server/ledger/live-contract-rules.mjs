@@ -471,6 +471,10 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseTeamCountMarket(line)??parseCountMarket(line);
+ // Foul totals come from verified match statistics, not from the
+ // sparse provider incident timeline. Time/ordinal foul wagers are not
+ // supported until a complete independent foul chronology exists.
+ if(contract?.event==='foul')return null;
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
