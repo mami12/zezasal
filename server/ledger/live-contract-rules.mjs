@@ -48,11 +48,11 @@ export function parsePlayerCardContract(line){
   // Some providers quote player names as outcomes, not as parameters.
   if(!label||/^(?:yes|no|po|jo|home|away|over|under|none)$/i.test(label))return null;
   return {version:1,kind:'player-card',event:'card',playerName:label,choice:true,
-   ...(/\b(?:yellow|red)\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
+   ...(/\b(?:yellow|red)\b|\bsent off\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
  }
  if(choice===null)return null;
  return {version:1,kind:'player-card',event:'card',playerName:player,choice,
-  ...(/\b(?:yellow|red)\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
+  ...(/\b(?:yellow|red)\b|\bsent off\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
 }
 export function parsePlayerGoalContract(line){
  const key=String(line.market_key??line.marketKey??'');
