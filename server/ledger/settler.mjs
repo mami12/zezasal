@@ -471,10 +471,49 @@ export async function updatePendingLine(lineId,status,ticketId,{database=pool}={
   try{
     await client.query('begin');
     const ticket=(await client.query('select status from app_ticket where id=$1 for update',[ticketId])).rows[0];
-    const changed=ticket?.status==='PENDING'?await client.query(`update app_ticket_line set status=$2 where id=$1 and status='PENDING' and not exists(select 1 from app_settlement_override o where o.line_id=app_ticket_line.id)`,[lineId,status]):{rowCount:0};
+    const changed=ticket?.status==='PENDING'?await client.query(`update app_ticket_line set status=$2,settlement_reason=null where id=$1 and status='PENDING' and not exists(select 1 from app_settlement_override o where o.line_id=app_ticket_line.id)`,[lineId,status]):{rowCount:0};
     await client.query('commit');return changed.rowCount;
   }catch(error){await client.query('rollback').catch(()=>{});throw error;}finally{client.release();}
 }
+/** Informational only. Never use these labels as evidence or financial decisions.
+ * The codes deliberately describe unproven prerequisites, not a guessed cause.
+ */
+export function pendingEventReason(line,result){
+ const contract=line?.live_contract;
+ if(!contract)return null;
+ if(contract.kind==='player-goal')return 'PLAYER_IDENTITY_OR_PARTICIPATION_UNVERIFIED';
+ if(!result)return 'FINAL_RESULT_OR_LIVE_FACTS_UNVERIFIED';
+ if(['sequence','race','nth-time'].includes(contract.kind))
+   return 'EVENT_ORDER_OR_COVERAGE_UNVERIFIED';
+ if(contract.kind==='interval-result'||contract.startExclusive===true)
+   return 'EVENT_SECOND_OR_COVERAGE_UNVERIFIED';
+ if(contract.event==='card'&&contract.cardColor)
+   return 'CARD_COLOR_OR_TIMELINE_UNVERIFIED';
+ return 'EVENT_TIMELINE_OR_TOTAL_UNVERIFIED';
+}
+async function recordPendingReasons(items,runQuery=query){
+ const grouped=new Map();
+ for(const {line,result} of items){
+  const reason=pendingEventReason(line,result);
+  if(!reason)continue;
+  if(!grouped.has(reason))grouped.set(reason,[]);
+  grouped.get(reason).push(line.id);
+ }
+ for(const [reason,ids] of grouped){
+  try{
+   // Skip actual row writes when the diagnostic code hasn't changed. Bounded
+   // batches avoid a query per pending selection on every settlement cycle.
+   await runQuery(`update app_ticket_line
+     set settlement_reason=$2
+     where id=any($1::uuid[]) and status='PENDING'
+       and settlement_reason is distinct from $2`,[ids,reason]);
+  }catch(error){
+   // No diagnostic failure may block a real ticket payment or a future pass.
+   console.warn('[settle] pending reason unavailable:',error.message);
+  }
+ }
+}
+
 export async function settleMatch(matchId) {
   const result = await getResult(matchId);
   if (!result) return { matchId: String(matchId), settled: 0, reason: 'no result stored yet' };
@@ -485,6 +524,7 @@ export async function settleMatch(matchId) {
   if (!lines.length) return { matchId: String(matchId), settled: 0 };
 
   const tickets = new Set();
+  const unresolved=[];
   let graded = 0;
   for (const line of lines) {
     let status=null;
@@ -498,11 +538,15 @@ export async function settleMatch(matchId) {
       // Unsupported parsing remains PENDING.
       if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result))status=null;
     }
-    if(!['WON','LOST','VOID'].includes(status))continue; // incomplete feed => PENDING
+    if(!['WON','LOST','VOID'].includes(status)){
+      if(line.live_contract)unresolved.push({line,result});
+      continue; // incomplete feed => PENDING
+    }
     const updated=await updatePendingLine(line.id,status,line.ticket_id);
     if(updated>0){graded++;tickets.add(line.ticket_id);}
   }
 
+  await recordPendingReasons(unresolved);
   const closed = [];
   for (const ticketId of tickets) {
     const done = await recalcTicket(ticketId);
@@ -552,13 +596,17 @@ export async function settleVerifiedEventFacts({
  const ids=[...new Set(rows.map(l=>l.match_id))];
  const finals=(await runQuery('select match_id,home_score,away_score,corners_home,corners_away,cards_home,cards_away from app_match_result where match_id=any($1::bigint[])',[ids])).rows;
  const results=new Map(finals.map(r=>[String(r.match_id),r]));
- const tickets=new Set();let graded=0;
+ const tickets=new Set(),unresolved=[];let graded=0;
  for(const line of rows){
   if(!SUPPORTED_FACT_KINDS.has(line.live_contract?.kind))continue;
   const status=await grade(line,results.get(String(line.match_id))??null,{execute:runQuery});
-  if(!['WON','LOST','VOID'].includes(status))continue;
+  if(!['WON','LOST','VOID'].includes(status)){
+    unresolved.push({line,result:results.get(String(line.match_id))??null});
+    continue;
+  }
   if(await update(line.id,status,line.ticket_id)){graded++;tickets.add(line.ticket_id);}
  }
+ await recordPendingReasons(unresolved,runQuery);
  const closed=[];
  for(const id of tickets){const done=await recalc(id);if(done)closed.push(done);}
  return {examined:rows.length,graded,closed};
