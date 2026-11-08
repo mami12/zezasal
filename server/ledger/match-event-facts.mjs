@@ -214,13 +214,15 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
        (player_name is not null and lower(player_name)=lower($7)) or
        (aiscore_verified=true and aiscore_player_name is not null
          and lower(aiscore_player_name)=lower($7))))))::int as player_goals,
-    bool_or(same_time>1) as ambiguous_order
+    bool_or(same_time>1) as ambiguous_order,
+    bool_or(seconds is null) as minute_only
    from ordered
  )
  select a.*,c.through_minute,c.count_home,c.count_away,c.complete,c.observed_at,c.confirmed_at,c.card_colors_verified,
   (select last_seen_at from app_live_event_cursor where match_id=$1) as second_poll_at,
   exists(select 1 from app_live_event_recovery g
-    where g.match_id=$1 and g.status='AWAITING_BACKUP_API' and $9::uuid=any(g.line_ids)) as open_recovery_gap,
+    where g.match_id=$1 and g.status='AWAITING_BACKUP_API' and $9::uuid=any(g.line_ids)
+      and $16::text='zizobet') as open_recovery_gap,
    (select team from ordered where ordinal=$8) as nth_team,
    (select minute from ordered where ordinal=$8) as nth_minute,
    (select same_time from ordered where ordinal=$8) as nth_same_time,
@@ -256,8 +258,13 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  // A partial/corrected frame must not silently reclassify a missing event.
  if(Number(data.home)!==Number(data.count_home)||
     Number(data.away)!==Number(data.count_away))return null;
- const full=!!(result&&data.complete===true&&
-    (c.event!=='goal'||(data.home===Number(result.home_score)&&data.away===Number(result.away_score))));
+ const totalFor=kind=>kind==='goal'?[result?.home_score,result?.away_score]:
+   kind==='corner'?[result?.corners_home,result?.corners_away]:
+   kind==='card'?[result?.cards_home,result?.cards_away]:[null,null];
+ const expectedTotals=totalFor(c.event);
+ const finalCounts=expectedTotals.every(x=>x!=null&&Number.isSafeInteger(Number(x))&&Number(x)>=0);
+ const full=!!(result&&data.complete===true&&finalCounts&&
+   Number(data.home)===Number(expectedTotals[0])&&Number(data.away)===Number(expectedTotals[1]));
  // Primary Zizobet facts need a later identical poll and a cursor update.
  // Historical facts instead need a complete FT score-matched timeline
  // persisted atomically under their real source. They never authorize
@@ -271,7 +278,11 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    const cursor=new Date(data.second_poll_at).getTime();
    if(!Number.isFinite(cursor)||stored!==cursor)return null;
  }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
-   c.event!=='goal'||!full||c.kind==='player-goal')return null; // historical player identity needs explicit cross-provider verification
+   !['goal','corner','card'].includes(c.event)||!full||c.kind==='player-goal')return null;
+ // No exact-second interval or rolling window may use a minute-only timestamp
+ // as though it were a true second. Fixed inclusive minute bands remain valid.
+ if(provider!=='zizobet'&&data.minute_only===true&&
+   (c.kind==='interval-result'||(c.kind==='window'&&c.startExclusive===true)))return null;
  if(c.cardColor!=null&&
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
@@ -392,21 +403,26 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
 export async function gradeStoredEventContract(line,result,{execute}={}){
  const primary=await gradeSingleEventProvider(line,result,{execute,provider:'zizobet'});
  if(primary!==null)return primary;
- if(!result||line?.live_contract?.event!=='goal'||typeof execute!=='function')return null;
+ if(!result||!['goal','corner','card'].includes(line?.live_contract?.event)||
+     typeof execute!=='function')return null;
  // A fully confirmed primary chronology that still cannot prove this contract
  // (e.g. a same-second ordinal tie) must not be overridden by a backup source.
  const authoritative=(await execute(`select 1 from app_match_event_coverage
-   where match_id=$1 and provider='zizobet' and kind='goal'
+   where match_id=$1 and provider='zizobet' and kind=$2
      and complete=true and confirmed_at is not null limit 1`,
-   [line.match_id])).rows;
+   [line.match_id,line.live_contract.event])).rows;
  if(authoritative.length)return null;
  const {rows}=await execute(`select provider from app_match_event_coverage
-   where match_id=$1 and kind='goal' and provider=any($2::text[])
+   where match_id=$1 and kind=$5 and provider=any($2::text[])
      and complete=true and confirmed_at is not null
      and count_home=$3 and count_away=$4
    order by observed_at desc limit 8`,
    [line.match_id,['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'],
-    result.home_score,result.away_score]);
+    line.live_contract.event==='goal'?result.home_score:
+      line.live_contract.event==='corner'?result.corners_home:result.cards_home,
+    line.live_contract.event==='goal'?result.away_score:
+      line.live_contract.event==='corner'?result.corners_away:result.cards_away,
+    line.live_contract.event]);
  if(!rows.length)return null;
  const verdicts=[];
  for(const row of rows){
