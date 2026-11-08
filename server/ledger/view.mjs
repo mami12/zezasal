@@ -212,7 +212,7 @@ export function toClientMatch(m) {
       }));
       if(!baseEvents.length || !scorers.length) return baseEvents;
       return baseEvents.map(ev => {
-        if(ev.type !== 'goal') return ev;
+        if(ev.type !== 'goal'||ev.player) return ev;
         const match = scorers.find(s => s.team === ev.team && Math.abs(s.minute - ev.minute) <= 2);
         if(!match || !match.player) return ev;
         return { ...ev, player: match.player, text: 'Goal: ' + match.player };
