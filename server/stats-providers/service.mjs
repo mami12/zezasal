@@ -4,6 +4,7 @@ import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
 import {supportedContract} from '../ledger/event-evidence.mjs';
 import {canonical,uniqueFixture,teamsMatch,goalCapabilities,normalizeBsd,normalizeApiFootball,normalizeSportApi,normalizeWorld,normalizeGoalApi} from './adapters.mjs';
+import {findFotMobFixture,fetchFotMobDetails,parseFotMobPayload,candidateDateStrings} from './match-recovery.mjs';
 const query=async(...a)=>(await import('../db.mjs')).query(...a);
 const specs={bsd:{base:'https://sports.bzzoiro.com/api/v2',env:'BSD_API_KEY',header:'Authorization',prefix:'Token ',day:1000,month:14000},worldcup26:{base:'https://worldcup26.ir',day:500,month:10000},sportapi:{base:'https://sportapi.ai/api',env:'SPORTAPI_API_KEY',header:'X-Api-Key',day:2000,month:14000},goalapi:{base:'https://api.goal-api.com/v1',env:'GOALAPI_API_KEY',header:'Authorization',prefix:'Bearer ',day:1000,month:31000},apifootball:{base:'https://v3.football.api-sports.io',env:'APIFOOTBALL_API_KEY',header:'x-apisports-key',day:100,month:3100}};
 const refreshMs=10*60*1000,requiredStats=['shotsOnTarget','fouls','shots','corners'];
@@ -305,6 +306,51 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      }
      if(!final&&statsReady(entry)&&entry.goalIntervals)break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
+   }
+   if (!entry.scorers?.length || !statsReady(entry)) {
+    try {
+     const targetDate = row.start_at || row.startAt || new Date().toISOString();
+     const dates = candidateDateStrings(targetDate);
+     const fm = await findFotMobFixture(row.home, row.away, dates);
+     if (fm && fm.match) {
+      const details = await fetchFotMobDetails(fm.match.id);
+      const parsed = parseFotMobPayload(fm.match, details);
+      if (!entry.scorers?.length && parsed.goalEvents.length) {
+       entry.scorers = parsed.goalEvents.map(e => ({
+         minute: e.minute,
+         team: e.team,
+         player: e.player
+       }));
+      }
+      const fmValues = {
+       possession: parsed.statistics.possession,
+       shots: parsed.statistics.shots,
+       shotsOnTarget: parsed.statistics.shotsOnTarget,
+       fouls: parsed.statistics.fouls,
+       corners: (parsed.cornersHome != null && parsed.cornersAway != null) ? { home: parsed.cornersHome, away: parsed.cornersAway } : null,
+       yellow: (parsed.cardsHome != null && parsed.cardsAway != null) ? { home: parsed.cardsHome, away: parsed.cardsAway } : null,
+       red: { home: 0, away: 0 }
+      };
+      for (const field of TEAM_STAT_FIELDS) {
+       const pair = fmValues[field];
+       if (!pair || pair.home == null || pair.away == null) continue;
+       const current = entry.values[field] ?? {};
+       if (current.home == null) current.home = pair.home;
+       if (current.away == null) current.away = pair.away;
+       entry.values[field] = current;
+       if (!entry.sources[field]) entry.sources[field] = 'fotmob';
+      }
+      if (final && parsed.finished) {
+       observations.push({
+         provider: 'fotmob',
+         final: true,
+         values: fmValues,
+         fixtureId: fm.match.id,
+         observedAt: new Date(now()).toISOString()
+       });
+      }
+     }
+    } catch {}
    }
    if(final){const review=compareFinalStatistics(observations,{attempted,unavailable});
     await runQuery('insert into app_stat_review(match_id,payload)values($1,$2::jsonb)on conflict(match_id)do update set payload=excluded.payload,updated_at=now()',[Number(id),JSON.stringify(review)]);

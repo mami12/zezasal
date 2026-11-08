@@ -25,8 +25,8 @@ export const DEFAULT_LIVE_RISK_SETTINGS = Object.freeze({
     { minute: 90, market: '1X2', score: 'ANY' },
   ],
   limits: {
-    maxLiveStake: 10000,
-    maxLivePayout: 100000,
+    maxLiveStake: 50000,
+    maxLivePayout: 500000,
     maxMatchExposure: 500000,
   },
 });

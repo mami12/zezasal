@@ -18,6 +18,23 @@ export async function refreshLiveRiskSettings({ initialize = false, database = p
   }
   const { rows } = await database.query('select settings from app_live_risk_settings where id=1');
   if (!rows.length) throw new Error('Live risk settings are not initialized.');
+  if (rows[0].settings?.limits) {
+    let changed = false;
+    const currentLimits = { ...rows[0].settings.limits };
+    if (currentLimits.maxLiveStake != null && currentLimits.maxLiveStake < 50000) {
+      currentLimits.maxLiveStake = 50000;
+      changed = true;
+    }
+    if (currentLimits.maxLivePayout != null && currentLimits.maxLivePayout < 500000) {
+      currentLimits.maxLivePayout = 500000;
+      changed = true;
+    }
+    if (changed) {
+      const updated = { ...rows[0].settings, limits: currentLimits };
+      await database.query('update app_live_risk_settings set settings=$1::jsonb where id=1', [JSON.stringify(updated)]);
+      rows[0].settings = updated;
+    }
+  }
   const settings = validateLiveRiskSettings(rows[0].settings);
   if (JSON.stringify(liveRiskSettings()) !== JSON.stringify(settings)) setLiveRiskSettings(settings);
   return settings;

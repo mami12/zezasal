@@ -117,7 +117,7 @@ try {
 } finally {setLiveRiskSettings(saved);}
 
 // Admin validation: no malformed settings may reach the database.
-assert.equal(validateLiveRiskSettings(DEFAULT_LIVE_RISK_SETTINGS).limits.maxLiveStake,10000);
+assert.equal(validateLiveRiskSettings(DEFAULT_LIVE_RISK_SETTINGS).limits.maxLiveStake,50000);
 assert.deepEqual(validateLiveRiskSettings({
   ...DEFAULT_LIVE_RISK_SETTINGS,marketClosureRules:undefined,
 }).marketClosureRules,[{minute:90,market:'1X2',score:'ANY'}],

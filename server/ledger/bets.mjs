@@ -418,6 +418,7 @@ export async function placeBet({ user, stake, selections = [], ticketType = null
 } = {}) {
   const amount = moneyCents(stake) / 100;
   if (amount < MIN_STAKE) throw badRequest(`Shuma minimale për të vendosur një bast është ${MIN_STAKE} Lek`);
+  if (amount > 50000) throw badRequest('Shuma maksimale për të vendosur një bast është 50,000 Lek.');
   if (amount > 100000000) throw badRequest('Shuma totale është shumë e madhe.');
   if (user.status !== 'ACTIVE') {
     throw Object.assign(new Error('Llogaria juaj nuk është aktive ose është e pezulluar'), { status: 403 });
@@ -446,6 +447,7 @@ export async function placeBet({ user, stake, selections = [], ticketType = null
   const totalOdds = totalOddsForSelections(lines);
   if (!Number.isFinite(totalOdds) || totalOdds > 9999999999.9999) throw badRequest('Koeficienti i biletës është shumë i madh.');
   const payout = systemColumnPayout(amount, lines.map(line => line.price));
+  if (payout > 500000) throw badRequest('Ka kaluar limitin e fitimit prej 500,000 Lek.');
 
   const client = await database.connect();
   try {
@@ -549,6 +551,7 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
   // preview as a different financial contract after a deployment.
   if (totalStake == null || stake != null) throw badRequest('Rifresko faqen: bileta e sistemit kërkon shumën totale (totalStake).');
   const amount = moneyCents(totalStake) / 100;
+  if (amount > 50000) throw badRequest('Shuma maksimale për të vendosur një bast është 50,000 Lek.');
   let picks = selections;
   // If explicit columns are supplied with totalStake, require the exact full
   // expansion. A client may never omit or duplicate a column to change risk.
@@ -623,6 +626,9 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
   }));
   if (priced.some(column => !Number.isFinite(column.odds) || column.odds > 9999999999.9999)) {
     throw badRequest('Koeficienti i kolonës është shumë i madh.');
+  }
+  if (priced.some(column => column.payout > 500000)) {
+    throw badRequest('Ka kaluar limitin e fitimit prej 500,000 Lek.');
   }
 
   const client = await database.connect();
@@ -706,6 +712,7 @@ export const placeColumns = createColumnsPlacer();
 export async function bookTicket({ stake, selections = [], ticketType = null, systemType = null }) {
   const amount = moneyCents(stake) / 100;
   if (amount < MIN_STAKE) throw badRequest(`Shuma minimale për të prenotuar një skedinë është ${MIN_STAKE} Lek`);
+  if (amount > 50000) throw badRequest('Shuma maksimale për të prenotuar një skedinë është 50,000 Lek.');
   if (!Array.isArray(selections) || selections.length < 1 || selections.length > 20) throw badRequest('Zgjidh 1–20 kuota për kolonë.');
 
   const type = ticketTypeForSelectionCount(ticketType, selections.length);
@@ -716,12 +723,14 @@ export async function bookTicket({ stake, selections = [], ticketType = null, sy
   assertDistinctMatches(lines);
 
   const totalOdds = totalOddsForSelections(lines);
+  const payout = systemColumnPayout(amount, lines.map(line => line.price));
+  if (payout > 500000) throw badRequest('Ka kaluar limitin e fitimit prej 500,000 Lek.');
   const code = bookingCode();
 
   const inserted = await query(
     `insert into app_ticket (booking_code, stake, total_odds, potential_payout, ticket_type, system_type, status)
      values ($1, $2, $3, $4, $5, $6, 'PENDING') returning id`,
-    [code, amount, totalOdds, systemColumnPayout(amount,lines.map(line => line.price)), type, systemType],
+    [code, amount, totalOdds, payout, type, systemType],
   );
   const ticketId = inserted.rows[0].id;
 

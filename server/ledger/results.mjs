@@ -12,6 +12,7 @@ import {matchSnapshots} from './match-snapshots.mjs';
 import {eventMarketRequirement} from './event-market-policy.mjs';
 import {teamStatisticsFromRow,verifiedFinalStatistics} from '../match-statistics.mjs';
 import {isStatisticMarket,hasStatisticEvidence} from './statistic-markets.mjs';
+import {recoverAllPendingMatches} from '../stats-providers/match-recovery.mjs';
 
 /**
  * Do not settle bets from a made-up 0-0 or a kickoff timer. A final score
@@ -143,8 +144,6 @@ export async function captureFinishedMatches() {
   const finished = [...candidateMatches.values()].filter(
     (r) => isFinished(r) && r.home_score !== null && r.away_score !== null,
   );
-  if (!finished.length) return 0;
-
   let stored = 0;
   for (const row of finished) {
     try {
@@ -156,6 +155,15 @@ export async function captureFinishedMatches() {
       console.error('[settle] result archive failed for match', row.match_id, e.message);
     }
   }
+
+  // Auto-recover any remaining pending ticket matches whose results were missed due to downtime
+  try {
+    const recoveryResult = await recoverAllPendingMatches();
+    if (recoveryResult?.recovered) stored += recoveryResult.recovered;
+  } catch (e) {
+    console.warn('[settle] external match recovery failed:', e.message);
+  }
+
   return stored;
 }
 
