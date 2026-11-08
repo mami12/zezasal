@@ -250,6 +250,34 @@ export function parseColorCardCount(line) {
  return null;
 }
 
+/** Half-scoped corner/card totals. Unlike the FT counters, a half's
+ * incidents must be classified by their saved period, including 45+ or 90+
+ * stoppage time. The original provider quote stays in English; UI translates.
+ */
+export function parseHalfTotal(line){
+ const name=norm(line.market_name??line.marketName??line.name);
+ const match=name.match(/^(1st|first|2nd|second)\s+half\s*[-–:.]\s*(?:total\s+)?(?:(home|away)\s+team\s+)?(?:total\s+)?(?:(yellow|red)\s+)?(corners?|cards?)\s*(?:(home|away)\s+team)?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
+ if(!match)return null;
+ const half=/^(?:1st|first)$/.test(match[1])?1:2;
+ if(line.period!=null&&Number(line.period)!==0&&Number(line.period)!==half)return null;
+ const sideA=match[2],sideB=match[5];
+ if(sideA&&sideB)return null;
+ const side=sideA??sideB;
+ const event=typeOf(match[4]),cardColor=match[3];
+ if(!['corner','card'].includes(event)||(cardColor&&event!=='card'))return null;
+ const outcome=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
+ const over=outcome.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ const under=outcome.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ if(!over&&!under)return null;
+ const named=number((over??under)[1]?.replace(',','.'));
+ const quoted=number(line.line??line.specifier);
+ const title=number(match[6]?.replace(',','.'));
+ const thresholds=[named,quoted,title].filter(x=>x!==null);
+ if(!thresholds.length||thresholds.some(x=>x!==thresholds[0])||
+    thresholds[0]<0||thresholds[0]>300||!Number.isInteger(thresholds[0]*2))return null;
+ return {version:1,kind:'half-total',event,half,...(side?{side}:{}),
+  ...(cardColor?{cardColor}:{}),choice:over?'over':'under',threshold:thresholds[0]};
+}
 /** First corner IN THE FIRST HALF, not the first corner of the match.
  * A "None" offer wins only when verified first-half corner absence is proven.
  * Never reuse the match-wide ordinal, especially when the first corner is 2H.
@@ -331,7 +359,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
-  parseColorCardCount(line)??parseFirstHalfCorner(line)??parseSequenceBet(line,counts)??
+  parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseCountMarket(line);
  if(!contract)return null;
  if(yellow||red){
