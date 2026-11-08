@@ -17,8 +17,11 @@ for(const [market,event] of [['goals','goal'],['corners','corner'],['cards','car
  assert.equal(race(market,'X')?.side,'none');
  assert.equal(race(market,'None')?.noneOffered,true);
 }
-assert.equal(liveContract({market_name:'1st half - Which team wins race to 7 corners',outcome_name:'None'}),null,
- 'Half-specific races require a separate period-aware contract');
+const halfRace=liveContract({
+ market_name:'1st half - Which team wins race to 7 corners',outcome_name:'None'});
+assert.deepEqual([halfRace?.kind,halfRace?.event,halfRace?.half,halfRace?.target,halfRace?.side],
+ ['half-race','corner',1,7,'none'],
+ 'The 1H race is isolated from FT and needs a verified 1H incident chronology');
 const evidence=(event,home,away,reached=null,full=true)=>async(sql,args)=>{
  assert.match(sql,/with covered as/);
  const target=7;
