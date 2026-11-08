@@ -218,15 +218,17 @@ export function aiscoreFixtureMatches(payload,mappedId,match){
  return identifier!=null&&String(identifier)===String(mappedId)&&
   tidy(name('home'))===tidy(match?.home)&&tidy(name('away'))===tidy(match?.away);
 }
-export async function inspectFootballInformation(matchId,{runQuery=query,request=fetch,loadMatch=getMatchById,now=Date.now}={}){
+export async function inspectFootballInformation(matchId,{runQuery=query,request=fetch,loadMatch=getMatchById,now=Date.now,needsOverride=null}={}){
  const id=Number(matchId);
  if(!Number.isSafeInteger(id)||id<=0)throw Object.assign(new Error('ID ndeshjeje i pavlefshëm.'),{status:400});
  const row=await loadMatch(id);
  if(!isFootballFixture(row))throw Object.assign(new Error('Ndeshja nuk është e konfirmuar si futboll.'),{status:400});
  const mapped=(await runQuery('select * from app_football_information_map where match_id=$1',[id])).rows[0];
  if(!mapped)return {matchId:id,status:'NO_FIXTURE_MAPPING',needs:[],sources:[]};
- const needs=await sourceMatchNeeds(id,{runQuery});
- if(!needs.length)return {matchId:id,status:'NO_PRIMARY_BETTED_MARKETS',needs:[],sources:[]};
+ // A user viewing an opened match wants scorer names even without an open
+ // player-goal ticket. This affects DISPLAY only, never market settlement.
+ const needs=Array.isArray(needsOverride)?needsOverride:await sourceMatchNeeds(id,{runQuery});
+ if(!needs.length)return {matchId:id,status:'NO_SUPPLEMENTARY_NEEDS',needs:[],sources:[]};
  const selected=selectedInformationEndpoints(mapped,needs);
  const results=[];
  for(const endpoint of selected){
@@ -257,9 +259,32 @@ export async function inspectFootballInformation(matchId,{runQuery=query,request
 export function createFootballInformationCollector({runQuery=query,request=fetch,loadMatch=getMatchById,
  env=process.env,now=Date.now}={}){
  let busy=false,lastTick=0;
- const enabled=()=>env.AISCORE_INFO_ENABLED==='true';
+ // Only explicitly mapped fixtures are queried. Disable globally with
+ // AISCORE_INFO_ENABLED=false; no browser session or proxy bypass is used.
+ const enabled=()=>env.AISCORE_INFO_ENABLED!=='false';
+ const warming=new Map(),lastWarm=new Map();
+ const warm=matchId=>{
+  const id=Number(matchId);
+  if(!enabled()||!Number.isSafeInteger(id)||id<=0)return Promise.resolve({status:'DISABLED_OR_INVALID'});
+  if(warming.has(id))return warming.get(id);
+  const at=now();
+  if(at-(lastWarm.get(id)??0)<60000)return Promise.resolve({status:'CACHED'});
+  lastWarm.set(id,at);
+  if(lastWarm.size>512)lastWarm.delete(lastWarm.keys().next().value);
+  const promise=(async()=>{
+   // Shared database cooldown prevents repeated upstream calls when several
+   // app instances serve the same selected match.
+   const {rows}=await runQuery('select next_check_at from app_football_information_map where match_id=$1 and aiscore_id is not null',[id]);
+   if(!rows.length)return {status:'NO_FIXTURE_MAPPING'};
+   const due=new Date(rows[0].next_check_at).getTime();
+   if(Number.isFinite(due)&&due>now())return {status:'MAPPING_NOT_DUE'};
+   return inspectFootballInformation(id,{runQuery,request,loadMatch,now,needsOverride:['player']});
+  })().finally(()=>warming.delete(id));
+  warming.set(id,promise);
+  return promise;
+ };
  return {
-  enabled,
+  enabled,warm,
   async tick(){
    if(!enabled()||busy||now()-lastTick<15000)return {enabled:enabled(),scanned:0};
    busy=true;lastTick=now();
