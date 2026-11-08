@@ -6,7 +6,7 @@ import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 
 const select=(market_name,outcome_name,line='')=>({market_name,outcome_name,line});
 const athlete='Yasin Zor';
-for(const [title,choice,line,threshold,half] of [
+for(const [title,choice,quotedLine,threshold,half] of [
  ['Player Total Goals · Yasin Zor','Over 1.5','',1.5,null],
  ['Player Total Goals · Yasin Zor','Under','2.5',2.5,null],
  ['Player to Score 2 or More Goals · Yasin Zor','Yes','',2,null],
@@ -16,7 +16,7 @@ for(const [title,choice,line,threshold,half] of [
  ['Player to Score in 2nd Half · Yasin Zor','Yes','',null,2],
  ['Player to Score in Both Halves · Yasin Zor','Yes','',null,'both']
 ]){
- const line=select(title,choice,line);
+ const line=select(title,choice,quotedLine);
  assert.equal(isPlayerGoalSpecial(line),true,title);
  const contract=parsePlayerGoalSpecial(line);
  assert.equal(contract?.kind,'player-goal-special',title);
