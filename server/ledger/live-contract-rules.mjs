@@ -373,6 +373,43 @@ export function parseSequenceBet(line,counts={}) {
  if(!Number.isSafeInteger(target)||target<1||target>100)return null;
  return {version:1,kind:'sequence',event,target,side};
 }
+/** Exact native HOME/AWAY aggregate contracts. These use the chosen
+ * team's incident count, never both teams combined. Color-qualified cards
+ * require a verified color-specific chronology, not a guessed tally.
+ */
+export function parseTeamCountMarket(line){
+ let name=norm(line.market_name??line.marketName??line.name);
+ if(line.period!=null&&Number(line.period)!==0)return null;
+ if(/\b(?:asian|handicap|half|minutes?|interval|player|scorer|penalty|both|each)\b|[&+]/.test(name))return null;
+ name=name.replace(/^(?:full time|match)\s*[-–.:]?\s*/,'');
+ const m=name.match(/^(?:total\s+)?(home|away)(?: team)?\s+(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/) ??
+  name.match(/^(?:total\s+)?(?:(yellow|red)\s+)?(goals?|corners?|cards?|fouls?)\s+(home|away)(?: team)?(?:\s+(?:total|over\s*\/\s*under))?(?:\s*\((\d+(?:[.,]\d+)?)\))?$/);
+ if(!m)return null;
+ const first=/^(?:home|away)$/.test(m[1]);
+ const side=first?m[1]:m[3],color=first?m[2]:m[1],
+  event=typeOf(first?m[3]:m[2]),title=first?m[4]:m[4];
+ if(!['home','away'].includes(side)||!['goal','corner','card','foul'].includes(event)||
+    (color&&event!=='card'))return null;
+ const selection=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
+ const rawLine=number(line.line??line.specifier),inTitle=number(title?.replace(',','.'));
+ const value=selection.match(/^(over|under)(?:\s+(\d+(?:[.,]\d+)?))?$/);
+ const base={version:1,event,side,...(color?{cardColor:color}:{})};
+ if(value){
+  const named=number(value[2]?.replace(',','.'));
+  const thresholds=[named,rawLine,inTitle].filter(v=>v!==null);
+  if(!thresholds.length||thresholds.some(v=>v!==thresholds[0])||
+     thresholds[0]<0||thresholds[0]>300||!Number.isInteger(thresholds[0]*2))return null;
+  return {...base,kind:value[1],threshold:thresholds[0]};
+ }
+ const exact=selection.match(/^(?:exact(?:ly)?\s+)?(\d{1,3})$/);
+ if(exact)return {...base,kind:'exact',target:Number(exact[1])};
+ const range=selection.match(/^(\d{1,3})\s*(?:to|[-–])\s*(\d{1,3})$/);
+ if(range&&Number(range[2])>=Number(range[1]))
+  return {...base,kind:'range',min:Number(range[1]),max:Number(range[2])};
+ const more=selection.match(/^(\d{1,3})\s*(?:\+|or more)$/);
+ if(more)return {...base,kind:'atLeast',target:Number(more[1])};
+ return null;
+}
 export function parseCountMarket(line) {
  const name=norm(line.market_name??line.marketName??line.name);
  const event=typeOf(name);
@@ -401,7 +438,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
-  parseTeamGoalMarket(line,teams)??parseCountMarket(line);
+  parseTeamGoalMarket(line,teams)??parseTeamCountMarket(line)??parseCountMarket(line);
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
