@@ -573,7 +573,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    return decision(data.nth_team===c.side);
   }
   if(!full)return null;
-  return c.side==='none'?'WON':decision(false);
+  return c.noneOffered===true?(c.side==='none'?'WON':'LOST'):'VOID';
  }
  if(c.kind==='race'){
   if(!Number.isInteger(c.target)||c.target<1||
