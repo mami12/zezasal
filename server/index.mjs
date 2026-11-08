@@ -410,7 +410,9 @@ app.get('/api/matches', async (req, res, next) => {
       limit: asInt(req.query.limit, 500, 2000),
       offset: asInt(req.query.offset, 0, 100000),
     });
-    const items = req.query.odds === '0' ? rows.map((r) => r) : await withOdds(rows);
+    // List endpoints are always lightweight. Only /api/matches/:id requests
+    // a full selected fixture; do not serialize old cached extra markets here.
+    const items = req.query.odds === '0' ? rows.map((r) => r) : await withOdds(rows,Date.now(),{board:true});
     const counts = await getCounts();
     res.json({ counts, items });
   } catch (e) {
