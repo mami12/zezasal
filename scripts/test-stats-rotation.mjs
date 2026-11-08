@@ -85,6 +85,7 @@ try{
   const h=await harness({env:{BSD_API_KEY:'test-key',WORLDCUP26_DAY_LIMIT:'0'},
    rows:[row(101,{feed_status:'FT'})],events:()=>source,persistFacts:true});
   await h.bet(101);
+  await database.query("update app_ticket_line set market_name='Total goals in minutes 1-15' where match_id=101");
   await database.query('insert into app_match_result values(101,0,0)');
   await h.service.tick();
   assert.ok(h.persistedTimed.some(f=>f.evidence.kind==='corner'&&
