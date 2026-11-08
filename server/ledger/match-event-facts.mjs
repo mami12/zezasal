@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import {gradeMultiCornerFacts} from './multi-corners.mjs';
+import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
 /**
  * Persistent PRIMARY-feed football incidents. Provider IDs and player names are
  * preserved verbatim. Only an incident list reconciled with the same provider's
@@ -156,7 +157,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-parity','multi-corners','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -464,6 +465,13 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
  const through=Number(data.through_minute);
+ if(c.kind==='corner-comparison'){
+  if(!full||c.event!=='corner')return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase
+    from app_match_event_fact where match_id=$1 and provider=$2
+      and kind='corner' and active=true`,[line.match_id,provider]);
+  return gradeCornerComparisonFacts(c,facts,{complete:true});
+ }
  if(c.kind==='multi-corners'){
   if(!full||c.event!=='corner')return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase
