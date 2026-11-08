@@ -64,7 +64,7 @@
     "test:match-sync": "node scripts/test-match-sync.mjs && node scripts/test-match-sync-browser.mjs",
     "test:match-detail": "node scripts/test-match-detail-browser.mjs",
     "test:historical-settlement": "node scripts/test-historical-event-facts-sql.mjs && node scripts/test-historical-timed-settlement-sql.mjs && node scripts/test-first-half-corner-settlement.mjs && node scripts/test-pending-historical-settlement.mjs && node scripts/test-zezasal-historical-recovery-and-delivery.mjs",
-    "test:statistics": "node scripts/test-info-statistics.mjs && node scripts/test-stats-rotation.mjs && node scripts/test-statistics-browser.mjs",
+    "test:statistics": "node --import ./scripts/fixtures/isolated-casino-env.mjs scripts/test-info-statistics.mjs && node --import ./scripts/fixtures/isolated-casino-env.mjs scripts/test-stats-rotation.mjs && node --import ./scripts/fixtures/isolated-casino-env.mjs scripts/test-statistics-browser.mjs",
     "test:primary-goal-display": "node scripts/test-primary-goal-display.mjs",
     "test:admin-matches": "node scripts/test-admin-match-reads.mjs && node scripts/test-admin-match-control-browser.mjs",
     "test:languages": "node scripts/test-display-copy.mjs && node scripts/test-sportsbook-labels.mjs && node scripts/test-language-browser.mjs",
