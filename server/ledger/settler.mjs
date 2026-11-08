@@ -264,14 +264,28 @@ export function gradeLine(line, result) {
     }
 
     case 'CORRECT_SCORE': {
-      const m = String(line.outcome_name ?? line.outcome_key ?? '').trim().match(/^(\d+)[\s*:-]\s*(\d+)$/);
-      if (m) {
-        return decide(home === Number(m[1]) && away === Number(m[2]));
-      }
-      if (/other|any other/i.test(name)) {
-        const standardGrid = [[0,0],[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[1,2],[2,2],[3,2],[4,2],[0,3],[1,3],[2,3],[3,3],[4,3],[0,4],[1,4],[2,4],[3,4],[4,4]];
-        const inGrid = standardGrid.some(([gh, ga]) => gh === home && ga === away);
-        return decide(!inGrid);
+      // Rest-of-match means goals scored AFTER the provider's frozen
+      // acceptance score, not the fixture's final cumulative score.
+      const rest=String(line.market_name??'').match(/^correct score rest of match\s*\(from\s*(\d{1,2})\s*:\s*(\d{1,2})\)$/i);
+      const actualHome=rest?Number(result.home_score)-Number(rest[1]):home;
+      const actualAway=rest?Number(result.away_score)-Number(rest[2]):away;
+      if(!Number.isSafeInteger(actualHome)||actualHome<0||
+         !Number.isSafeInteger(actualAway)||actualAway<0)return null;
+      const m=String(line.outcome_name??line.outcome_key??'').trim().match(/^(\d+)\s*[:\-]\s*(\d+)$/);
+      if(m)return decide(actualHome===Number(m[1])&&actualAway===Number(m[2]));
+      if(/\bother\b/i.test(name)){
+        // The actual quoted exact scores were frozen at purchase. A generic
+        // 0..4 score grid is NOT proof of the provider's "Other" outcome.
+        const grid=line.live_contract?.kind==='correct-score-grid'?line.live_contract.grid:null;
+        if(!Array.isArray(grid)||!grid.length||grid.length>500||
+           !grid.every(pair=>Array.isArray(pair)&&pair.length===2&&
+             pair.every(n=>Number.isSafeInteger(n)&&n>=0&&n<=99)))return null;
+        const outside=!grid.some(([h,a])=>h===actualHome&&a===actualAway);
+        const otherName=String(line.outcome_name??'').toLowerCase();
+        const type=/\bhome\s+win\b/.test(otherName)?actualHome>actualAway:
+          /\baway\s+win\b/.test(otherName)?actualAway>actualHome:
+          /\bdraw\b/.test(otherName)?actualHome===actualAway:true;
+        return decide(outside&&type);
       }
       return null;
     }
