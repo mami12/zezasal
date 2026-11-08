@@ -11,7 +11,7 @@ const yesNo=line=>{
  if(['no','jo'].includes(label))return false;
  return null;
 };
-const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','x','draw','no goal','no corner','no more goals','no more corners','no team'].includes(norm(v))?'none':null;
+const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','neither','asnjera','asnje skuader','x','draw','no goal','no corner','no more goals','no more corners','no team'].includes(norm(v))?'none':null;
 const typeOf=name=>/\b(?:corners?|corner kicks?|kornera?)\b/.test(name)?'corner':
  /\b(?:goals?|scores?|golat?|gola?)\b/.test(name)?'goal':
  /\b(?:cards?|bookings?|kartona?)\b/.test(name)?'card':
@@ -264,8 +264,8 @@ export function parseFirstHalfCorner(line) {
 export function parseSequenceBet(line,counts={}) {
  const name=norm(line.market_name??line.marketName??line.name);
  // An event numbered inside a time band is not the same as the Nth event of the match.
- if(/\b(?:minutes?|mins?|interval)\b/.test(name))return null;
- const event=/\bcorner/.test(name)?'corner':/\bgoal/.test(name)?'goal':null;
+ if(/\b(?:minutes?|mins?|interval|period|extra time)\b|\b(?:1st|first|2nd|second)\s+half\b/.test(name))return null;
+ const event=/\bcorner/.test(name)?'corner':/\bgoal/.test(name)?'goal':/\b(?:cards?|bookings?)\b/.test(name)?'card':null;
  if(!event)return null;
  // Zizobet publishes separate *absolute* numbered offers such as
  // "Next Goal 1st" and "Next Goal 2nd". These refer to goal #1/#2 of
@@ -279,15 +279,19 @@ export function parseSequenceBet(line,counts={}) {
  const isNext=/^(?:next|who (?:scores|takes) (?:the )?next)\s+(?:goal|corner)\b|^(?:which team )?(?:scores|wins) next (?:goal|corner)/.test(name);
  const numbered=name.match(/^(?:(?:who (?:scores|takes) (?:the )?)|(?:which team (?:scores|wins) (?:the )?))?(\d+)(?:st|nd|rd|th)?\s+(?:goal|corner)\b|^(?:(?:who (?:scores|takes)|which team (?:scores|wins)) (?:the )?)?(?:goal|corner)\s*(\d+)\b|^which team (?:scores|wins) (?:the )?goal (\d+)\b/);
  const first=/^(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?first\s+(?:goal|corner)\b/.test(name);
- const reach=name.match(/^(?:which team\s+)?(?:reaches|gets|takes|scores)\s+(\d{1,3})\s+(goals?|corners?)\s+first\b/);
- const race=name.match(/\brace to (\d{1,3}) (goals?|corners?)\b/);
+ const reach=name.match(/^(?:which team\s+)?(?:reaches|gets|takes|scores|receives)\s+(\d{1,3})\s+(goals?|corners?|cards?)\s+first\b/);
+ const race=name.match(/\brace to (\d{1,3}) (goals?|corners?|cards?)\b/);
  if(!isNext&&!providerOrdinal&&!numbered&&!race&&!first&&!reach)return null;
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!side)return null;
  if(race||reach){
   const threshold=Number((race??reach)[1]);
-  if(!Number.isInteger(threshold)||threshold<1||threshold>100||side==='none')return null;
-  return {version:1,kind:'race',event:/(?:goal)/.test((race??reach)[2])?'goal':'corner',target:threshold,side};
+  if(!Number.isInteger(threshold)||threshold<1||threshold>100)return null;
+  const raceEvent=/goal/.test((race??reach)[2])?'goal':/corner/.test((race??reach)[2])?'corner':'card';
+  // A third quoted outcome changes the no-threshold result from VOID to
+  // a winning Neither selection. Freeze that distinction at acceptance.
+  return {version:1,kind:'race',event:raceEvent,target:threshold,side,
+   noneOffered:side==='none'||line.raceNoneOffered===true};
  }
  let target=providerOrdinal?Number(providerOrdinal[2]):
   numbered?Number(numbered[1]??numbered[2]??numbered[3]):first?1:null;
@@ -437,8 +441,8 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
   for(const e of relevant){if(!['home','away'].includes(e.team))return null;teamCounts[e.team]++;
    if(teamCounts[e.team]===contract.target){winner=e.team;break;}}
   if(winner)return winner===contract.side?'WON':'LOST';
-  // Whether an unachieved race is LOST or VOID depends on provider rules.
-  return null;
+  if(!ended)return null;
+  return contract.noneOffered===true?(contract.side==='none'?'WON':'LOST'):'VOID';
  }
  if(count===null)return null;
  if(contract.kind==='over')return count>contract.threshold?'WON':(scopeEnded||ended)?count===contract.threshold&&Number.isInteger(contract.threshold)?'VOID':'LOST':null;
@@ -474,6 +478,13 @@ export function gradeFromAcceptedCounters(contract,frame={}){
  }
  if(bh>=contract.target||ba>=contract.target)return null;
  const homeReached=h>=contract.target,awayReached=a>=contract.target;
- if(homeReached===awayReached)return null;
+ if(contract.side==='none'){
+  if(homeReached||awayReached)return 'LOST';
+  return end&&contract.noneOffered===true?'WON':null;
+ }
+ if(!homeReached&&!awayReached){
+  return end&&contract.noneOffered===true?'LOST':null;
+ }
+ if(homeReached&&awayReached)return null;
  return (homeReached?'home':'away')===contract.side?'WON':'LOST';
 }
