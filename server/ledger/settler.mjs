@@ -37,7 +37,7 @@ const legacyHandicapResult=(line,result)=>{
  const saved=line?.live_contract?.kind==='score-handicap'?line.live_contract:null;
  // Historical generic "Handicap" rows contain no proof whether a draw
  // was offered. Do not reconstruct an uncertain 2-way vs 3-way payout.
- if(!saved&&!/\b(?:asian|european|1x2|2[\s-]*way|3[\s-]*way|corner spread)\b/i.test(
+ if(!saved&&!/\b(?:asian|european|1x2|2[\s-]*way|3[\s-]*way|corner (?:spread|handicap))\b/i.test(
      String(line?.market_name??'')))return null;
  const c=saved??parseHandicapContract(line,{
   teams:{home:result?.home_team,away:result?.away_team}});
