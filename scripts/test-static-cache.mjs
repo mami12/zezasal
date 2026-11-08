@@ -14,8 +14,18 @@ try {
   const app=express();app.use(express.static(root,{setHeaders:staticCacheHeaders}));
   server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
   const base=`http://127.0.0.1:${server.address().port}`;
-  for(const name of ['index.html','casino-original/bookofra/libs/assembler.js','casino-original/bookofra/manifest.json']) {
-    const response=await fetch(`${base}/${name}`);assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
+  const index=await fetch(`${base}/index.html`);
+  assert.equal(index.status,200);
+  assert.equal(index.headers.get('cache-control'),'no-store, max-age=0');
+  for(const name of ['casino-original/bookofra/libs/assembler.js','casino-original/bookofra/manifest.json']){
+    const response=await fetch(`${base}/${name}`);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('cache-control'),'public, no-cache, max-age=0, must-revalidate');
+    assert.ok(response.headers.get('etag'),'Static game boot must support conditional requests');
+    const code=await new Promise((resolve,reject)=>get(`${base}/${name}`,
+     {headers:{'If-None-Match':response.headers.get('etag')}},
+     r=>{r.resume();r.on('end',()=>resolve(r.statusCode));}).on('error',reject));
+    assert.equal(code,304,'Unchanged casino scripts and manifests avoid repeat byte transfer');
   }
   const bundle=await fetch(`${base}/assets/index-aBcD1234.js`);assert.equal(bundle.headers.get('cache-control'),'public, max-age=31536000, immutable');
   const media=await fetch(`${base}/casino-original/bookofra/image.png`);assert.equal(media.headers.get('cache-control'),'public, max-age=3600');
@@ -23,7 +33,7 @@ try {
   // ordinary HTTP request to test the browser's actual If-None-Match contract.
   const cached=await new Promise((resolve,reject)=>get(`${base}/casino-original/bookofra/image.png`,{headers:{'If-None-Match':media.headers.get('etag')}},response=>{response.resume();response.on('end',()=>resolve(response.statusCode));}).on('error',reject));assert.equal(cached,304);
   const ranged=await fetch(`${base}/casino-original/bookofra/music.ogg`,{headers:{Range:'bytes=2-5'}});assert.equal(ranged.status,206);assert.equal(await ranged.text(),'2345');
-  let windowsHeader;staticCacheHeaders({setHeader:(key,value)=>windowsHeader=value},'C:\\faqja\\casino-original\\sizzling\\libs\\assembler.js');assert.equal(windowsHeader,'no-store, max-age=0');
+  let windowsHeader;staticCacheHeaders({setHeader:(key,value)=>windowsHeader=value},'C:\\faqja\\casino-original\\sizzling\\libs\\assembler.js');assert.equal(windowsHeader,'public, no-cache, max-age=0, must-revalidate');
   console.log('PASS static delivery: cached media, immutable bundles, fresh Windows/Linux game boots, unchanged ETags and audio range requests');
 } finally {
   if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
