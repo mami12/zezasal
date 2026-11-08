@@ -34,8 +34,13 @@ export function validateHistoricalGoals(payload){
      !Number.isInteger(minute)||minute<0||minute>90)return null;
   const injury=event.injury==null?0:Number(event.injury);
   if(!Number.isSafeInteger(injury)||injury<0||injury>30)return null;
-  const second=event.seconds==null?null:Number(event.seconds);
-  if(second!==null&&(!Number.isFinite(second)||second<0||second>130*60))return null;
+  // Stoppage-time labels (45+2 / 90+2) cannot be treated as the
+  // ordinary minute 45/90 for money grading without provider-specific
+  // absolute-clock semantics. Keep them display-only until verified.
+  if(injury!==0)return null;
+  const rawSeconds=event.seconds==null?null:Number(event.seconds);
+  const second=rawSeconds!==null&&Number.isFinite(rawSeconds)&&
+    rawSeconds>=minute*60&&rawSeconds<(minute+1)*60?rawSeconds:null;
   ids.add(id);
   events.push({
    id,team:event.team,minute,seconds:second,
