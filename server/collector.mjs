@@ -6,7 +6,7 @@ import { config, dbErrorHint } from './config.mjs';
 import { liveClock } from './minute.mjs';
 import { fetchRealFootball } from './upstream.mjs';
 import { upsertMatches, expireStaleMatches, getCounts, getMatches, getMatchById } from './matches.mjs';
-import { getOddsForMatches as getOddsFromDb } from './db.mjs';
+import { getOddsForMatches as getOddsFromDb, query as dbQuery } from './db.mjs';
 import { getOddsForMatches as getOddsFromMemory } from './odds-store.mjs';
 import { marketColumn } from './odds.mjs';
 import { isHandicapOfferMarket } from './market-policy.mjs';
@@ -523,7 +523,49 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
     if (!byMatch.has(o.match_id)) byMatch.set(o.match_id, []);
     byMatch.get(o.match_id).push(o);
   }
-  return rows.map((r) => ({...serializeMatch({...r,stats:statsProviders.displayStatistics(r)}, byMatch.get(r.match_id) ?? [], now),marketCount:counts.get(r.match_id)?.size??0}));
+  const matches=rows.map((r) => ({...serializeMatch({...r,stats:statsProviders.displayStatistics(r)}, byMatch.get(r.match_id) ?? [], now),marketCount:counts.get(r.match_id)?.size??0}));
+  // The board never reads player identities from Postgres. Only a deliberately
+  // opened detail requests names already verified against primary goal events.
+  if(displayStats&&!board&&ids.length){
+    try{
+      const names=(await dbQuery(`select match_id,provider_event_id,team,minute,
+        coalesce(case when aiscore_verified=true then aiscore_player_name end,player_name) as player
+        from app_match_event_fact
+        where match_id=any($1::bigint[]) and provider='zizobet'
+          and kind='goal' and active=true
+          and (player_name is not null or (aiscore_verified=true and aiscore_player_name is not null))
+        order by minute limit 300`,[ids])).rows;
+      for(const match of matches){
+        const listed=names.filter(n=>String(n.match_id)===String(match.id)&&n.player);
+        if(!listed.length)continue;
+        const events=Array.isArray(match.events)?match.events:[];
+        const enriched=events.map(event=>{
+          if(event.type!=='goal'||event.player)return event;
+          const candidates=listed.filter(n=>n.team===event.team &&
+            (n.provider_event_id===String(event.id??'')||Number(n.minute)===Number(event.minute)));
+          if(candidates.length!==1)return event;
+          return {...event,player:candidates[0].player,text:'Goal: '+candidates[0].player};
+        });
+        const seen=new Set(enriched.filter(e=>e.type==='goal').map(e=>[e.team,e.minute].join('|')));
+        // The primary incident archive can outlive the lightweight live cache.
+        // Reconstruct only specifically observed goals, never a missing scoreline.
+        for(const fact of listed){
+          const key=[fact.team,fact.minute].join('|');
+          if(seen.has(key))continue;
+          enriched.push({id:'primary-'+fact.provider_event_id,matchId:String(match.id),
+            type:'goal',minute:Number(fact.minute),minuteLabel:String(fact.minute),
+            team:fact.team,player:fact.player,text:'Goal: '+fact.player});
+          seen.add(key);
+        }
+        match.events=enriched.sort((a,b)=>Number(a.minute)-Number(b.minute));
+      }
+    }catch(error){
+      // Player names are display metadata; missing optional tables must never
+      // prevent odds or a match's primary score from loading.
+      console.warn('[match-detail] supplementary scorer lookup:',error.message);
+    }
+  }
+  return matches;
 }
 
 export function startCollector({ io } = {}) {
