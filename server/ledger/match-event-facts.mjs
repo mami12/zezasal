@@ -183,8 +183,9 @@ export function gradeFirstHalfCornerFacts(contract,facts,{complete=false}={}){
    if(minute<45)return null;
    which='second';
   }else if(phase){
-   // An unknown provider phase is never silently treated as 2H.
-   which=minute<45?'first':'unknown';
+   // Unknown phases include possible extra-time / penalty periods. An
+   // absolute-looking minute does not authorize assigning those to 1H.
+   return null;
   }else which=minute<45?'first':'unknown';
   const event={minute,seconds,team:item.team};
   if(which==='first')first.push(event);
