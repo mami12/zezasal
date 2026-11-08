@@ -25,14 +25,14 @@ const colorOf=raw=>{
  if(/^(red|red card|straight red)$/.test(s))return 'red';
  return null;
 };
-const idOf=(event,type,team,minute,color,index)=>{
+const idOf=(event,type,team,minute,color,index,injury=0)=>{
  const explicit=event?.eventId??event?.event_id??event?.id;
  if(explicit!=null&&String(explicit).trim())return String(explicit);
  // Content-derived identity (not array index) permits identical snapshots
  // while refusing indistinguishable duplicate same-minute incidents.
  const actor=event?.player?.id??event?.playerId??event?.player_id??
    event?.player?.name??event?.player_name??event?.nameStr??'';
- return ['unkeyed',type,team??'',minute,actor,color??'',event?.detail??''].join('|');
+ return ['unkeyed',type,team??'',minute,injury,actor,color??'',event?.detail??''].join('|');
 };
 const map=(entries,adapt)=>{
  const corner=[],card=[];
@@ -59,7 +59,7 @@ const playerOf=e=>{
  };
 };
 const make=(event,index,type,team,minute,injury,color=null,detail='')=>({
- id:idOf(event,type,team,minute,color,index),
+ id:idOf(event,type,team,minute,color,index,injury),
  type,team,minute,injury,cardColor:color,detail:String(detail??''),...playerOf(event),
  disabled:event?.disabled===true||event?.cancelled===true||event?.canceled===true,
  shootout:event?.shootout===true,
