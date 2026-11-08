@@ -50,9 +50,7 @@ export function scoringPropFamily(line){
  if(/^win either half$|^to win either half$/.test(name))return 'win-either';
  if(/^win to nil$/.test(name))return 'win-nil';
  const withoutPrefix=name.replace(/^(?:home team|away team|team [12]|home|away) /,'');
- if(/^(?:to )?score in both halves$|^to win both halves$|^to win either half$|
-    ^to win to nil$|^win to nil$|^highest scoring half$|
-    ^goals? odd\s*\/?\s*even$|^exact goals?$/.test(withoutPrefix.replace(/\s+/g,' ')))
+ if(/^(?:(?:to )?score in both halves|to win both halves|to win either half|(?:to )?win to nil|highest scoring half|goals? odd\s*\/?\s*even|exact goals?)$/.test(withoutPrefix))
   return /^to score in both halves$|^score in both halves$/.test(withoutPrefix)?'team-score-both':
    /^to win both halves$/.test(withoutPrefix)?'team-win-both':
    /^to win either half$/.test(withoutPrefix)?'team-win-either':
