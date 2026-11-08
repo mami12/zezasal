@@ -3,6 +3,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {displayGoalIntervals,displayTeamStatistics,groupGoalsIntoIntervals} from '../server/stats-providers/display-stats.mjs';
 import {createStatsService} from '../server/stats-providers/service.mjs';
 import {teamStatisticsFromRow} from '../server/match-statistics.mjs';
+import {MATCH_EVENT_FACT_SQL} from '../server/ledger/match-event-facts.mjs';
 
 const worldFixture={id:'world-1',league:'eng.1',start:'2026-11-03T17:00:00.000Z',raw:{}};
 const worldStats={events:[{id:'world-1',date:'2026-11-03T17:00:00.000Z',competitions:[{competitors:[
@@ -58,11 +59,26 @@ const row={match_id:101,home:'Alpha',away:'Beta',start_at:'2026-11-03T17:00:00.0
 }};
 try{
  await database.exec('create table app_match_result(match_id bigint primary key)');
+ await database.exec(MATCH_EVENT_FACT_SQL);
+ await database.query(`insert into app_match_event_coverage
+   (match_id,provider,kind,through_minute,count_home,count_away,
+    confirmed_at,observed_at)
+   values (101,'zizobet','goal',80,1,1,'2026-11-03T18:00:00Z',
+    '2026-11-03T18:00:00Z')`);
+ await database.query(`insert into app_match_event_fact
+   (match_id,provider,provider_event_id,kind,team,minute,phase,
+    player_name,own_goal) values
+   (101,'zizobet','g-home','goal','home',15,'H1','Home Scorer',false),
+   (101,'zizobet','g-away','goal','away',31,'H1','Away Scorer',false)`);
  await service.warmStatistics(row);
  const stats=teamStatisticsFromRow({...row,stats:service.displayStatistics(row)});
  assert.equal(stats.home.shotsOnTarget,4);assert.equal(stats.away.shotsOnTarget,2);
  assert.equal(stats.home.fouls,7);assert.equal(stats.away.fouls,11);
  assert.deepEqual(service.displayGoalIntervalStats(row).map(x=>[x.home,x.away]),[[1,0],[0,0],[0,1],[0,0],[0,0],[0,0]]);
+ assert.deepEqual(service.displayScorers(row).map(x=>x.player),
+  ['Home Scorer','Away Scorer']);
+ assert.ok(!calls.some(url=>url.includes('/plays?')),
+  'External provider must NOT be asked for goal minutes when Zizobet confirms the timeline');
  const count=calls.length;await service.warmStatistics(row);assert.equal(calls.length,count,'the shared display cache avoids repeat provider requests');
  assert.ok(calls.every(url=>url.startsWith('https://worldcup26.ir/')),'the information-only provider is the only requested service');
 }finally{await database.close();}
