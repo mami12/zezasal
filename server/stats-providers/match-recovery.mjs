@@ -383,6 +383,26 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     }catch(error){console.warn('[recovery] configured history providers unavailable:',error.message);}
   }
   if(!parsed)return {recovered:false,reason:'MATCH_NOT_FINISHED_OR_FOUND'};
+  // Preserve independent provider identities. Fill only wholly missing FT
+  // total PAIRS from an agreeing secondary result, never mix half a pair or
+  // silently replace a conflicting FotMob count.
+  for(const {parsed:extra} of supplemental){
+    for(const prefix of ['corners','cards']){
+      const home=prefix+'Home',away=prefix+'Away';
+      if(parsed[home]==null&&parsed[away]==null&&
+         extra[home]!=null&&extra[away]!=null&&
+         [extra[home],extra[away]].every(n=>Number.isSafeInteger(Number(n))&&Number(n)>=0)){
+        parsed[home]=Number(extra[home]);parsed[away]=Number(extra[away]);
+      }
+    }
+    for(const field of ['shots','shotsOnTarget','fouls','possession']){
+      if(!parsed.statistics?.[field]?.home&&!parsed.statistics?.[field]?.away&&
+        extra.statistics?.[field]?.home!=null&&extra.statistics?.[field]?.away!=null){
+        parsed.statistics??={};
+        parsed.statistics[field]=extra.statistics[field];
+      }
+    }
+  }
   const {homeScore,awayScore}=parsed;
   if(alreadyHasFt&&(Number(priorResult.home_score)!==homeScore||
     Number(priorResult.away_score)!==awayScore))
