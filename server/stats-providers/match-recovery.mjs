@@ -334,14 +334,39 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     }
   }
 
-  // 2. If FotMob has no verified FT, try configured, quota-limited history APIs.
-  // Each adapter must match both teams and kickoff within two hours.
-  if(!parsed){
+  // 2. Query pending incident kinds, then ask a backup source for evidence
+  // FotMob lacks. A valid FT score alone must not end the fallback cascade.
+  const requested=(await runQuery(`select distinct l.live_contract->>'event' as kind
+    from app_ticket_line l join app_ticket t on t.id=l.ticket_id
+    where l.match_id=$1 and l.status='PENDING' and t.status='PENDING'
+      and l.live_contract->>'event' in ('goal','corner','card')`,[id]))
+    .rows.map(row=>row.kind);
+  const hasTimeline=(candidate,kind)=>{
+    if(!candidate)return false;
+    if(kind==='goal'){
+      const goals=candidate.goalEvents??[];
+      return candidate.goalTimelineAvailable===true&&
+        goals.filter(e=>e.type==='goal'&&e.team==='home').length===Number(candidate.homeScore)&&
+        goals.filter(e=>e.type==='goal'&&e.team==='away').length===Number(candidate.awayScore);
+    }
+    const prefix=kind==='corner'?'corners':'cards';
+    const events=candidate[kind+'Events']??[];
+    return candidate[kind+'TimelineAvailable']===true&&
+      candidate[prefix+'Home']!=null&&candidate[prefix+'Away']!=null&&
+      events.length===Number(candidate[prefix+'Home'])+Number(candidate[prefix+'Away']);
+  };
+  const missing=requested.filter(kind=>!hasTimeline(parsed,kind));
+  const supplemental=[];
+  if(!parsed||missing.length){
     try{
       const {statsProviders}=await import('./index.mjs');
-      const backup=await statsProviders.recoverHistoricalMatch?.({home,away,start_at:targetDate,service:'PREMATCH'});
+      const backup=await statsProviders.recoverHistoricalMatch?.(
+        {home,away,start_at:targetDate,service:'PREMATCH'},
+        {neededKinds:missing,expectedScore:parsed?{home:parsed.homeScore,away:parsed.awayScore}:
+          alreadyHasFt?{home:priorResult.home_score,away:priorResult.away_score}:null}
+      );
       if(backup){
-        parsed={homeScore:backup.homeScore,awayScore:backup.awayScore,
+        const candidate={homeScore:backup.homeScore,awayScore:backup.awayScore,
           halfHomeScore:null,halfAwayScore:null,
           cornersHome:backup.cornersHome,cornersAway:backup.cornersAway,
           cardsHome:backup.cardsHome,cardsAway:backup.cardsAway,
@@ -351,7 +376,9 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
           cardTimelineAvailable:backup.cardTimelineAvailable===true,
           goalEvents:backup.evidence.events.filter(event=>event.type==='goal'&&!event.shootout),
           goalTimelineAvailable:backup.evidence.complete===true&&backup.evidence.goalsAvailable===true};
-        source=backup.source;
+        if(!parsed){parsed=candidate;source=backup.source;}
+        else if(backup.source!==source&&backup.homeScore===parsed.homeScore&&
+          backup.awayScore===parsed.awayScore)supplemental.push({source:backup.source,parsed:candidate});
       }
     }catch(error){console.warn('[recovery] configured history providers unavailable:',error.message);}
   }
@@ -384,42 +411,40 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     parsed.halfHomeScore,parsed.halfAwayScore,parsed.cornersHome,parsed.cornersAway,
     parsed.cardsHome,parsed.cardsAway,JSON.stringify({...parsed.statistics,recoverySource:source})]);
 
-  // A list of some goals is not a complete timeline. Only reconcile every
-  // scoring incident to FT before letting event-window or player props grade.
-  const goals=parsed.goalEvents??[];
-  const scoreMatches=goals.filter(e=>e.team==='home').length===homeScore &&
-    goals.filter(e=>e.team==='away').length===awayScore;
-  const uniqueIds=new Set(goals.map(e=>String(e.id)));
-  const fullTimeline=parsed.goalTimelineAvailable===true&&scoreMatches&&
-    !goals.some(event=>event.own===true&&source==='fotmob')&&
-    uniqueIds.size===goals.length&&goals.every(e=>
-      (e.team==='home'||e.team==='away')&&Number.isInteger(e.minute)&&e.minute>=0&&e.minute<=130);
-  if(fullTimeline){
-    const evidencePayload={source,complete:true,final:true,homeScore,awayScore,
-      goalsAvailable:true,events:goals,observedAt:new Date().toISOString()};
-    try{
-      // Durable historical incidents use their real provider name, never
-      // pretend to be Zizobet. Coverage and gaps are written atomically.
-      await persistHistoricalGoalFacts(id,evidencePayload);
-      // Keep read-only history for player display without overwriting the
-      // original provider's event evidence.
-      await runQuery(`insert into app_match_event_evidence(match_id,payload)
-        values($1,$2::jsonb) on conflict(match_id) do nothing`,
-        [id,JSON.stringify(evidencePayload)]);
-    }catch(error){console.warn('[recovery] historical incident verification:',error.message);}
-  }
-  // Only a provider's FULL dated incident chronology agreeing with its
-  // independently reported team totals may grade corner/card contracts.
-  for(const [kind,eventKey,flag,prefix] of [
-    ['corner','cornerEvents','cornerTimelineAvailable','corners'],
-    ['card','cardEvents','cardTimelineAvailable','cards']
-  ]){
-    const homeCount=parsed[prefix+'Home'],awayCount=parsed[prefix+'Away'];
-    if(parsed[flag]!==true||homeCount==null||awayCount==null)continue;
-    try{
-      await persistHistoricalTimedEvents(id,{source,kind,final:true,complete:true,
-        timelineAvailable:true,homeCount,awayCount,events:parsed[eventKey]??[]});
-    }catch(error){console.warn('[recovery] timed',kind,'verification:',error.message);}
+  // Provider identities stay separate; never merge event lists into an
+  // invented chronology. Each source must reconcile independently to FT.
+  for(const evidence of [{source,parsed},...supplemental]){
+    const src=evidence.source,details=evidence.parsed;
+    const goals=details.goalEvents??[];
+    const scoreMatches=goals.filter(e=>e.team==='home').length===homeScore &&
+      goals.filter(e=>e.team==='away').length===awayScore;
+    const ids=new Set(goals.map(e=>String(e.id)));
+    const fullTimeline=details.goalTimelineAvailable===true&&scoreMatches&&
+      !goals.some(event=>event.own===true&&src==='fotmob')&&
+      ids.size===goals.length&&goals.every(e=>
+        (e.team==='home'||e.team==='away')&&Number.isInteger(e.minute)&&
+        e.minute>=0&&e.minute<=130);
+    if(fullTimeline){
+      const payload={source:src,complete:true,final:true,homeScore,awayScore,
+        goalsAvailable:true,events:goals,observedAt:new Date().toISOString()};
+      try{
+        await persistHistoricalGoalFacts(id,payload);
+        await runQuery(`insert into app_match_event_evidence(match_id,payload)
+          values($1,$2::jsonb) on conflict(match_id) do nothing`,
+          [id,JSON.stringify(payload)]);
+      }catch(error){console.warn('[recovery] historical goal verification:',error.message);}
+    }
+    for(const [kind,eventKey,flag,prefix] of [
+      ['corner','cornerEvents','cornerTimelineAvailable','corners'],
+      ['card','cardEvents','cardTimelineAvailable','cards']
+    ]){
+      const homeCount=details[prefix+'Home'],awayCount=details[prefix+'Away'];
+      if(details[flag]!==true||homeCount==null||awayCount==null)continue;
+      try{
+        await persistHistoricalTimedEvents(id,{source:src,kind,final:true,complete:true,
+          timelineAvailable:true,homeCount,awayCount,events:details[eventKey]??[]});
+      }catch(error){console.warn('[recovery] timed',kind,'verification:',error.message);}
+    }
   }
   const outcome=await settleMatch(id);
   return {recovered:true,source:source.toUpperCase(),score:`${homeScore}-${awayScore}`,
