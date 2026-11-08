@@ -457,7 +457,7 @@ export function serializeMatch(row, oddsRows = [], now = Date.now()) {
       }));
       if(!baseEvents.length || !scorers.length) return baseEvents;
       return baseEvents.map(ev => {
-        if(ev.type !== 'goal') return ev;
+        if(ev.type !== 'goal'||ev.player) return ev;
         const match = scorers.find(s => s.team === ev.team && Math.abs(s.minute - ev.minute) <= 2);
         if(!match || !match.player) return ev;
         return { ...ev, player: match.player, text: 'Goal: ' + match.player };
@@ -528,7 +528,7 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
   // opened detail requests names already verified against primary goal events.
   if(displayStats&&!board&&ids.length){
     try{
-      const names=(await dbQuery(`select match_id,provider_event_id,team,minute,
+      const names=(await dbQuery(`select match_id,provider_event_id,team,minute,aiscore_verified,
         coalesce(case when aiscore_verified=true then aiscore_player_name end,player_name) as player
         from app_match_event_fact
         where match_id=any($1::bigint[]) and provider='zizobet'
@@ -540,10 +540,10 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
         if(!listed.length)continue;
         const events=Array.isArray(match.events)?match.events:[];
         const enriched=events.map(event=>{
-          if(event.type!=='goal'||event.player)return event;
+          if(event.type!=='goal')return event;
           const candidates=listed.filter(n=>n.team===event.team &&
             (n.provider_event_id===String(event.id??'')||Number(n.minute)===Number(event.minute)));
-          if(candidates.length!==1)return event;
+          if(candidates.length!==1||event.player&&candidates[0].aiscore_verified!==true)return event;
           return {...event,player:candidates[0].player,text:'Goal: '+candidates[0].player};
         });
         const seen=new Set(enriched.filter(e=>e.type==='goal').map(e=>[e.team,e.minute].join('|')));
