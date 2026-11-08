@@ -26,7 +26,7 @@
     "build:web": "npm --prefix web run build",
     "dev:web": "npm --prefix web run dev",
     "test:ingest": "node scripts/test-live-ingest.mjs",
-    "test:markets": "node scripts/test-scoring-props.mjs && node scripts/test-half-event-races.mjs && node scripts/test-team-count-markets.mjs && node scripts/test-markets.mjs && node scripts/test-timed-market-acceptance.mjs && node scripts/test-first-half-corner-settlement.mjs && node scripts/test-team-interval-contracts.mjs && node scripts/test-race-none-and-aiscore.mjs && node scripts/test-half-period-totals.mjs",
+    "test:markets": "node scripts/test-scoring-props.mjs && node scripts/test-half-event-races.mjs && node scripts/test-team-count-markets.mjs && node scripts/test-player-booking-contracts.mjs && node scripts/test-markets.mjs && node scripts/test-timed-market-acceptance.mjs && node scripts/test-first-half-corner-settlement.mjs && node scripts/test-team-interval-contracts.mjs && node scripts/test-race-none-and-aiscore.mjs && node scripts/test-half-period-totals.mjs",
     "test:providers": "node scripts/test-provider-pin.mjs",
     "test:ticket-pricing": "node scripts/test-ticket-pricing.mjs",
     "test:manager-finance": "node scripts/test-manager-finance.mjs",
