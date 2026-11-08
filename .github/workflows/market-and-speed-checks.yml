@@ -76,9 +76,9 @@ jobs:
       - name: Market 15 - player booking contracts
         if: always()
         run: node scripts/test-player-booking-contracts.mjs
-      - name: Market 16 - markets
+      - name: Market 16 - captured odds store and suspension
         if: always()
-        run: node scripts/test-markets.mjs
+        run: node scripts/test-odds-store.mjs
       - name: Market 17 - timed market acceptance
         if: always()
         run: node scripts/test-timed-market-acceptance.mjs
