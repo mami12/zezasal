@@ -2,8 +2,9 @@
  * Multi-API Match Recovery & Result Historical Collector.
  * Automatically resolves finished matches that were missed during server downtime
  * or lack live FT signals from the primary provider.
- * Uses FotMob (scores, half-time, corners, cards, fouls, shots, scorers) as primary source,
- * cascading to configured secondary providers (ApiFootball, SportApi, GoalApi, BSD).
+ * Uses FotMob for historical results, then the configured secondary providers
+ * through their own verified, quota-aware fixture matching. Zizobet remains
+ * the sole bookmaker odds and live-market source.
  */
 import { query } from '../db.mjs';
 import { teamsMatch, canonical } from './adapters.mjs';
@@ -11,6 +12,9 @@ import { settleMatch } from '../ledger/settler.mjs';
 
 const fotmobDailyCache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const recoveryCooldowns=new Map();
+let recoveryCursor=0;
+const RECOVERY_RETRY_MS=8 * 60 * 1000;
 
 /**
  * Fetch all matches for a given date from FotMob (YYYYMMDD).
@@ -104,10 +108,13 @@ export function parseFotMobPayload(summary, details = null) {
   const isFinished = status?.finished === true ||
     /^(?:ft|ended|finished|aet|pen)/i.test(status?.reason?.short || status?.reason?.shortKey || '');
 
-  const scoreStr = header?.status?.scoreStr || summary?.status?.scoreStr || `${summary?.home?.score ?? ''} - ${summary?.away?.score ?? ''}`;
-  const scoreParts = scoreStr.split('-').map(s => Number(s.trim()));
-  const homeScore = Number.isInteger(scoreParts[0]) ? scoreParts[0] : (summary?.home?.score != null ? Number(summary.home.score) : null);
-  const awayScore = Number.isInteger(scoreParts[1]) ? scoreParts[1] : (summary?.away?.score != null ? Number(summary.away.score) : null);
+  // Number('') is zero: never manufacture a 0-0 when FotMob omits its score.
+  const scoreStr = header?.status?.scoreStr || summary?.status?.scoreStr || null;
+  const scoreParts = typeof scoreStr==='string'?scoreStr.match(/^\s*(\d{1,2})\s*[-:]\s*(\d{1,2})\s*$/):null;
+  const scoreNumber=value=>value!=null&&value!==''&&Number.isSafeInteger(Number(value))&&
+    Number(value)>=0&&Number(value)<=99?Number(value):null;
+  const homeScore = scoreNumber(scoreParts?.[1] ?? summary?.home?.score);
+  const awayScore = scoreNumber(scoreParts?.[2] ?? summary?.away?.score);
 
   let halfHome = null;
   let halfAway = null;
@@ -126,7 +133,9 @@ export function parseFotMobPayload(summary, details = null) {
   let possessionH = null;
   let possessionA = null;
 
-  const events = details?.content?.matchFacts?.events?.events || [];
+  const rawEvents = details?.content?.matchFacts?.events?.events;
+  const events = Array.isArray(rawEvents)?rawEvents:[];
+  let cardTotalsVerified=false;
   for (const ev of events) {
     if (ev.type === 'Half' && (ev.halfStrShort === 'HT' || ev.time === 45)) {
       if (Number.isInteger(ev.homeScore)) halfHome = ev.homeScore;
@@ -146,8 +155,9 @@ export function parseFotMobPayload(summary, details = null) {
   for (const group of allStats) {
     for (const item of group.stats || []) {
       const title = String(item.title || item.key || '').toLowerCase();
-      const s0 = Number(item.stats?.[0]);
-      const s1 = Number(item.stats?.[1]);
+      const statNumber=value=>value!=null&&value!==''&&Number.isFinite(Number(value))?Number(value):null;
+      const s0 = statNumber(item.stats?.[0]);
+      const s1 = statNumber(item.stats?.[1]);
       if (/corner/i.test(title)) {
         if (Number.isFinite(s0)) cornersH = s0;
         if (Number.isFinite(s1)) cornersA = s1;
@@ -164,11 +174,9 @@ export function parseFotMobPayload(summary, details = null) {
         if (Number.isFinite(s0)) possessionH = s0;
         if (Number.isFinite(s1)) possessionA = s1;
       } else if (/yellow card/i.test(title)) {
-        if (Number.isFinite(s0)) yellowH = s0;
-        if (Number.isFinite(s1)) yellowA = s1;
+        if (s0!==null&&s1!==null){yellowH=s0;yellowA=s1;cardTotalsVerified=true;}
       } else if (/red card/i.test(title)) {
-        if (Number.isFinite(s0)) redH = s0;
-        if (Number.isFinite(s1)) redA = s1;
+        if (s0!==null&&s1!==null){redH=s0;redA=s1;cardTotalsVerified=true;}
       }
     }
   }
@@ -184,7 +192,8 @@ export function parseFotMobPayload(summary, details = null) {
       id: String(e.eventId || `goal-${e.time}-${idx}`),
       type: 'goal',
       team: e.isHome ? 'home' : 'away',
-      minute: Number(e.time ?? 0),
+      minute: /^\d{1,3}(?:\s*\+\s*\d{1,2})?$/.test(String(e.time??''))?parseInt(String(e.time),10):NaN,
+      injury: Number(String(e.time??'').match(/\+\s*(\d{1,2})/)?.[1]??0),
       player: e.player?.name || e.nameStr || e.fullName || null,
       playerId: e.player?.id || e.playerId || null,
       own: e.ownGoal === true || e.shotmapEvent?.isOwnGoal === true,
@@ -192,7 +201,7 @@ export function parseFotMobPayload(summary, details = null) {
       penalty: e.penalty === true || /penalty/i.test(e.goalDescription ?? ''),
       shootout: false
     }))
-    .filter(e => e.player);
+    .filter(e => Number.isInteger(e.minute) && e.minute>=0 && e.minute<=130);
 
   return {
     finished: isFinished,
@@ -202,15 +211,16 @@ export function parseFotMobPayload(summary, details = null) {
     halfAwayScore: halfAway,
     cornersHome: cornersH,
     cornersAway: cornersA,
-    cardsHome: totalCardsH > 0 || (details && isFinished) ? totalCardsH : null,
-    cardsAway: totalCardsA > 0 || (details && isFinished) ? totalCardsA : null,
+    cardsHome: cardTotalsVerified ? totalCardsH : null,
+    cardsAway: cardTotalsVerified ? totalCardsA : null,
     statistics: {
       shots: (shotsH != null && shotsA != null) ? { home: shotsH, away: shotsA } : {},
       shotsOnTarget: (sOnTargetH != null && sOnTargetA != null) ? { home: sOnTargetH, away: sOnTargetA } : {},
       fouls: (foulsH != null && foulsA != null) ? { home: foulsH, away: foulsA } : {},
       possession: (possessionH != null && possessionA != null) ? { home: possessionH, away: possessionA } : {}
     },
-    goalEvents
+    goalEvents,
+    goalTimelineAvailable: Array.isArray(rawEvents)
   };
 }
 
@@ -265,72 +275,87 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     return { recovered: false, reason: 'CANNOT_IDENTIFY_TEAMS' };
   }
 
-  const targetDate = fixture?.start_at || placedAt || new Date().toISOString();
+  const targetDate = fixture?.start_at || fixture?.startAt;
+  if(!targetDate||!Number.isFinite(Date.parse(targetDate)))return {recovered:false,reason:'KICKOFF_DATE_NOT_VERIFIED'};
+  // Historical APIs must not be polled for matches still in progress.
+  if(Date.now()-Date.parse(targetDate)<2*60*60*1000)return {recovered:false,reason:'MATCH_NOT_YET_FINISHED'};
   const dates = candidateDateStrings(targetDate);
 
-  // 1. Try FotMob
+  // 1. FotMob is the historical fallback, never an odds source.
   const found = await findFotMobFixture(home, away, dates);
-  if (found && found.match) {
-    const details = await fetchFotMobDetails(found.match.id);
-    const parsed = parseFotMobPayload(found.match, details);
-
-    if (parsed.finished && parsed.homeScore != null && parsed.awayScore != null) {
-      // Store result
-      await runQuery(`
-        insert into app_match_result (
-          match_id, home_team, away_team, home_score, away_score,
-          half_home_score, half_away_score, corners_home, corners_away,
-          cards_home, cards_away, statistics, source, finished_at
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, 'RECOVERY', now())
-        on conflict (match_id) do update set
-          home_score = coalesce(excluded.home_score, app_match_result.home_score),
-          away_score = coalesce(excluded.away_score, app_match_result.away_score),
-          half_home_score = coalesce(excluded.half_home_score, app_match_result.half_home_score),
-          half_away_score = coalesce(excluded.half_away_score, app_match_result.half_away_score),
-          corners_home = coalesce(excluded.corners_home, app_match_result.corners_home),
-          corners_away = coalesce(excluded.corners_away, app_match_result.corners_away),
-          cards_home = coalesce(excluded.cards_home, app_match_result.cards_home),
-          cards_away = coalesce(excluded.cards_away, app_match_result.cards_away),
-          statistics = coalesce(app_match_result.statistics, '{}'::jsonb) || excluded.statistics
-      `, [
-        id, home, away, parsed.homeScore, parsed.awayScore,
-        parsed.halfHomeScore, parsed.halfAwayScore,
-        parsed.cornersHome, parsed.cornersAway,
-        parsed.cardsHome, parsed.cardsAway,
-        JSON.stringify(parsed.statistics)
-      ]);
-
-      // If goal events are present, store into app_match_event_evidence
-      if (parsed.goalEvents.length > 0) {
-        const evidencePayload = {
-          source: 'fotmob',
-          complete: true,
-          homeScore: parsed.homeScore,
-          awayScore: parsed.awayScore,
-          goalsAvailable: true,
-          events: parsed.goalEvents,
-          observedAt: new Date().toISOString()
-        };
-        await runQuery(`
-          insert into app_match_event_evidence(match_id, payload)
-          values ($1, $2::jsonb)
-          on conflict(match_id) do update set payload = excluded.payload, observed_at = now()
-        `, [id, JSON.stringify(evidencePayload)]).catch(e => console.warn('[recovery] save evidence error:', e.message));
-      }
-
-      // Settle tickets immediately
-      const outcome = await settleMatch(id);
-      return {
-        recovered: true,
-        source: 'FOTMOB',
-        score: `${parsed.homeScore}-${parsed.awayScore}`,
-        settled: outcome.settled,
-        tickets: outcome.tickets?.length ?? 0
-      };
+  let parsed=null, source=null;
+  if(found?.match){
+    const details=await fetchFotMobDetails(found.match.id);
+    const candidate=parseFotMobPayload(found.match,details);
+    if(candidate.finished&&candidate.homeScore!==null&&candidate.awayScore!==null){
+      parsed=candidate;source='fotmob';
     }
   }
 
-  return { recovered: false, reason: 'MATCH_NOT_FINISHED_OR_FOUND' };
+  // 2. If FotMob has no verified FT, try configured, quota-limited history APIs.
+  // Each adapter must match both teams and kickoff within two hours.
+  if(!parsed){
+    try{
+      const {statsProviders}=await import('./index.mjs');
+      const backup=await statsProviders.recoverHistoricalMatch?.({home,away,start_at:targetDate,service:'PREMATCH'});
+      if(backup){
+        parsed={homeScore:backup.homeScore,awayScore:backup.awayScore,
+          halfHomeScore:null,halfAwayScore:null,cornersHome:null,cornersAway:null,
+          cardsHome:null,cardsAway:null,statistics:{},
+          goalEvents:backup.evidence.events.filter(event=>event.type==='goal'&&!event.shootout),
+          goalTimelineAvailable:backup.evidence.complete===true};
+        source=backup.source;
+      }
+    }catch(error){console.warn('[recovery] configured history providers unavailable:',error.message);}
+  }
+  if(!parsed)return {recovered:false,reason:'MATCH_NOT_FINISHED_OR_FOUND'};
+  const {homeScore,awayScore}=parsed;
+  if(![homeScore,awayScore].every(value=>Number.isSafeInteger(value)&&value>=0&&value<=99))
+    return {recovered:false,reason:'UNVERIFIED_FINAL_SCORE'};
+
+  // Never replace an already recorded primary FT score in a concurrent update.
+  await runQuery(`
+    insert into app_match_result (
+      match_id, home_team, away_team, home_score, away_score,
+      half_home_score, half_away_score, corners_home, corners_away,
+      cards_home, cards_away, statistics, source, finished_at
+    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,'RECOVERY',now())
+    on conflict(match_id) do update set
+      home_score=coalesce(app_match_result.home_score,excluded.home_score),
+      away_score=coalesce(app_match_result.away_score,excluded.away_score),
+      half_home_score=coalesce(app_match_result.half_home_score,excluded.half_home_score),
+      half_away_score=coalesce(app_match_result.half_away_score,excluded.half_away_score),
+      corners_home=coalesce(app_match_result.corners_home,excluded.corners_home),
+      corners_away=coalesce(app_match_result.corners_away,excluded.corners_away),
+      cards_home=coalesce(app_match_result.cards_home,excluded.cards_home),
+      cards_away=coalesce(app_match_result.cards_away,excluded.cards_away),
+      statistics=coalesce(app_match_result.statistics,'{}'::jsonb) || excluded.statistics
+  `,[id,home,away,homeScore,awayScore,
+    parsed.halfHomeScore,parsed.halfAwayScore,parsed.cornersHome,parsed.cornersAway,
+    parsed.cardsHome,parsed.cardsAway,JSON.stringify({...parsed.statistics,recoverySource:source})]);
+
+  // A list of some goals is not a complete timeline. Only reconcile every
+  // scoring incident to FT before letting event-window or player props grade.
+  const goals=parsed.goalEvents??[];
+  const scoreMatches=goals.filter(e=>e.team==='home').length===homeScore &&
+    goals.filter(e=>e.team==='away').length===awayScore;
+  const uniqueIds=new Set(goals.map(e=>String(e.id)));
+  const fullTimeline=parsed.goalTimelineAvailable===true&&scoreMatches&&
+    uniqueIds.size===goals.length&&goals.every(e=>
+      (e.team==='home'||e.team==='away')&&Number.isInteger(e.minute)&&e.minute>=0&&e.minute<=130);
+  if(fullTimeline){
+    const evidencePayload={source,complete:true,final:true,homeScore,awayScore,
+      goalsAvailable:true,events:goals,observedAt:new Date().toISOString()};
+    try{
+      // Do not overwrite a previously collected primary-provider timeline.
+      await runQuery(`insert into app_match_event_evidence(match_id,payload)
+        values($1,$2::jsonb) on conflict(match_id) do nothing`,
+        [id,JSON.stringify(evidencePayload)]);
+    }catch(error){console.warn('[recovery] historical goal evidence unavailable:',error.message);}
+  }
+  const outcome=await settleMatch(id);
+  return {recovered:true,source:source.toUpperCase(),score:`${homeScore}-${awayScore}`,
+    settled:outcome.settled,tickets:outcome.tickets?.length??0};
 }
 
 /**
@@ -338,43 +363,49 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
  * recover results from external sources, and trigger settlement.
  */
 export async function recoverAllPendingMatches({ runQuery = query } = {}) {
-  const pending = await runQuery(`
-    select l.match_id,
-           min(l.match_name) as match_name,
+  const scanPage=offset=>runQuery(`
+    select l.match_id,min(l.match_name) as match_name,
            min(t.placed_at) as placed_at,
            array_agg(distinct l.market_name) as market_names
       from app_ticket_line l
-      join app_ticket t on t.id = l.ticket_id
-     where l.status = 'PENDING' and t.status = 'PENDING'
+      join app_ticket t on t.id=l.ticket_id
+     where l.status='PENDING' and t.status='PENDING'
        and not exists (
-         select 1 from app_match_result r
-          where r.match_id = l.match_id
-            and r.home_score is not null
-            and r.away_score is not null
+         select 1 from app_match_result r where r.match_id=l.match_id
+           and r.home_score is not null and r.away_score is not null
        )
      group by l.match_id
-     order by min(t.placed_at) asc
-     limit 25
-  `);
+     order by min(t.placed_at),l.match_id
+     limit 25 offset $1`,[offset]);
+  let pending=await scanPage(recoveryCursor);
+  if(!pending.rows.length&&recoveryCursor>0){
+    recoveryCursor=0;
+    pending=await scanPage(recoveryCursor);
+  }
+  recoveryCursor+=pending.rows.length;
+  if(!pending.rows.length)return {examined:0,recovered:0};
 
-  if (!pending.rows.length) return { examined: 0, recovered: 0 };
-
-  let recoveredCount = 0;
-  for (const row of pending.rows) {
-    try {
-      const res = await recoverPendingMatch(row.match_id, {
-        matchName: row.match_name,
-        placedAt: row.placed_at,
-        runQuery
+  let recoveredCount=0, attempted=0;
+  for(const row of pending.rows){
+    const id=Number(row.match_id),at=Date.now();
+    if((recoveryCooldowns.get(id)??0)>at)continue;
+    // Bounded work per settlement pass, even during a provider outage.
+    if(attempted>=3)break;
+    attempted++;
+    try{
+      const result=await recoverPendingMatch(id,{
+        matchName:row.match_name,placedAt:row.placed_at,runQuery
       });
-      if (res.recovered) {
+      if(result.recovered){
         recoveredCount++;
-        console.log(`[recovery] Match ${row.match_id} (${row.match_name}) recovered: score=${res.score} settled_tickets=${res.tickets}`);
-      }
-    } catch (e) {
-      console.error(`[recovery] Error recovering match ${row.match_id}:`, e.message);
+        recoveryCooldowns.delete(id);
+        console.log(`[recovery] match ${id} restored from ${result.source}: ${result.score??'FT'}`);
+      }else recoveryCooldowns.set(id,Date.now()+RECOVERY_RETRY_MS);
+    }catch(error){
+      recoveryCooldowns.set(id,Date.now()+RECOVERY_RETRY_MS);
+      console.error('[recovery] match',id,error.message);
     }
   }
-
+  if(recoveryCooldowns.size>2000)recoveryCooldowns.clear();
   return { examined: pending.rows.length, recovered: recoveredCount };
 }
