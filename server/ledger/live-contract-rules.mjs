@@ -323,7 +323,8 @@ export function parseFirstHalfCorner(line) {
     (line.period!=null&&Number(line.period)!==0&&Number(line.period)!==1))return null;
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!['home','away','none'].includes(side))return null;
- return {version:1,kind:'half-first-event',event:'corner',half:1,side};
+ return {version:1,kind:'half-first-event',event:'corner',half:1,side,
+  noneOffered:side==='none'||line.halfNoneOffered===true};
 }
 /** The last goal/corner/card can be determined only from a complete FT
  * chronology. A quoted Neither is an actual third outcome; without one,
@@ -352,7 +353,7 @@ export function parseHalfEventContract(line){
  const event=typeOf(m[5]);
  if(!event||!['goal','corner','card'].includes(event))return null;
  return {version:1,kind:m[4]==='first'?'half-first-event':'half-last-event',
-  event,half,side,noneOffered:side==='none'||line.lastNoneOffered===true};
+  event,half,side,noneOffered:side==='none'||line.halfNoneOffered===true};
 }
 export function parseLastEvent(line){
  const title=norm(line.market_name??line.marketName??line.name);
