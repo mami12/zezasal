@@ -37,6 +37,8 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const name=String(line.market_name??line.marketName??'');
  if(service==='PREMATCH'&&!scheduled)throw fail('Ndeshja prematch nuk ka fillim të ardhshëm të verifikuar.');
  if(!contract){
+  if(/\b(?:45|90)\+\s*min\.?/i.test(name)&&/\b(?:corners?|goals?|cards?)\b/i.test(name))
+    throw fail('Intervali përfshin 45+/90+ me kohë shtesë; mungon verifikimi i minutave sipas pjesës së ndeshjes.');
   if(eventish(name))throw fail('Ky treg nuk ka kusht të verifikueshëm në këtë moment.');
   return null;
  }
