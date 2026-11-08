@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { BetslipProvider } from './context/BetslipContext';
 import LoginPage from './pages/LoginPage';
-import SportsbookPage from './pages/SportsbookPage';
+const SportsbookPage=lazy(()=>import('./pages/SportsbookPage'));
 const AdminPage=lazy(()=>import('./pages/AdminPage'));
 const ManagerPage=lazy(()=>import('./pages/ManagerPage'));
 const AgentPage=lazy(()=>import('./pages/AgentPage'));
