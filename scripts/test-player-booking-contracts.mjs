@@ -10,8 +10,8 @@ const yellow=parsePlayerCardContract(line('Player to receive a yellow card'));
 assert.deepEqual([yellow.kind,yellow.event,yellow.cardColor,yellow.playerName,yellow.choice],
  ['player-card','card','yellow','Kiefersauer, Xaver',true]);
 assert.equal(parsePlayerCardContract(line('Player to be booked','No'))?.choice,false);
-assert.equal(parsePlayerCardContract(line('Player to be sent off'))?.cardColor,undefined,
- 'Sent off is NOT automatically a verified red-card-only label');
+assert.equal(parsePlayerCardContract(line('Player to be sent off'))?.cardColor,'red',
+ 'A yellow booking alone must never win a sent-off proposition');
 assert.equal(liveContract(line('Player to be booked'))?.kind,'player-card');
 assert.equal(parsePlayerCardContract({market_name:'Player to be booked',outcome_name:'Yes'}),null,
  'Yes for unnamed player is ambiguous');
