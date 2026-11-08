@@ -46,6 +46,7 @@ import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
+import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
@@ -188,6 +189,24 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw err;
   }
 
+  // A combination is a single provider quote, not a fabricated product.
+  // The 1H and 2H variants must be evaluated from their own scoreboards.
+  let halfComboContract=null;
+  if(isHalfComboFamily(row)){
+    halfComboContract=parseHalfCombination(row,{home:match.home,away:match.away});
+    if(!halfComboContract)
+      throw Object.assign(badRequest('Opsioni i kombinimit nuk përputhet me rezultatin dhe totalin e tregut.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    const liveCombo=String(match.service??'').toUpperCase()==='LIVE';
+    if(liveCombo&&halfComboContract.half===1){
+      const phase=String(match.feed_status??match.phase??'').toLowerCase();
+      const clockAt=Date.parse(match.clock_at??'');
+      if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
+         /^(?:ht|half time|halftime|second half|2nd half|2h|full time|finished|ft)\b/.test(phase))
+        throw Object.assign(badRequest('Kombinimi i pjesës së parë ka përfunduar.'),{
+          code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+    }
+  }
   // Full-time foul/shot markets are backed by the verified statistics
   // providers. Never freeze them as a time-ordered incident contract or
   // accept an unrecognized player/half statistic with no settlement rule.
@@ -358,6 +377,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
+    if(halfComboContract)contract=halfComboContract;
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
