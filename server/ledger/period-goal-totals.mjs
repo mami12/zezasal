@@ -18,7 +18,7 @@ export function isPeriodGoalTotal(line){
  const name=norm(line?.market_name??line?.marketName??line?.name);
  if(/(?:\bgoals?\b|\bgoal line\b|\btotal\b)/.test(name)&&
     /\b(?:player|scorer|asian|handicap|minutes?|corner|card|shots?|foul|result|btts|both|race|next|first goal|last goal|odd|even)\b/.test(name))return false;
- return /(?:^|\b)(?:total goals?|goals? total|team [12] goals?|goals?|goal line|over\s*\/\s*under)/.test(name);
+ return /(?:^|\b)(?:total goals?|goals? total|team [12] goals?|goals?|goal line|over\s*\/\s*under)/.test(name)||\n  /^(?:(?:1st|first|2nd|second) half|full time|match) total$/.test(name)||name==='total';
 }
 export function parsePeriodGoalTotal(line,teams={}){
  if(!isPeriodGoalTotal(line))return null;
@@ -59,7 +59,7 @@ export function parsePeriodGoalTotal(line,teams={}){
  const exactGroup=name.match(/^exact goals?(?:\s+(\d{1,2})\+)?$/);
  const titleMinimum=exactGroup?.[1]==null?null:Number(exactGroup[1]);
  if(exactGroup)name='goals';
- if(!/^(?:goals?|goal line|over\s*\/\s*under)$/.test(name))return null;
+ if(!/^(?:goals?|goal line|total|over\s*\/\s*under)$/.test(name))return null;
  const title=norm(line.market_name??line.marketName??'');
  const threeWay=/\b(?:3\s*way|three\s*way|1x2)\b/.test(title);
  let label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
