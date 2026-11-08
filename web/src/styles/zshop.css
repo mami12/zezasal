@@ -126,7 +126,7 @@
 .zshop-tracker-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#0b0f17}
 .zshop-tracker-stat{background:#272d38;padding:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px}
 .zshop-tracker-stat strong{white-space:nowrap;color:#ffda45;font-size:12px}
-.zshop-tracker-events{border-top:1px solid #434c5a;padding:5px 8px;color:#cbd1dc}
+.zshop-tracker-events{border-top:1px solid #434c5a;padding:5px 8px;color:#cbd1dc;max-height:270px;overflow-y:auto;overscroll-behavior:contain}
 .zshop-tracker-events>div{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #434c5a40}
 .zshop-tracker-events time{min-width:28px;color:#ffda45}
 @media(min-width:1280px){.zshop-shell [data-betslip-rail]{width:25%;min-width:285px;max-width:370px}.zshop-shell .zshop-slip-frame{width:100%}}
