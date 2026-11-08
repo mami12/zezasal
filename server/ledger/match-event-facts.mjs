@@ -409,10 +409,18 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   return c.side==='none'?'WON':decision(false);
  }
  if(c.kind==='race'){
-  if(!Number.isInteger(c.target)||c.target<1||!['home','away'].includes(c.side))return null;
+  if(!Number.isInteger(c.target)||c.target<1||
+     !['home','away','none'].includes(c.side))return null;
   const h=data.race_home_time==null?null:Number(data.race_home_time);
   const a=data.race_away_time==null?null:Number(data.race_away_time);
-  if(h===null&&a===null)return full?'VOID':null; // race not reached in normal time
+  // The quoted third selection is a real outcome, not a refundable push:
+  // neither side reached X => None wins after confirmed FT completeness.
+  // A reached threshold proves None lost without knowing which side was first.
+  if(c.side==='none'){
+   if(h!==null||a!==null)return 'LOST';
+   return full&&c.noneOffered===true?'WON':null;
+  }
+  if(h===null&&a===null)return full?(c.noneOffered===true?'LOST':'VOID'):null;
   // Simultaneous or minute-only indistinguishable milestones require review.
   if(h!==null&&a!==null&&h===a)return null;
   return decision(c.side===(h!==null&&(a===null||h<a)?'home':'away'));
