@@ -44,11 +44,13 @@ export function isPlayerGoalSpecial(line){
 }
 export function parsePlayerGoalSpecial(line){
  const title=String(line?.market_name??line?.marketName??line?.name??'').trim();
- const left=title.split(/\s+·\s+/)[0],name=fold(left);
+ const left=title.split(/\s+·\s+/)[0],name=String(left).normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
  const period=Number(line?.period??0);
  if(![0,1,2].includes(period))return null;
  const rawLabel=String(line?.outcome_name??line?.outcomeName??line?.outcome_key??line?.outcomeKey??'').trim();
- const label=fold(rawLabel);
+ const label=String(rawLabel).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .toLowerCase().replace(/\s+/g,' ').trim();
  let mode=null,choice=null,threshold=null,half=null;
  const halfMarket=name.match(/^player to score in (1st|first|2nd|second|both) (?:half|halves)$/);
  const atLeast=name.match(/^player to score (\d{1,2})\s*(?:\+|or more)(?:\s+goals?)?$/);
