@@ -32,6 +32,11 @@ const cleanTotal=n=>n!==null&&Number.isFinite(n)&&n>=0&&Number.isInteger(n*2);
 export function auditOffer(row){
  const n=fold(row.market_name), v=label(row),line=threshold(row),period=Number(row.period??0);
  if(!n)return category('NOT_SETTLEABLE','Mungon emri origjinal i marketit');
+ // A 45+ / 90+ interval includes injury time. Normalized absolute minutes
+ // alone cannot distinguish stoppage events from later-period incidents.
+ if(/^\d{1,3}:[0-5]\d\s*[-–]\s*(?:45|90)\+\s*min\.?\s*[-–]/.test(n))
+  return category('STOPPAGE_TIMELINE_UNVERIFIED',
+   'Clock interval through 45+/90+ requires verified period/stoppage identities, not only minute totals');
  // Highest-risk aliases: the old generic score grader can misinterpret these.
  if(/\b(?:early payout|extra time|overtime|shootout|to qualify|qualif(?:y|ication)|lift the trophy)\b/.test(n))
   return category('DANGER_WRONG_RESULT','Kerkon rregulla per fitimin/promovimin ose kohe tjeter nga 90 minutat');
@@ -94,11 +99,11 @@ try{
   const cap=Math.min(2500,limit-offset);
   const {rows}=await query(`select
    coalesce(provider_id,'?') as provider_id,coalesce(native_market_id,'?') as native_market_id,
-   market_name,outcome_name,period,min(line) as line,count(*)::int as offers,
+   market_name,outcome_name,period,line,count(*)::int as offers,
    count(distinct match_id)::int as fixtures
    from app_provider_offer_current
-   group by provider_id,native_market_id,market_name,outcome_name,period
-   order by provider_id,native_market_id,market_name,outcome_name,period
+   group by provider_id,native_market_id,market_name,outcome_name,period,line
+   order by provider_id,native_market_id,market_name,outcome_name,period,line
    limit $1 offset $2`,[cap,offset]);
   for(const row of rows){
    const audit=auditOffer(row),item={...row,...audit};
@@ -116,7 +121,7 @@ try{
    group by l.market_name,l.outcome_name,l.line
    order by count(*) desc limit 2000`)).rows.map(row=>({...row,...auditOffer(row)}));
  }catch(error){console.error('Pending ticket audit unavailable:',error.message);}
- const priorities=['DANGER_WRONG_RESULT','UNSUPPORTED_OR_SPECIAL','UNKNOWN_REVIEW','INCIDENT_EVIDENCE_REQUIRED','STATS_EVIDENCE_REQUIRED','SCORE_GRADEABLE'];
+ const priorities=['DANGER_WRONG_RESULT','STOPPAGE_TIMELINE_UNVERIFIED','UNSUPPORTED_OR_SPECIAL','UNKNOWN_REVIEW','INCIDENT_EVIDENCE_REQUIRED','STATS_EVIDENCE_REQUIRED','SCORE_GRADEABLE'];
  console.log(JSON.stringify({readOnly:true,scannedDistinctOffers:offers.length,
   partial:offers.length>=limit,limit,counts:Object.fromEntries(priorities.map(k=>[k,groups.get(k)??0])),
   riskyOffers:offers.filter(r=>!['SCORE_GRADEABLE'].includes(r.category))
