@@ -381,7 +381,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   * Reuse the configured provider identities, verified kickoff matching, quota
   * accounting and HTTP timeouts. No other match's data may grade this fixture.
   */
- async function recoverHistoricalMatch(row,{neededKinds=[]}={}){
+ async function recoverHistoricalMatch(row,{neededKinds=[],expectedScore=null}={}){
   if(!enabled()||!row?.home||!row?.away||!Number.isFinite(Date.parse(row.start_at??row.startAt)))return null;
   await init();
   let best=null,bestCoverage=-1;
@@ -429,6 +429,11 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       return candidate[prefix+'TimelineAvailable']===true&&h!=null&&a!=null&&
         list.length===h+a;
     };
+    // Independent supplementary results must agree with an already known
+    // FT score before their incident list can authorize any ticket status.
+    if(expectedScore&&(
+      candidate.homeScore!==Number(expectedScore.home)||
+      candidate.awayScore!==Number(expectedScore.away)))continue;
     const coverage=neededKinds.filter(covers).length;
     if(coverage>bestCoverage){best=candidate;bestCoverage=coverage;}
     if(coverage===neededKinds.length)break;
