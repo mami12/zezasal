@@ -316,7 +316,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       const details = await fetchFotMobDetails(fm.match.id);
       const parsed = parseFotMobPayload(fm.match, details);
       if (!entry.scorers?.length && parsed.goalEvents.length) {
-       entry.scorers = parsed.goalEvents.map(e => ({
+       entry.scorers = parsed.goalEvents.filter(e=>e.player).map(e => ({
          minute: e.minute,
          team: e.team,
          player: e.player
@@ -328,8 +328,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        shotsOnTarget: parsed.statistics.shotsOnTarget,
        fouls: parsed.statistics.fouls,
        corners: (parsed.cornersHome != null && parsed.cornersAway != null) ? { home: parsed.cornersHome, away: parsed.cornersAway } : null,
-       yellow: (parsed.cardsHome != null && parsed.cardsAway != null) ? { home: parsed.cardsHome, away: parsed.cardsAway } : null,
-       red: { home: 0, away: 0 }
+       // FotMob card totals do not distinguish yellow and red cards.
+       yellow: null,
+       red: null
       };
       for (const field of TEAM_STAT_FIELDS) {
        const pair = fmValues[field];
@@ -390,7 +391,28 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     const validScore=value=>value!=null&&value!==''&&Number.isSafeInteger(Number(value))&&Number(value)>=0&&Number(value)<=99;
     if(evidence.final!==true||evidence.complete!==true||
        !validScore(evidence.homeScore)||!validScore(evidence.awayScore))continue;
-    return {source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),evidence};
+    // Historical totals require explicit final team statistics, not
+    // inferred zeroes from a missing provider response.
+    let values={};
+    try{
+      const path=provider==='bsd'?'/events/'+fixture.id+'/stats/':
+       provider==='goalapi'?'/fixtures/'+fixture.id+'/statistics':
+       provider==='sportapi'?'/fixtures/'+fixture.id+'/stats':
+       provider==='apifootball'?'/fixtures/statistics?fixture='+fixture.id:
+       '/get/soccer/'+fixture.league+'/scoreboard?dates='+String(fixture.start).slice(0,10).replaceAll('-','');
+      values=displayTeamStatistics(provider,await api(provider,path,0),fixture);
+    }catch{}
+    const validPair=field=>{
+      const pair=values[field],valid=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0;
+      return pair&&valid(pair.home)&&valid(pair.away)?{home:Number(pair.home),away:Number(pair.away)}:null;
+    };
+    const corners=validPair('corners'),yellow=validPair('yellow'),red=validPair('red');
+    const cards=yellow&&red?{home:yellow.home+red.home,away:yellow.away+red.away}:null;
+    const statistics=Object.fromEntries(['shots','shotsOnTarget','fouls','possession']
+      .map(field=>[field,validPair(field)]).filter(([,pair])=>pair));
+    return {source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),
+      cornersHome:corners?.home??null,cornersAway:corners?.away??null,
+      cardsHome:cards?.home??null,cardsAway:cards?.away??null,statistics,evidence};
    }catch(error){
     health.providers[provider]={...(health.providers[provider]??{}),
       lastError:/^STATS_[A-Z_0-9]+$/.test(error.message)?error.message:'STATS_UNAVAILABLE'};
