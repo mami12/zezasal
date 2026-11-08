@@ -108,7 +108,7 @@ assert.equal(gradeFromAcceptedCounters(deltaNext,{teams:{goal:{home:2,away:1}}})
  'Two goals between snapshots require history from the backup API');
 assert.equal(gradeFromAcceptedCounters(deltaNext,{teams:{goal:{home:0,away:1}}}),null,
  'Score rollback or VAR correction must not pay');
-assert.equal(gradeFromAcceptedCounters({...deltaNext,side:'none'},
+assert.equal(gradeFromAcceptedCounters({...deltaNext,side:'none',noneOffered:true},
  {teams:{goal:{home:1,away:0}},ended:true}),'WON');
 const deltaRace={...race,baseline:{home:2,away:1}};
 assert.equal(gradeFromAcceptedCounters(deltaRace,{teams:{corner:{home:3,away:2}}}),'WON');
