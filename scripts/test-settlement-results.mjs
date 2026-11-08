@@ -97,7 +97,8 @@ assert.equal(hasRequiredSettlementEvidence({market_name:'Total Cards'},{
   ...resolved,cards_away:null}),false);
 for(const unsafe of ['Home team total cards','Away team total cards','1st half total cards',
  '2nd half total cards','Home team exact corners','Away team exact corners',
- '1st half exact corners','Home team exact goals']){
+ '1st half exact corners','Home team exact goals',
+ 'Inter Milan exact corners','Inter Milan exact goals']){
  const line={market_name:unsafe,line:'2.5',outcome_key:'Over',outcome_name:'Over',builder_legs:null};
  assert.equal(hasRequiredSettlementEvidence(line,resolved),false,unsafe+' cannot use full-match totals');
  assert.equal(gradeLine(line,resolved),null,unsafe+' cannot pay from unrelated totals');
