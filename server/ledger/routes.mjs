@@ -1,6 +1,7 @@
 import {matchOverride} from './overrides.mjs';
 import {statsProviders} from '../stats-providers/index.mjs';
-import {footballInformation} from '../stats-providers/football-information.mjs';
+import {footballInformation,setFootballInformationMapping,inspectFootballInformation} from '../stats-providers/football-information.mjs';
+import {query} from '../db.mjs';
 import {filterFixtureRowsByDay} from '../fixture-dates.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 /**
@@ -187,6 +188,30 @@ ledgerRouter.get('/admin/live-risk', requireLedger, requireAuth, requireAdmin,
   guard(async (req,res) => res.json({ settings: await refreshLiveRiskSettings(), defaults: DEFAULT_LIVE_RISK_SETTINGS })));
 ledgerRouter.put('/admin/live-risk', requireLedger, requireAuth, requireAdmin,
   guard(async (req,res) => res.json(await writeLiveRiskSettings(req.body?.settings,req.user))));
+
+/* ------------------------------------------------------- optional AiScore match identities.
+ * The upstream ID must be supplied explicitly and confirmed against the exact
+ * fixture before a scorer can be displayed. Never fuzzy-match two fixtures.
+ */
+ledgerRouter.get('/admin/football-information/:matchId',requireLedger,requireAuth,requireAdmin,
+  guard(async(req,res)=>{
+    const id=Number(req.params.matchId);
+    if(!Number.isSafeInteger(id)||id<=0)return res.status(400).json({message:'Invalid match ID'});
+    const {rows}=await query('select match_id,aiscore_id,thesports01_id,mapping_status,last_checked_at,last_error,next_check_at from app_football_information_map where match_id=$1',[id]);
+    return res.json({mapping:rows[0]??null,enabled:footballInformation.enabled()});
+  }));
+ledgerRouter.put('/admin/football-information/:matchId',requireLedger,requireAuth,requireAdmin,
+  guard(async(req,res)=>{
+    const mapping=await setFootballInformationMapping({
+      matchId:req.params.matchId,aiscoreId:req.body?.aiscoreId,
+      thesports01Id:req.body?.thesports01Id,actorId:req.user.id,
+    });
+    res.json({mapping});
+  }));
+ledgerRouter.post('/admin/football-information/:matchId/inspect',requireLedger,requireAuth,requireAdmin,
+  guard(async(req,res)=>res.json(await inspectFootballInformation(req.params.matchId,{
+    needsOverride:['player'],
+  }))));
 
 /* ------------------------------------------------------- universal bet builders */
 ledgerRouter.get('/admin/bet-builders/catalog', requireLedger, requireAuth, requireAdmin,
