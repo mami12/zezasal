@@ -42,6 +42,7 @@ import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
+import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
@@ -249,6 +250,14 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
     /^(?:none|neither|no team|no one|no goal|no more goals?|no corner|no more corners?|no cards?|no more cards?|no bookings?|x|draw)$/i.test(
       String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
+  // Two-way First/Last (half) incident bets refund on no event. A real
+  // third "Neither" outcome means the team choices LOSE instead. Snapshot
+  // the actual sibling quote list, not an assumption about provider rules.
+  const isHalfIncident=Boolean(parseFirstHalfCorner(row)||parseHalfEventContract(row));
+  const halfNoneOffered=isHalfIncident&&quotedOffers.some(o=>
+    o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
+    /^(?:none|neither|no team|no one|no goal|no more goals?|no corner|no more corners?|no cards?|no more cards?|x|draw|asnj[eë]ra)$/i.test(
+      String(o.outcome_name??o.outcome_key??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
   const isLast=/^(?:(?:which|what) team (?:will )?(?:score|take|receive) (?:the )?)?last (?:goal|corner|card)$|^(?:last (?:goal|corner|card) (?:by|scored by|taken by)|team (?:to )?(?:score|take|receive) (?:the )?last (?:goal|corner|card))$/i.test(raceName);
   const lastNoneOffered=isLast&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
@@ -343,7 +352,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
+      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
   } catch(error) {
