@@ -99,7 +99,9 @@ jobs:
           node scripts/test-settlement-results.mjs
           npm run test:historical-settlement
       - name: Database provider/statistics contract checks
-        run: npm run test:statistics
+        run: |
+          npm run test:primary-goal-display
+          npm run test:statistics
       - name: Board subscription and caching checks
         run: |
           npm run test:feed-route
