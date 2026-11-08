@@ -43,4 +43,19 @@ assert.deepEqual(matchedSupplementalScorers([
  {...facts[0],provider_event_id:'g1'},{...facts[0],provider_event_id:'g4'}
 ],[{minute:12,team:'home',player:'Unknown'}]),[],
  'Two Zizobet goals in the same minute cannot receive a guessed matching name');
+const addedTime=primaryGoalDisplay({
+ count_home:1,count_away:1,through_minute:94,confirmed_at:'2026-11-08T12:00:00Z'
+},[
+ {provider_event_id:'h1',minute:47,phase:'1st half',team:'home',player_name:'A'},
+ {provider_event_id:'h2',minute:93,phase:'2nd half',team:'away',player_name:'B'}
+],{home_score:1,away_score:1,match_time_ms:92*60000});
+assert.ok(addedTime,'Zizobet 45+2 / 90+3 remain valid regulation injury-time goals');
+assert.deepEqual(addedTime.goalIntervals.map(i=>[i.home,i.away]),
+ [[0,0],[0,0],[1,0],[0,0],[0,0],[0,1]],
+ '45+2 must display in 31-45+, and 90+3 in 76-90+');
+assert.deepEqual(matchedSupplementalScorers(facts,[
+ {minute:48,team:'away',player:'First Name'},
+ {minute:48,team:'away',player:'Conflicting Name'},
+ {minute:74,team:'home',player:'Own Goal',own:true}
+]),[],'Ambiguous source actors and own goals may not supply a scorer name');
 console.log('PASS primary Zizobet verified goal time buckets and strictly matched supplemental scorer names');
