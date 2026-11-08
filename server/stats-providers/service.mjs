@@ -12,7 +12,7 @@ const refreshMs=10*60*1000,requiredStats=['shotsOnTarget','fouls','shots','corne
 const finished=row=>row.final===true||[row.status,row.service,row.feed_status].some(value=>/^(?:ft|full.?time|finished|ended|cancelled|canceled|after (?:match|penalt(?:y|ies)))(?:\b|$)/i.test(String(value??'')));
 const live=row=>!finished(row)&&String(row.service??row.status).toUpperCase()==='LIVE';
 export const providerUrls=Object.fromEntries(Object.entries(specs).map(([k,v])=>[k,v.base]));
-export function createStatsService({runQuery=query,env=process.env,request=fetch,now=Date.now,saveEvidence,loadMatch,loadSnapshots,getWatchIds,getEventWatchIds}={}){
+export function createStatsService({runQuery=query,env=process.env,request=fetch,now=Date.now,saveEvidence,persistGoalFacts,persistTimedFacts,loadMatch,loadSnapshots,getWatchIds,getEventWatchIds}={}){
  let initFlight,busy=false,active=0;const offers=new Map(),inflight=new Map();
  const viewed=new Map();
  const displayCache=new Map(),displayFlights=new Map();let displayActive=0;const displayWaiters=[];
@@ -140,6 +140,42 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    if(pageIndex>=p.pageCount)return normalizeWorld(f,plays);
   }throw Error('STATS_INCOMPLETE_PAGES');
  }
+ // Backup incidents are kept in their own provenance namespace. Only
+ // recorded FT results and independently fetched same-provider counters can
+ // certify a complete supplementary chronology.
+ async function saveVerifiedBackupFacts(id,provider,match,evidence,result){
+  if(!result||evidence?.final!==true||evidence?.complete!==true||
+     ![evidence.homeScore,evidence.awayScore].every(x=>x!=null&&Number.isSafeInteger(Number(x))&&Number(x)>=0)||
+     Number(evidence.homeScore)!==Number(result.home_score)||
+     Number(evidence.awayScore)!==Number(result.away_score))return;
+  if(typeof persistGoalFacts==='function'&&evidence.goalsAvailable===true)
+   await persistGoalFacts(id,evidence);
+  if(typeof persistTimedFacts!=='function'||
+     (!evidence.cornerTimelineAvailable&&!evidence.cardTimelineAvailable))return;
+  const statsPath=provider==='bsd'?'/events/'+match.id+'/stats/':
+    provider==='goalapi'?'/fixtures/'+match.id+'/statistics':
+    provider==='sportapi'?'/fixtures/'+match.id+'/stats':
+    provider==='apifootball'?'/fixtures/statistics?fixture='+match.id:
+    '/get/soccer/'+match.league+'/scoreboard?dates='+String(match.start).slice(0,10).replaceAll('-','');
+  const sourceStats=displayTeamStatistics(provider,await api(provider,statsPath,0),match);
+  const pair=field=>{
+   const p=sourceStats?.[field];
+   return p&&['home','away'].every(side=>p[side]!=null&&
+      Number.isSafeInteger(Number(p[side]))&&Number(p[side])>=0)?
+     {home:Number(p.home),away:Number(p.away)}:null;
+  };
+  const corners=pair('corners'),yellow=pair('yellow'),red=pair('red');
+  const cards=yellow&&red?
+    {home:yellow.home+red.home,away:yellow.away+red.away}:null;
+  for(const [kind,events,available,counts] of [
+    ['corner',evidence.cornerEvents,evidence.cornerTimelineAvailable,corners],
+    ['card',evidence.cardEvents,evidence.cardTimelineAvailable,cards]]){
+   if(!available||!counts||!Array.isArray(events))continue;
+   await persistTimedFacts(id,{source:evidence.source,kind,final:true,
+     complete:true,timelineAvailable:true,homeCount:counts.home,
+     awayCount:counts.away,events});
+  }
+ }
  async function update(row,pending=false){
   if(!enabled()||!row)return;const id=String(row.match_id??row.id);
   if(inflight.has(id))return inflight.get(id);
@@ -178,6 +214,8 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      const eventIds=goals.filter(e=>e.id!=null&&String(e.id)!=='').map(e=>String(e.id));
      const reconciled=new Set(eventIds).size===eventIds.length&&evidence.final===true&&evidence.complete===true&&[evidence.homeScore,evidence.awayScore].every(x=>Number.isInteger(x)&&x>=0)&&goals.every(e=>['home','away'].includes(e.team))&&goals.filter(e=>e.team==='home').length===evidence.homeScore&&goals.filter(e=>e.team==='away').length===evidence.awayScore&&(!result||(evidence.homeScore===Number(result.home_score)&&evidence.awayScore===Number(result.away_score)));
      if(final&&reconciled)await saveEvidence?.(id,evidence);
+     if(final&&result&&(persistGoalFacts||persistTimedFacts))
+      await saveVerifiedBackupFacts(Number(id),provider,m,evidence,result);
      if(!final&&cap.goals&&requiredMethods.every(k=>cap.methodFields?.[k]===true)&&(!needsAssists||cap.assists))break;
     }catch(e){health.providers[provider]={...(health.providers[provider]??{}),lastError:/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE'};/* Provider failures are never zero goals. No credentials or raw responses in logs. */}
    }
