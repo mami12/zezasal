@@ -39,7 +39,7 @@ assert.equal(gradeLine(quote('Asian Handicap','1','-1'),result),'VOID',
  'Verified Asian integer spread is a refund, not a loss');
 assert.equal(gradeLine(quote('Corner Handicap','2','-2'),result),'WON',
  'Corner handicap uses corners, not final goals');
-const live=parseHandicapContract(quote('Rest of Match Asian Handicap','2','0.5'));
+const live=parseHandicapContract(quote('Rest of Match Asian Handicap','2','-0.5'));
 assert.equal(gradeHandicapContract({...live,baseline:{home:1,away:0}},
  {...result,home_score:2,away_score:1}),'WON',
  'Rest-of-match handicap ignores accepted earlier goals');
