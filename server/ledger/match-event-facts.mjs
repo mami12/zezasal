@@ -195,6 +195,9 @@ export function gradeFirstHalfCornerFacts(contract,facts,{complete=false}={}){
   if(uncertain.length)return null;
   return contract.side==='none'?'WON':'LOST';
  }
+ // One proven 1H corner is enough to disprove NONE, even when its
+ // exact position relative to another same-minute corner is unclear.
+ if(contract.side==='none')return 'LOST';
  first.sort((a,b)=>a.minute-b.minute||
    (a.seconds!=null&&b.seconds!=null?a.seconds-b.seconds:0));
  const leader=first[0];
