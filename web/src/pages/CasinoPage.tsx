@@ -1,13 +1,14 @@
 import { useLanguage } from '../context/LanguageContext';
 import CasinoFullscreen,{requestCasinoLandscape,releaseCasinoLandscape} from '../components/Layout/CasinoFullscreen';
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {createCasinoExitController} from './casinoExit';
 import {apiClient} from '../api/client';
 import {useAuth} from '../context/AuthContext';
 import { ArrowLeft, BookOpen, Cherry, Sparkles, Flame, Search, Play, EyeOff } from 'lucide-react';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Layout/Header';
-import CasinoOriginalWallet, { type CasinoGame } from './CasinoOriginalWallet';
+import type { CasinoGame } from './CasinoOriginalWallet';
+const CasinoOriginalWallet=lazy(()=>import('./CasinoOriginalWallet'));
 import { casinoAssetUrl } from './casinoOriginalArt';
 
 type GameMeta = {
@@ -69,6 +70,8 @@ function GameArt({ game, className }: { game: GameMeta; className: string }) {
     <img
       src={game.demo ? '/app/casino-original/prophecy-ra-demo/assets/card/logo.webp' : casinoAssetUrl(game.logo)}
       alt={game.title}
+      loading="lazy"
+      decoding="async"
       className={className}
       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
     />
@@ -228,6 +231,8 @@ export default function CasinoPage() {
                     src={game.demo ? '/app/casino-original/prophecy-ra-demo/assets/card/background.webp' : casinoAssetUrl(game.background)}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover opacity-75 transition-all duration-500 group-hover:scale-108 group-hover:opacity-95"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#140a20] via-[#140a20]/30 to-black/30" />
@@ -388,6 +393,8 @@ export default function CasinoPage() {
   if (!game) return <Navigate to="/casino" replace />;
 
   return <CasinoFullscreen key={game.id} title={game.title} onExit={exitGame}>
-    <CasinoOriginalWallet game={game.id}/>
+    <Suspense fallback={<div role="status" className="p-6 text-sm text-white">{t('common.loading')}</div>}>
+      <CasinoOriginalWallet game={game.id}/>
+    </Suspense>
   </CasinoFullscreen>;
 }
