@@ -313,7 +313,7 @@ export default function MatchDetail() {
         {goals.length>0&&<div className="mt-2 space-y-1">
           <div className="text-xs font-bold">{lang==='en'?'Goal minutes':'Minutat e golave'}</div>
           {goals.map((goal,index)=><div key={goal.id??index}>
-            ⚽ {goal.team==='home'?live.homeTeam:live.awayTeam} · {goal.minuteLabel??goal.minute}′
+            ⚽ {goal.team==='home'?live.homeTeam:live.awayTeam} · {goal.minuteLabel??goal.minute}′{goal.player ? ' · ' + goal.player : ''}
           </div>)}
         </div>}
         {goals.length===0&&<div className="mt-2 text-xs">
