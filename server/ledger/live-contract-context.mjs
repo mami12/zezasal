@@ -3,7 +3,7 @@ import {teamStatisticsFromRow} from '../match-statistics.mjs';
 const safe=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0?Number(v):null;
 const time=v=>v!=null&&Number.isFinite(new Date(v).getTime())?new Date(v).getTime():null;
 const fail=message=>Object.assign(new Error(message),{status:400,code:'MARKET_EVIDENCE_UNSUPPORTED'});
-const eventish=name=>/\b(?:next|race to|reaches\s+\d+|(?:first|last|[1-9]\d*(?:st|nd|rd|th))\s+(?:goal|corner)|minutes?|mins?|within|before|after)\b|\b(?:yellow|red)\s+cards?\b|\b(?:second\s+yellow|yellow\s+red)\b/i.test(name);
+const eventish=name=>/\b(?:next|race to|reaches\s+\d+|(?:first|last|[1-9]\d*(?:st|nd|rd|th))\s+(?:goal|corner)|minutes?|mins?|within|before|after)\b|\b(?:yellow|red)\s+cards?\b|\b(?:second\s+yellow|yellow\s+red)\b|\b(?:goalscorer|goal\s+scorer)s?\b|\bplayer\s+to\s+score\b/i.test(name);
 /** Freeze what was actually offered at purchase, never derive a live target
  * from the scoreboard when the bet is paid or the page is refreshed.
  */
