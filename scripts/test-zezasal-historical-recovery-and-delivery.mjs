@@ -12,6 +12,10 @@ assert.equal(empty.cardsHome,null,'Missing final card counts must not be invente
 
 const draw=parseFotMobPayload({status:{finished:true,scoreStr:'0 - 0'},home:{},away:{}});
 assert.deepEqual([draw.homeScore,draw.awayScore],[0,0],'Explicit true 0-0 is accepted');
+assert.equal(parseFotMobPayload({status:{finished:true,reason:{short:'AET'}},home:{score:2},away:{score:1}}).finished,false,
+ 'Extra-time score cannot settle a normal-time 1X2 ticket');
+assert.equal(parseFotMobPayload({status:{finished:true,reason:{short:'FT',shortKey:'After Penalties'}},home:{score:2},away:{score:1}}).finished,false,
+ 'Conflicting provider final labels must not authorize penalty score grading');
 const minute=parseFotMobPayload({status:{finished:true,scoreStr:'1 - 0'}},{
  content:{matchFacts:{events:{events:[{type:'Goal',time:'90+2',isHome:true}]}}}
 });
