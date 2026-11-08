@@ -149,7 +149,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      Number(evidence.homeScore)!==Number(result.home_score)||
      Number(evidence.awayScore)!==Number(result.away_score))return;
   if(typeof persistGoalFacts==='function'&&evidence.goalsAvailable===true)
-   await persistGoalFacts(id,evidence);
+   try{await persistGoalFacts(id,evidence);}catch(error){
+    health.lastError='SUPPLEMENTAL_GOAL_FACTS_UNAVAILABLE';
+   }
   if(typeof persistTimedFacts!=='function'||
      (!evidence.cornerTimelineAvailable&&!evidence.cardTimelineAvailable))return;
   const statsPath=provider==='bsd'?'/events/'+match.id+'/stats/':
@@ -171,9 +173,11 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     ['corner',evidence.cornerEvents,evidence.cornerTimelineAvailable,corners],
     ['card',evidence.cardEvents,evidence.cardTimelineAvailable,cards]]){
    if(!available||!counts||!Array.isArray(events))continue;
-   await persistTimedFacts(id,{source:evidence.source,kind,final:true,
+   try{await persistTimedFacts(id,{source:evidence.source,kind,final:true,
      complete:true,timelineAvailable:true,homeCount:counts.home,
-     awayCount:counts.away,events});
+     awayCount:counts.away,events});}catch(error){
+    health.lastError='SUPPLEMENTAL_'+kind.toUpperCase()+'_FACTS_UNAVAILABLE';
+   }
   }
  }
  async function update(row,pending=false){
