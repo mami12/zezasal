@@ -271,7 +271,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    const cursor=new Date(data.second_poll_at).getTime();
    if(!Number.isFinite(cursor)||stored!==cursor)return null;
  }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
-   c.event!=='goal'||!full||(c.kind==='player-goal'&&c.playerId!=null))return null;
+   c.event!=='goal'||!full||c.kind==='player-goal')return null; // historical player identity needs explicit cross-provider verification
  if(c.cardColor!=null&&
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
@@ -393,6 +393,13 @@ export async function gradeStoredEventContract(line,result,{execute}={}){
  const primary=await gradeSingleEventProvider(line,result,{execute,provider:'zizobet'});
  if(primary!==null)return primary;
  if(!result||line?.live_contract?.event!=='goal'||typeof execute!=='function')return null;
+ // A fully confirmed primary chronology that still cannot prove this contract
+ // (e.g. a same-second ordinal tie) must not be overridden by a backup source.
+ const authoritative=(await execute(`select 1 from app_match_event_coverage
+   where match_id=$1 and provider='zizobet' and kind='goal'
+     and complete=true and confirmed_at is not null limit 1`,
+   [line.match_id])).rows;
+ if(authoritative.length)return null;
  const {rows}=await execute(`select provider from app_match_event_coverage
    where match_id=$1 and kind='goal' and provider=any($2::text[])
      and complete=true and confirmed_at is not null
