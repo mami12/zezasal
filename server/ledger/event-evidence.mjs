@@ -120,7 +120,8 @@ export function normalizeEvents(data,source){
    playerId:e.playerId??e.player_id??null,
    // The provider's 45+N notation unambiguously belongs to first-half
    // stoppage. Keep it as phase evidence: 45+2 must not be treated as 2H.
-   phase:e.phase??(/^45\s*\+\s*[1-9]\d?$/.test(String(e.gt??'').trim())?'1st half':null),
+   phase:e.phase??(/^45\s*\+\s*[1-9]\d?$/.test(String(e.gt??'').trim())?'1st half':
+     /^90\s*\+\s*[1-9]\d?$/.test(String(e.gt??'').trim())?'2nd half':null),
    updatedAt:e.updated_uts??null};
  });
  const unique=new Map();for(const event of events){const key=String(event.id),old=unique.get(key);if(!old||Number(event.updatedAt??0)>=Number(old.updatedAt??0)||!Number.isFinite(Number(old.updatedAt)))unique.set(key,event);}
