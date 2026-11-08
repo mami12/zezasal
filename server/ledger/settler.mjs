@@ -101,9 +101,9 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Exact team/period goal quotes overlap the broad historical scoring
   // property recognizer. They must use their numerical HT/FT count rule.
   if(isPeriodGoalTotal(line))return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result)!==null;
+  if(isHalfComboFamily(line))return gradeHalfCombination(parseHalfCombination(line,result),result)!==null;
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
   if(isHalfExactMarketFamily(line))return false; // FT counts are not 1H/2H corner/card facts
-  if(isHalfComboFamily(line))return gradeHalfCombination(parseHalfCombination(line,result),result)!==null;
   if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
   if(isHandicapMarket(line))return legacyHandicapResult(line,result)!==null;
   // A final aggregate card count cannot tell red from yellow cards.
@@ -176,10 +176,10 @@ export function gradeLine(line, result) {
     return gradeParityMarket(line,result);
   if(!Array.isArray(line.builder_legs)&&isPeriodGoalTotal(line))
     return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result);
-  if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
-    return gradeScoringPropMarket(line,result);
   if(!Array.isArray(line.builder_legs)&&isHalfComboFamily(line))
     return gradeHalfCombination(parseHalfCombination(line,result),result);
+  if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
+    return gradeScoringPropMarket(line,result);
   if(needsEvents(line)&&!Array.isArray(line.builder_legs))return gradeEventLine(line,result)??null;
   if (line.builder_legs !== null && line.builder_legs !== undefined) {
     const legs = line.builder_legs;
