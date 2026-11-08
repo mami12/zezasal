@@ -119,12 +119,16 @@ export default function Betslip() {
           marketLine: foundSel?.marketLine,
           matchName: errData?.matchName || foundSel?.matchName || '',
         });
-      } else if (errData?.code === 'LIVE_RISK_SUSPENDED' ||
-                 ['MARKET_DECIDED','SELECTION_UNAVAILABLE','QUOTE_STALE','FEED_REFRESHING','MARKET_EVIDENCE_UNSUPPORTED'].includes(errData?.code) ||
-                 /pezulluar|përfunduar|nuk është më e disponueshme/i.test(String(errData?.message ?? ''))) {
-        invalidateSelections([errData?.outcomeId,errData?.sourceOutcomeId].filter(Boolean));
       } else {
-        alert(errData?.message || e.message || t('common.error'));
+        // Every refusal needs a visible explanation. In particular unsupported
+        // event contracts used to be swallowed, making the button look broken.
+        setStakeError(String(errData?.message || errData?.error || e.message || t('common.error')));
+        // Temporarily missing evidence or stale quotes can recover on refresh.
+        // Never permanently lock those selections in the client state.
+        const unavailable=['MARKET_DECIDED','SELECTION_UNAVAILABLE','LIVE_RISK_SUSPENDED','MARKET_NOT_OFFERED','MATCH_NOT_OFFERED'];
+        if(unavailable.includes(errData?.code)){
+          invalidateSelections([errData?.outcomeId,errData?.sourceOutcomeId].filter(Boolean));
+        }
       }
     } finally {
       placeBetClickLock.current = false;
@@ -155,11 +159,9 @@ export default function Betslip() {
       clearAll();
     } catch (e: any) {
       const detail = e.response?.data;
-      if (['LIVE_RISK_SUSPENDED','MARKET_DECIDED','SELECTION_UNAVAILABLE','QUOTE_STALE','FEED_REFRESHING','MARKET_EVIDENCE_UNSUPPORTED'].includes(detail?.code) ||
-          /pezulluar|përfunduar/i.test(String(detail?.message ?? ''))) {
+      setStakeError(String(detail?.message || detail?.error || e.message || t('common.error')));
+      if(['LIVE_RISK_SUSPENDED','MARKET_DECIDED','SELECTION_UNAVAILABLE','MARKET_NOT_OFFERED','MATCH_NOT_OFFERED'].includes(detail?.code)){
         invalidateSelections([detail?.outcomeId,detail?.sourceOutcomeId].filter(Boolean));
-      } else {
-        alert(detail?.message || e.message || t('common.error'));
       }
     }
   };
