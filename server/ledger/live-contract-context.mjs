@@ -33,7 +33,13 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const windowSide=windowMarket&&(homeNamed||awayNamed)?(homeNamed?'home team':'away team'):null;
  const namedLine=windowSide?{...line,market_name:windowSide+' '+market}:line;
  const prepared=selected?{...line,outcome_name:selected,outcomeName:selected}:namedLine;
- const contract=liveContract(prepared,{clock,counts:{goal:goals,corner:corners},teams:match});
+ // Numbered/next card bets require the same accepted card counters that
+ // Race-to-Cards already uses. PREMATCH baseline is verified zero.
+ const cardSnapshot=line.raceCardSnapshot;
+ const verifiedCards=scheduled?{home:0,away:0}:cardSnapshot?{
+  home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)
+ }:null;
+ const contract=liveContract(prepared,{clock,counts:{goal:goals,corner:corners,card:verifiedCards},teams:match});
  const name=String(line.market_name??line.marketName??'');
  if(service==='PREMATCH'&&!scheduled)throw fail('Ndeshja prematch nuk ka fillim të ardhshëm të verifikuar.');
  if(!contract){
@@ -43,10 +49,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   return null;
  }
  const live=String(match.service??'').toUpperCase()==='LIVE';
- const cardSnapshot=line.raceCardSnapshot;
- const verifiedCards=cardSnapshot?{
-  home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)
- }:null;
+
  const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
   contract.event==='card'?verifiedCards:null;
  if(live&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
@@ -68,7 +71,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
     throw Object.assign(new Error('Lojtari e ka marrë kartonin; tregu ka përfunduar.'),{
       status:400,code:'MARKET_DECIDED'});
  }
- if(live&&contract.kind==='race'){
+ if(live&&(contract.kind==='race'||contract.kind==='sequence')){
   if(contract.event==='card'){
    const observed=time(cardSnapshot?.observed_at);
    const confirmed=time(cardSnapshot?.confirmed_at);
