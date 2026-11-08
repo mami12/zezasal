@@ -7,6 +7,7 @@
  *
  * Run: node scripts/test-odds-store.mjs [frame-file ...]
  */
+import './fixtures/isolated-casino-env.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
