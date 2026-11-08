@@ -78,7 +78,11 @@ export function parsePlayerGoalSpecial(line){
    if(!Number.isFinite(named)||named<0||named>30||!Number.isSafeInteger(named*2))return null;
    threshold=named;choice=over?'over':'under';
   }else if(/^over$|^under$/.test(label)){
-   const quoted=Number(String(line.line??line.specifier??'').replace(',','.'));
+   // Number('') is zero in JavaScript; an omitted goal line is NOT an
+   // explicitly priced "Over 0" market and must never be accepted.
+   const supplied=line.line??line.specifier;
+   if(supplied==null||String(supplied).trim()==='')return null;
+   const quoted=Number(String(supplied).replace(',','.'));
    if(!Number.isFinite(quoted)||quoted<0||quoted>30||!Number.isSafeInteger(quoted*2))return null;
    threshold=quoted;choice=label;
   }else if(exact){threshold=Number(exact[1]);choice='exact';}
