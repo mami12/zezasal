@@ -58,7 +58,8 @@ export function parsePlayerGoalSpecial(line){
  if(halfMarket){
   mode='period';half=/^(?:1st|first)$/.test(halfMarket[1])?1:
     /^(?:2nd|second)$/.test(halfMarket[1])?2:'both';
-  if(period&&period!==half&&half!=='both')return null;
+  if((half==='both'&&period!==0)||
+     (half!=='both'&&period&&period!==half))return null;
   choice=yes(rawLabel);
   if(choice===null)choice=true;
  }else if(atLeast||hat){
@@ -83,6 +84,9 @@ export function parsePlayerGoalSpecial(line){
   }else if(exact){threshold=Number(exact[1]);choice='exact';}
   else return null;
  }else return null;
+ // Native period=1/2 on a player's goal-total is the respective half,
+ // never silently expanded to full-time scoring.
+ if(mode==='count'&&period)half=period;
  const actor=quotedActor(line,title,rawLabel,mode==='count'?'count':'named');
  if(!actor)return null;
  if(mode==='period'&&!['boolean'].includes(typeof choice))return null;
@@ -120,11 +124,12 @@ export function gradePlayerGoalSpecial(contract,facts,{complete=false,participat
   const same=contract.playerId!=null&&scorerId!=null?
     String(contract.playerId)===String(scorerId):scorer===requiredName;
   if(!same)continue;
+  const inHalf=phaseOf(fact);
+  if(inHalf===null){ambiguous=true;continue;}
+  if(contract.mode==='count'&&contract.half&&inHalf!==contract.half)continue;
   count++;
-  const half=phaseOf(fact);
-  if(half===1)firstHalf++;
-  else if(half===2)secondHalf++;
-  else ambiguous=true;
+  if(inHalf===1)firstHalf++;
+  else if(inHalf===2)secondHalf++;
  }
  const positive=contract.mode==='period'?
   contract.half==='both'?firstHalf>0&&secondHalf>0:
