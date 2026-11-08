@@ -246,7 +246,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         [matchId]);
       if(coverage.length){
         const {rows:actors}=await executor(
-          "select player_id,player_name from app_match_event_fact "+
+          "select player_id,player_name,card_color from app_match_event_fact "+
           "where match_id=$1 and provider='zizobet' and kind='card' and active=true",
           [matchId]);
         const person=v=>{
@@ -257,6 +257,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         };
         const expected=person(playerCard.playerName);
         const booked=actors.some(actor=>
+          (!playerCard.cardColor||actor.card_color===playerCard.cardColor)&&
           (playerCard.playerId!=null&&actor.player_id!=null?
             String(playerCard.playerId)===String(actor.player_id):
             !!expected&&person(actor.player_name)===expected));
