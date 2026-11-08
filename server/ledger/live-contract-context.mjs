@@ -83,17 +83,21 @@ export function frozenLiveContract(line,match={},at=Date.now()){
      !phase||finished||(contract.half===1&&firstEnded))
    throw fail('Periudha e marketit nuk është e hapur ose ora LIVE nuk është e konfirmuar.');
  }
+ // The current match-wide scoreboard does not establish a 2H-only
+ // race/ordinal baseline. Do not sell a half market on a guessed history.
+ if(live&&(contract.kind==='half-race'||contract.kind==='half-last-event'))
+  throw fail('Kërkohet historik i konfirmuar sipas pjesës për këtë treg LIVE.');
  if(live&&contract.kind==='half-first-event'){
-  // The first-half first corner is already decided after ANY corner in 1H.
-  // A live bettor must not wager on a past incident, or use an old total
-  // when the current feed/clock cannot establish a reliable zero baseline.
+  if(contract.half!==1)
+   throw fail('Mungon numëruesi i verifikuar i ngjarjeve të pjesës së dytë LIVE.');
+  const count=contract.event==='goal'?goals:contract.event==='corner'?corners:null;
   const clockAt=time(match.clock_at),scoreAt=time(match.score_at);
   if(clock===null||clock>=45||clockAt===null||at-clockAt>45000||clockAt-at>5000||
      scoreAt===null||at-scoreAt>90000||scoreAt-at>5000||
-     corners.home==null||corners.away==null)
-    throw fail('Mungon numri ose ora live e konfirmuar për kornerin e parë të pjesës së parë.');
-  if(corners.home+corners.away>0)
-    throw fail('Korneri i parë i pjesës së parë ka ndodhur tashmë.');
+     count?.home==null||count?.away==null)
+    throw fail('Mungon numri ose ora LIVE e konfirmuar për ngjarjen e parë të pjesës së parë.');
+  if(count.home+count.away>0)
+    throw fail('Ngjarja e parë e pjesës së parë ka ndodhur tashmë.');
  }
  if(contract.kind==='sequence'&&current?.home!=null&&current?.away!=null&&
     contract.target<=current.home+current.away)throw fail('Goli/korneri i kërkuar ka ndodhur tashmë.');
