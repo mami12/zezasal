@@ -290,13 +290,14 @@ export function parseColorCardCount(line) {
  */
 export function parseHalfTotal(line){
  const name=norm(line.market_name??line.marketName??line.name);
- const match=name.match(/^(1st|first|2nd|second)\s+half\s*[-–:.]\s*(?:total\s+)?(?:(home|away)\s+team\s+)?(?:total\s+)?(?:(yellow|red)\s+)?(corners?|cards?)\s*(?:(home|away)\s+team)?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
+ const match=name.match(/^(1st|first|2nd|second)\s+half\s*[-–:.]?\s*(?:total\s+)?(?:(home(?: team)?|away(?: team)?|team [12])\s+)?(?:total\s+)?(?:(yellow|red)\s+)?(corners?|cards?)\s*(?:(home(?: team)?|away(?: team)?|team [12]))?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
  if(!match)return null;
  const half=/^(?:1st|first)$/.test(match[1])?1:2;
  if(line.period!=null&&Number(line.period)!==0&&Number(line.period)!==half)return null;
  const sideA=match[2],sideB=match[5];
  if(sideA&&sideB)return null;
- const side=sideA??sideB;
+ const rawSide=sideA??sideB;
+ const side=rawSide?/^(?:home|team 1)\b/.test(rawSide)?'home':'away':null;
  const event=typeOf(match[4]),cardColor=match[3];
  if(!['corner','card'].includes(event)||(cardColor&&event!=='card'))return null;
  const outcome=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
@@ -318,7 +319,8 @@ export function parseHalfTotal(line){
  */
 export function parseFirstHalfCorner(line) {
  const name=norm(line.market_name??line.marketName??line.name);
- if(!/^(?:1st|first)\s+half\s*[-–:.]\s*first\s+corner$/.test(name))return null;
+ if(!/^(?:1st|first)\s+half\s*[-–:.]?\s*first\s+corner$/.test(name)||
+    (line.period!=null&&Number(line.period)!==0&&Number(line.period)!==1))return null;
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!['home','away','none'].includes(side))return null;
  return {version:1,kind:'half-first-event',event:'corner',half:1,side};
