@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import {gradeMultiCornerFacts} from './multi-corners.mjs';
 import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
-import {gradeHandicapContract} from './handicap-contracts.mjs';
+import {gradeHandicapContract,gradeHalfCornerHandicapFacts} from './handicap-contracts.mjs';
 /**
  * Persistent PRIMARY-feed football incidents. Provider IDs and player names are
  * preserved verbatim. Only an incident list reconciled with the same provider's
@@ -466,6 +466,13 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
  const through=Number(data.through_minute);
+ if(c.kind==='score-handicap'&&c.event==='corner'&&c.half){
+  if(!full)return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase
+    from app_match_event_fact where match_id=$1 and provider=$2
+      and kind='corner' and active=true`,[line.match_id,provider]);
+  return gradeHalfCornerHandicapFacts(c,facts,{complete:true});
+ }
  if(c.kind==='corner-comparison'){
   if(!full||c.event!=='corner')return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase
@@ -662,7 +669,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  * primary timeline. Conflicting historical verdicts are never paid.
  */
 export async function gradeStoredEventContract(line,result,{execute}={}){
- if(line?.live_contract?.kind==='score-handicap')
+ if(line?.live_contract?.kind==='score-handicap'&&
+    !(line.live_contract.event==='corner'&&line.live_contract.half))
   return gradeHandicapContract(line.live_contract,result);
  const primary=await gradeSingleEventProvider(line,result,{execute,provider:'zizobet'});
  if(primary!==null)return primary;
