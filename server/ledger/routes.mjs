@@ -32,6 +32,7 @@ import {DEFAULT_BOARD_SETTINGS} from '../board-settings.mjs';
 
 import {catalogRows,categoryPolicies,marketFamily,scopeBlockRows} from '../market-catalog.mjs';
 import {refreshMarketCatalog,saveMarketPolicy,saveScopePolicy} from './market-catalog-store.mjs';
+import {providerMarketCoverage} from './market-coverage.mjs';
 export const ledgerRouter = express.Router();
 ledgerRouter.use(freshFeed);
 
@@ -313,6 +314,10 @@ ledgerRouter.get(
 
 ledgerRouter.get('/market-policy',(_req,res)=>res.set('Cache-Control','no-store').json({markets:catalogRows(),categories:categoryPolicies(),scopes:scopeBlockRows()}));
 ledgerRouter.get('/admin/market-catalog',requireLedger,requireAuth,requireAdmin,guard(async(_req,res)=>res.json({markets:await refreshMarketCatalog(),categories:categoryPolicies(),scopes:scopeBlockRows()})));
+ledgerRouter.get('/admin/market-coverage',requireLedger,requireAuth,requireAdmin,guard(async(req,res)=>{
+ const sampled=Math.max(100,Math.min(15000,Number(req.query.sampleLimit)||12000));
+ res.set('Cache-Control','no-store').json(await providerMarketCoverage({quoteLimit:sampled}));
+}));
 ledgerRouter.patch('/admin/market-catalog',requireLedger,requireAuth,requireAdmin,guard(async(req,res)=>res.json({markets:await saveMarketPolicy(req.body,req.user),categories:categoryPolicies(),scopes:scopeBlockRows()})));
 ledgerRouter.get('/admin/market-catalog/scopes',requireLedger,requireAuth,requireAdmin,guard(async(_req,res)=>res.json({scopes:scopeBlockRows()})));
 ledgerRouter.put('/admin/market-catalog/scopes',requireLedger,requireAuth,requireAdmin,guard(async(req,res)=>{const scopes=await saveScopePolicy(req.body?.scopes,req.user);res.json({scopes,markets:await refreshMarketCatalog()});}));
