@@ -253,7 +253,10 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // Two-way First/Last (half) incident bets refund on no event. A real
   // third "Neither" outcome means the team choices LOSE instead. Snapshot
   // the actual sibling quote list, not an assumption about provider rules.
-  const isHalfIncident=Boolean(parseFirstHalfCorner(row)||parseHalfEventContract(row));
+  // Match the market grammar independently of its offered team label:
+  // native feeds may quote 'Inter Milan' rather than literal '1'.
+  const halfTitle={...row,outcome_name:'1',outcomeName:'1',outcome_key:'1',outcomeKey:'1'};
+  const isHalfIncident=Boolean(parseFirstHalfCorner(halfTitle)||parseHalfEventContract(halfTitle));
   const halfNoneOffered=isHalfIncident&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
     /^(?:none|neither|no team|no one|no goal|no more goals?|no corner|no more corners?|no cards?|no more cards?|x|draw|asnj[eë]ra)$/i.test(
