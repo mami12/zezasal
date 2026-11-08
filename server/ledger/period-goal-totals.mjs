@@ -52,6 +52,13 @@ export function parsePeriodGoalTotal(line,teams={}){
   }
  }
  name=name.replace(/^total\s+/,'').replace(/\s+total$/,'').trim();
+ // Catalogue: "1st half - exact goals", "Exact goals 5+",
+ // "2nd half - exact goals 2+". The outcome still supplies the
+ // chosen number/range; a title saying 2+ is a lower bound, not
+ // permission to invent a hidden player, period or total.
+ const exactGroup=name.match(/^exact goals?(?:\s+(\d{1,2})\+)?$/);
+ const titleMinimum=exactGroup?.[1]==null?null:Number(exactGroup[1]);
+ if(exactGroup)name='goals';
  if(!/^(?:goals?|goal line|over\s*\/\s*under)$/.test(name))return null;
  const title=norm(line.market_name??line.marketName??'');
  const threeWay=/\b(?:3\s*way|three\s*way|1x2)\b/.test(title);
@@ -72,6 +79,9 @@ export function parsePeriodGoalTotal(line,teams={}){
  else if(more){kind='atLeast';target=Number(more[1]);}
  else if(range){kind='range';target=[Number(range[1]),Number(range[2])];}
  else return null;
+ if(titleMinimum!==null&&
+    (kind==='range'?target[0]<titleMinimum:
+     (typeof target==='number'&&target<titleMinimum)))return null;
  if(kind==='range'){
   if(target[1]<target[0]||target[1]>100)return null;
  }else if(!Number.isFinite(target)||target<0||target>100||
