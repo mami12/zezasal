@@ -49,7 +49,7 @@ export function parseCornerComparison(line){
  if(!team)return null;
  return {version:1,kind:'corner-comparison',event:'corner',
   mode:'period-result',half,side:team,
-  drawOffered:/1x2|result/.test(title)||line.cornerDrawOffered===true};
+  drawOffered:/1x2|result/.test(title)||line.cornerDrawOffered===true||team==='none'};
 }
 const first=new Set(['1','h1','1h','1sthalf','firsthalf','half1','firstperiod','1stperiod','period1']);
 const second=new Set(['2','h2','2h','2ndhalf','secondhalf','half2','secondperiod','2ndperiod','period2']);
