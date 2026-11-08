@@ -27,9 +27,12 @@ export function validateHistoricalTimedEvents(payload){
   // Stoppage or extended-time event attribution is provider-specific.
   const time=Number(event.minute);
   const injury=Number(event.injury??0);
+  const phase=String(event.phase??'').toLowerCase();
   if(!Number.isSafeInteger(time)||time<0||time>90||
       !Number.isSafeInteger(injury)||injury!==0||
-      event.phase==='extra'||event.shootout===true)return null;
+      /extra|shootout|penalt/.test(phase)||event.shootout===true||
+      (/^(?:h2|2nd|second)/.test(phase)&&time<45)||
+      (/^(?:h1|1st|first)/.test(phase)&&time>45))return null;
   const key=String(event.id);
   if(unique.has(key))return null;
   unique.add(key);
