@@ -88,6 +88,17 @@ assert.equal(gradeLine({...firstHalfTotal,market_name:'Full time Total'},resolve
 assert.equal(gradeLine({...firstHalfTotal,market_name:'1st half. Total'},{
   ...resolved,half_home_score:null,half_away_score:null,
 }), null, 'missing half-time facts stay PENDING; they cannot use full-time totals');
+// Native second-half markets use FT minus the verified HT score, not
+// full-match goals. Do not infer 2H corners or cards from FT aggregates.
+const secondHalfTotal={...firstHalfTotal,market_name:'2nd half - Total'};
+assert.equal(gradeLine(secondHalfTotal,resolved),'WON','2H has two goals (1-1)');
+assert.equal(gradeLine({...secondHalfTotal,outcome_key:'Under',outcome_name:'Under'},resolved),'LOST');
+assert.equal(gradeLine({...secondHalfTotal,line:'2.5'},resolved),'LOST');
+assert.equal(gradeLine({market_name:'2nd Half - Result',outcome_key:'X',outcome_name:'X',builder_legs:null},resolved),'WON');
+assert.equal(gradeLine({market_name:'2nd Half - Both Teams to Score',outcome_key:'Yes',outcome_name:'Yes',builder_legs:null},resolved),'WON');
+assert.equal(gradeLine(secondHalfTotal,{...resolved,half_home_score:null}),null);
+assert.equal(gradeLine(secondHalfTotal,{...resolved,half_home_score:4}),null,'FT below HT is contradictory');
+assert.equal(gradeLine({market_name:'2nd Half - Total Corners',outcome_key:'Over',outcome_name:'Over',line:'2.5'},resolved),null);
 assert.equal(hasRequiredSettlementEvidence(firstHalfTotal,resolved),true);
 assert.equal(hasRequiredSettlementEvidence(firstHalfTotal,{...resolved,half_home_score:null}),false,
   'wait for authoritative half-time score before grading');
