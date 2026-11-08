@@ -30,8 +30,11 @@ export function validateHistoricalGoals(payload){
   // the complete chronology is not authorized to move money.
   if(event.own===true||event.ownGoal===true)return null;
   const id=String(event.id??'').trim(),minute=Number(event.minute);
+  const phase=String(event.phase??'').toLowerCase();
   if(!id||ids.has(id)||!['home','away'].includes(event.team)||
-     !Number.isInteger(minute)||minute<0||minute>90)return null;
+     !Number.isInteger(minute)||minute<0||minute>90||
+     (/^(?:h2|2nd|second)/.test(phase)&&minute<45)||
+     (/^(?:h1|1st|first)/.test(phase)&&minute>45))return null;
   const injury=event.injury==null?0:Number(event.injury);
   if(!Number.isSafeInteger(injury)||injury<0||injury>30)return null;
   // Stoppage-time labels (45+2 / 90+2) cannot be treated as the
