@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, X } from 'lucide-react';
 import { Ticket } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
@@ -55,16 +57,21 @@ interface Props {
 
 export default function TicketReceipt({ ticket, onClose }: Props) {
   const { t } = useLanguage();
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [onClose]);
   const barcodeValue = ticket.system ? `SYS-${ticket.system.batchId.replace(/-/g,'').slice(0,12)}`.toUpperCase()
     : ticket.id.replace(/-/g, '').slice(0, 10).toUpperCase();
   const system = ticket.system;
   const stakes = system?.columns.map(column => column.stake) ?? [];
   const minStake = Math.min(...stakes), maxStake = Math.max(...stakes);
 
-  return (
-    <div className="ticket-print-overlay fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-3 sm:p-6">
-      <section className="ticket-print-panel w-full max-w-md rounded-2xl bg-white p-5 text-black shadow-2xl">
-        <div className="ticket-print-actions mb-3 flex justify-end gap-2">
+  return createPortal(
+    <div className="ticket-print-overlay fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={t('BILETË BASTI')}>
+      <section className="ticket-print-panel mx-auto my-auto w-full max-w-md rounded-2xl bg-white p-5 text-black shadow-2xl">
+        <div className="ticket-print-actions sticky top-0 z-10 mb-3 flex justify-end gap-2 bg-white py-2">
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-bold text-white"
@@ -122,6 +129,6 @@ export default function TicketReceipt({ ticket, onClose }: Props) {
           <p className="mt-2 text-[10px]">{t("Ruajeni biletën për verifikim.")}</p>
         </div>
       </section>
-    </div>
+    </div>, document.body
   );
 }
