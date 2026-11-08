@@ -24,6 +24,36 @@ const nonNeg=v=>{const n=number(v);return n!==null&&Number.isInteger(n)&&n>=0?n:
 /** Freeze the native Zizobet player selection only at purchase.
  * All actual goal times and teams continue to come from Zizobet.
  */
+/** Player booking quotes are bound to the actual native quoted actor,
+ * never to a team-wide card total. A confirmed individual incident proves
+ * YES; a NO needs separate participation and completeness evidence.
+ */
+export function parsePlayerCardContract(line){
+ const original=String(line.market_name??line.marketName??line.name??'').trim();
+ const [title,...personParts]=original.split(/\s+·\s+/);
+ const name=norm(title);
+ const valid=/^(?:anytime\s+)?player\s+(?:to be booked|to get booked|to receive (?:a |any )?card|to receive (?:a )?(?:yellow|red) card|to be sent off|(?:yellow|red) card)$/.test(name);
+ if(!valid)return null;
+ let quoted=null;
+ try{
+  const encoded=String(line.market_key??line.marketKey??'').split('@')[1];
+  if(encoded)quoted=JSON.parse(Buffer.from(encoded,'base64url').toString())?.pl;
+ }catch{return null;}
+ const embedded=personParts.join(' · ').trim();
+ const label=String(line.outcome_name??line.outcomeName??'').trim();
+ const choice=yesNo(line);
+ const player=typeof quoted==='string'&&quoted.trim()?quoted.trim():
+  embedded||null;
+ if(!player){
+  // Some providers quote player names as outcomes, not as parameters.
+  if(!label||/^(?:yes|no|po|jo|home|away|over|under|none)$/i.test(label))return null;
+  return {version:1,kind:'player-card',event:'card',playerName:label,choice:true,
+   ...(/\b(?:yellow|red)\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
+ }
+ if(choice===null)return null;
+ return {version:1,kind:'player-card',event:'card',playerName:player,choice,
+  ...(/\b(?:yellow|red)\b/.test(name)?{cardColor:/\byellow\b/.test(name)?'yellow':'red'}:{})};
+}
 export function parsePlayerGoalContract(line){
  const key=String(line.market_key??line.marketKey??'');
  let quotedPlayer=null;
@@ -436,7 +466,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const yellow=/\byellow\s+cards?\b/.test(name),red=/\bred\s+cards?\b/.test(name);
  const ambiguous=/\b(?:second\s+yellow|yellow\s+red)\b/.test(name);
  if((yellow&&red)||ambiguous)return null;
- const contract=parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
+ const contract=parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfTotal(line)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
@@ -445,7 +475,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
   if(contract.event!=='card'||!['over','under','exact','range','atLeast',
-    'window','window-total','half-total'].includes(contract.kind))return null;
+    'window','window-total','half-total','player-card'].includes(contract.kind))return null;
   return {...contract,cardColor:yellow?'yellow':'red'};
  }
  return contract;
