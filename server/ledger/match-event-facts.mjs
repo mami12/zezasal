@@ -155,7 +155,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -210,6 +210,46 @@ export function gradeFirstHalfCornerFacts(contract,facts,{complete=false}={}){
  return contract.side===(leader.team)?'WON':'LOST';
 }
 
+/** Period-sensitive totals require the FULL reconciled event chronology.
+ * 45+/90+ incidents belong to the recorded half, not a numeric <=45/<=90
+ * cutoff. An unlabelled minute >=45 is ambiguous (it can be 45+ injury
+ * time), so an ambiguous phase remains PENDING rather than paying wrongly.
+ */
+export function gradeHalfTotalFacts(contract,facts,{complete=false,cardColorsVerified=false}={}){
+ if(!complete||contract?.kind!=='half-total'||
+    !['corner','card'].includes(contract.event)||![1,2].includes(contract.half)||
+    !['over','under'].includes(contract.choice)||
+    (contract.side!=null&&!['home','away'].includes(contract.side))||
+    !Number.isFinite(contract.threshold)||contract.threshold<0||
+    !Number.isInteger(contract.threshold*2)||!Array.isArray(facts))return null;
+ if(contract.cardColor!=null&&(contract.event!=='card'||
+    !['yellow','red'].includes(contract.cardColor)||!cardColorsVerified))return null;
+ const first=new Set(['1','h1','1h','1sthalf','firsthalf','half1','firstperiod','1stperiod','period1']);
+ const second=new Set(['2','h2','2h','2ndhalf','secondhalf','half2','secondperiod','2ndperiod','period2']);
+ let count=0;
+ for(const fact of facts){
+  const minute=Number(fact?.minute);
+  const seconds=fact?.seconds==null?null:Number(fact.seconds);
+  if(!Number.isSafeInteger(minute)||minute<0||minute>130||
+     (seconds!==null&&(!Number.isFinite(seconds)||seconds<0))||
+     !['home','away'].includes(fact?.team))return null;
+  const phase=String(fact?.phase??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  let half;
+  if(first.has(phase)){if(minute>75)return null;half=1;}
+  else if(second.has(phase)){if(minute<45)return null;half=2;}
+  else if(phase)return null; // unknown phase, extra-time, penalties, etc
+  else if(minute<45)half=1;
+  else return null; // missing phase can be 45+ 1H or ordinary 2H
+  if(half!==contract.half||contract.side!=null&&fact.team!==contract.side)continue;
+  if(contract.cardColor){
+   if(fact.card_color!=null&&!['yellow','red'].includes(fact.card_color))return null;
+   if(fact.card_color===contract.cardColor)count++;
+   else if(fact.card_color==null)return null;
+  }else count++;
+ }
+ if(count===contract.threshold&&Number.isInteger(contract.threshold))return 'VOID';
+ return (contract.choice==='over'?count>contract.threshold:count<contract.threshold)?'WON':'LOST';
+}
 /**
  * PostgreSQL counts the accepted, verified incidents. Returns null when the
  * accepted structured contract, ordering or coverage cannot prove an answer.
@@ -341,6 +381,15 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
  const through=Number(data.through_minute);
+ if(c.kind==='half-total'){
+  if(!full||!['corner','card'].includes(c.event))return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase,card_color
+    from app_match_event_fact
+    where match_id=$1 and provider=$2 and kind=$3 and active=true`,
+    [line.match_id,provider,c.event]);
+  return gradeHalfTotalFacts(c,facts,{complete:true,
+    cardColorsVerified:data.card_colors_verified===true});
+ }
  if(c.kind==='half-first-event'){
   if(!full||c.event!=='corner'||c.half!==1)return null;
   const events=(await execute(`select minute,seconds,team,phase
