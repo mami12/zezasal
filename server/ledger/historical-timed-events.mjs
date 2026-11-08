@@ -45,8 +45,13 @@ export function validateHistoricalTimedEvents(payload){
   // official coverage; do not assume a red count includes/excludes it.
   if(kind==='card'&&/second.?yellow|yellow.?red|two.?yellow/i.test(String(event.detail??'')))
    return null;
+  const playerId=event.playerId==null||String(event.playerId).trim()===''?
+   null:String(event.playerId).trim().slice(0,150);
+  const playerName=typeof event.playerName==='string'&&event.playerName.trim()?
+   event.playerName.trim().slice(0,200):null;
   facts.push({id:key,kind,team:event.team,minute:time,seconds,
-   cardColor:color,phase:event.phase==null?null:String(event.phase)});
+   cardColor:color,phase:event.phase==null?null:String(event.phase),
+   playerId,playerName});
  }
  if(facts.filter(e=>e.team==='home').length!==home||
     facts.filter(e=>e.team==='away').length!==away)return null;
@@ -79,10 +84,12 @@ export async function persistHistoricalTimedEvents(matchId,payload,{database=poo
    return {stored:false,reason:previous.sample_signature===data.signature?'ALREADY_VERIFIED':'TIMELINE_CHANGED'};
   }
   for(const f of data.facts)await client.query(`insert into app_match_event_fact
-     (match_id,provider,provider_event_id,kind,team,minute,seconds,card_color,phase,active)
-     values($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+     (match_id,provider,provider_event_id,kind,team,minute,seconds,card_color,phase,
+      player_id,player_name,active)
+     values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)
      on conflict(match_id,provider,provider_event_id,kind) do nothing`,
-     [id,data.source,f.id,data.kind,f.team,f.minute,f.seconds,f.cardColor,f.phase]);
+     [id,data.source,f.id,data.kind,f.team,f.minute,f.seconds,f.cardColor,f.phase,
+      f.playerId,f.playerName]);
   const now=new Date();
   const inserted=await client.query(`insert into app_match_event_coverage
      (match_id,provider,kind,through_minute,count_home,count_away,
