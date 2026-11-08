@@ -90,13 +90,14 @@ export function hasRequiredSettlementEvidence(line, result) {
   if (family === 'HT_FT' && (result.half_home_score == null || result.half_away_score == null)) return false;
   if (family === 'BANDS_EXACT') {
     const isCorner = /corner/i.test(marketName);
-    // The legacy BANDS_EXACT grader uses MATCH totals. A team/period-scoped
-    // exact-corner market must never be graded from that combined FT total.
-    if(isCorner&&/\b(?:home|away|team\s*[12]|1st|first|2nd|second|half|period|minutes?|interval|player)\b/i.test(marketName))
-      return false;
-    // Likewise, an exact team GOAL band is not the match goal count.
-    if(!isCorner&&/\b(?:home|away|team\s*[12]|player|scorer)\b/i.test(marketName))
-      return false;
+    // An unrecognized qualifier could be a real team name rather than the
+    // words "Home team". Never grade "Inter Milan exact corners" from both
+    // teams' combined corners, or a named player's exact goals as match goals.
+    const base=marketName.toLowerCase().replace(/^(?:(?:full time|match)|(?:(?:1st|first) half))\s*[.:-]?\s*/,'').trim();
+    const provenFamily=isCorner
+      ?/^(?:exact corners?|total corners?\s*\((?:exact|bands)\)|corners?\s*\((?:exact|bands)\))$/.test(base)
+      :/^(?:exact goals?|multigoals|number of goals|total goals?\s*\((?:exact|bands)\))$/.test(base);
+    if(!provenFamily)return false;
     if (isCorner && (result.corners_home == null || result.corners_away == null)) return false;
   }
   if (family === 'CORNERS') {
