@@ -1,5 +1,5 @@
 import {statsProviders} from './stats-providers/index.mjs';
-import {footballInformation} from './stats-providers/football-information.mjs';
+import {footballInformation,FOOTBALL_INFORMATION_SQL} from './stats-providers/football-information.mjs';
 import {toClientMatches} from './ledger/view.mjs';
 import {persistProviderMarketDefinitions} from './ledger/provider-offer-archive.mjs';
 import express from 'express';
@@ -163,6 +163,8 @@ async function ensureLedgerSchema() {
   try {
     await initSchema();
     await initLedgerSchema(); // users / transactions / tickets (additive, create-only)
+    // Supplementary AiScore mappings are optional, never wallet-critical.
+    try{await query(FOOTBALL_INFORMATION_SQL);}catch(error){console.warn('[aiscore] optional schema unavailable:',error.message);}
     await refreshLiveRiskSettings({ initialize: true });
     await refreshBoardSettings();
     await refreshMarketCatalog({initialize:true});
