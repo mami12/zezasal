@@ -4,6 +4,7 @@
  */
 import {goalTotalContract} from './goal-total-contract.mjs';
 import {parseParityMarket} from './parity-markets.mjs';
+import {parseMultiCornerContract} from './multi-corners.mjs';
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const number=v=>v==null||v===''||!Number.isFinite(Number(v))?null:Number(v);
 const yesNo=line=>{
@@ -471,7 +472,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
-  parseTeamGoalMarket(line,teams)??parseTeamCountMarket(line)??parseCountMarket(line);
+  parseTeamGoalMarket(line,teams)??parseMultiCornerContract(line)??parseTeamCountMarket(line)??parseCountMarket(line);
  // Foul totals come from verified match statistics, not from the
  // sparse provider incident timeline. Time/ordinal foul wagers are not
  // supported until a complete independent foul chronology exists.
