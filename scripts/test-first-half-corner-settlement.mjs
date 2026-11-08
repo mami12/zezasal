@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
 import {liveContract,parseFirstHalfCorner} from '../server/ledger/live-contract-rules.mjs';
 import {frozenLiveContract} from '../server/ledger/live-contract-context.mjs';
-import {gradeFirstHalfCornerFacts,gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
+import {gradeFirstHalfCornerFacts,gradeHalfEventFacts,gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 import {normalizeEvents} from '../server/ledger/event-evidence.mjs';
 import {LEDGER_SQL} from '../server/ledger/schema.mjs';
 
@@ -11,11 +11,28 @@ const title='1st half - First corner';
 const first=(outcome_name)=>({market_name:title,outcome_name,line:'',market_key:'zz123@e30'});
 for(const [label,side] of [['None','none'],['No corner','none'],['1','home'],['2','away']]){
  assert.deepEqual(parseFirstHalfCorner(first(label)),
-  {version:1,kind:'half-first-event',event:'corner',half:1,side});
+  {version:1,kind:'half-first-event',event:'corner',half:1,side,
+   noneOffered:side==='none'});
 }
 assert.equal(parseFirstHalfCorner({market_name:'2nd half - First corner',outcome_name:'None'}),null);
 assert.equal(parseFirstHalfCorner({market_name:'1st half - Last corner',outcome_name:'None'}),null);
 assert.equal(parseFirstHalfCorner(first('Unrecognized')),null);
+assert.equal(parseFirstHalfCorner({...first('1'),period:2}),null,
+ 'Wrong explicit half cannot be interpreted as first-half corner');
+assert.equal(parseFirstHalfCorner({...first('1'),halfNoneOffered:true})?.noneOffered,true,
+ 'Market with a quoted third None option must freeze it for settlement');
+const noneOnlySecond=[
+ {team:'away',minute:61,phase:'H2',seconds:null}
+];
+assert.equal(gradeHalfEventFacts({...parseFirstHalfCorner(first('1')),noneOffered:false},
+ noneOnlySecond,{complete:true}),'VOID',
+ '2-way first corner with no first-half corners is a refund');
+assert.equal(gradeHalfEventFacts({...parseFirstHalfCorner(first('1')),noneOffered:true},
+ noneOnlySecond,{complete:true}),'LOST',
+ '3-way first corner with no first-half corners pays Neither and loses Home');
+assert.equal(gradeHalfEventFacts(parseFirstHalfCorner(first('None')),
+ noneOnlySecond,{complete:true}),'WON');
+
 const prematch={service:'PREMATCH',start_at:'2030-01-01T20:00:00Z',home:'Inter Milan',away:'Como 1907'};
 const at=Date.parse('2026-11-08T14:00:00Z');
 assert.equal(frozenLiveContract(first('None'),prematch,at)?.side,'none');
