@@ -161,17 +161,17 @@ export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','over','un
  * accepted structured contract, ordering or coverage cannot prove an answer.
  * Do not infer a loss from an absent row or an incomplete timeline.
  */
-export async function gradeStoredEventContract(line,result,{execute}={}){
+async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}={}){
  const c=line?.live_contract;
  if(!c||!SUPPORTED_FACT_KINDS.has(c.kind)||!validKind.has(c.event)||typeof execute!=='function')return null;
  const {rows}=await execute(`with covered as (
    select through_minute,count_home,count_away,complete,observed_at,confirmed_at,card_colors_verified from app_match_event_coverage
-   where match_id=$1 and provider='zizobet' and kind=$2
+   where match_id=$1 and provider=$16::text and kind=$2
  ), ordered as (
    select f.*,row_number() over(order by coalesce(f.seconds,f.minute*60),f.minute,f.provider_event_id) as ordinal,
      count(*) over(partition by coalesce(f.seconds,f.minute*60)) as same_time
    from app_match_event_fact f
-   where f.match_id=$1 and f.provider='zizobet' and f.kind=$2 and f.active
+   where f.match_id=$1 and f.provider=$16::text and f.kind=$2 and f.active
  ), aggregate as (
    select count(*)::int as total,
     count(*) filter(where team='home')::int as home,
@@ -250,7 +250,7 @@ export async function gradeStoredEventContract(line,result,{execute}={}){
   c.kind==='window'&&c.startExclusive===true,
   c.kind==='interval-result'?c.fromSeconds:c.kind==='window'?c.from*60:null,
   c.kind==='interval-result'?c.toExclusiveSeconds:c.kind==='window'?c.to*60:null,
-  c.kind==='interval-result',c.kind==='interval-leader',c.cardColor??null]);
+  c.kind==='interval-result',c.kind==='interval-leader',c.cardColor??null,provider]);
  const data=rows[0];
  if(!data||data.through_minute==null||data.open_recovery_gap===true)return null;
  // A partial/corrected frame must not silently reclassify a missing event.
@@ -258,14 +258,20 @@ export async function gradeStoredEventContract(line,result,{execute}={}){
     Number(data.away)!==Number(data.count_away))return null;
  const full=!!(result&&data.complete===true&&
     (c.event!=='goal'||(data.home===Number(result.home_score)&&data.away===Number(result.away_score))));
- // Only a later matching, fully reconciled PRIMARY incident sample can grade.
- // A changed or incomplete frame advances the cursor but cannot confirm facts.
- if(data.confirmed_at==null||data.observed_at==null||data.second_poll_at==null)return null;
+ // Primary Zizobet facts need a later identical poll and a cursor update.
+ // Historical facts instead need a complete FT score-matched timeline
+ // persisted atomically under their real source. They never authorize
+ // partial live grading or corner/card totals inferred from aggregate stats.
+ if(data.confirmed_at==null||data.observed_at==null)return null;
  const confirmed=new Date(data.confirmed_at).getTime();
  const stored=new Date(data.observed_at).getTime();
- const cursor=new Date(data.second_poll_at).getTime();
- if(![confirmed,stored,cursor].every(Number.isFinite)||
-    confirmed>stored||stored!==cursor)return null;
+ if(![confirmed,stored].every(Number.isFinite)||confirmed>stored)return null;
+ if(provider==='zizobet'){
+   if(data.second_poll_at==null)return null;
+   const cursor=new Date(data.second_poll_at).getTime();
+   if(!Number.isFinite(cursor)||stored!==cursor)return null;
+ }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
+   c.event!=='goal'||!full||(c.kind==='player-goal'&&c.playerId!=null))return null;
  if(c.cardColor!=null&&
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
@@ -377,4 +383,29 @@ export async function gradeStoredEventContract(line,result,{execute}={}){
   return full?decision(count>=c.min&&count<=c.max):null;
  }
  return null;
+}
+
+/** Keep historical incidents in their own provider rows. A verified primary
+ * decision wins; a complete historical FT may fill a genuinely missing
+ * primary timeline. Conflicting historical verdicts are never paid.
+ */
+export async function gradeStoredEventContract(line,result,{execute}={}){
+ const primary=await gradeSingleEventProvider(line,result,{execute,provider:'zizobet'});
+ if(primary!==null)return primary;
+ if(!result||line?.live_contract?.event!=='goal'||typeof execute!=='function')return null;
+ const {rows}=await execute(`select provider from app_match_event_coverage
+   where match_id=$1 and kind='goal' and provider=any($2::text[])
+     and complete=true and confirmed_at is not null
+     and count_home=$3 and count_away=$4
+   order by observed_at desc limit 8`,
+   [line.match_id,['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'],
+    result.home_score,result.away_score]);
+ if(!rows.length)return null;
+ const verdicts=[];
+ for(const row of rows){
+   const status=await gradeSingleEventProvider(line,result,{execute,provider:row.provider});
+   if(!['WON','LOST','VOID'].includes(status))return null;
+   verdicts.push(status);
+ }
+ return new Set(verdicts).size===1?verdicts[0]:null;
 }
