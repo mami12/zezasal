@@ -31,8 +31,48 @@ jobs:
           cache: npm
       - name: Install pinned backend dependencies
         run: npm ci --ignore-scripts
-      - name: Market acceptance and grading tests
-        run: npm run test:markets
+      - name: Market 01 - english half exact catalog
+        run: node scripts/test-english-half-exact-catalog.mjs
+      - name: Market 02 - period goal totals
+        run: node scripts/test-period-goal-totals.mjs
+      - name: Market 03 - half combinations
+        run: node scripts/test-half-combinations.mjs
+      - name: Market 04 - player goal specials
+        run: node scripts/test-player-goal-specials.mjs
+      - name: Market 05 - player ordinal scorers
+        run: node scripts/test-player-ordinal-scorers.mjs
+      - name: Market 06 - handicap contracts
+        run: node scripts/test-handicap-contracts.mjs
+      - name: Market 07 - card sequences
+        run: node scripts/test-card-sequences.mjs
+      - name: Market 08 - corner comparisons
+        run: node scripts/test-corner-comparisons.mjs
+      - name: Market 09 - multi corners
+        run: node scripts/test-multi-corners.mjs
+      - name: Market 10 - parity markets
+        run: node scripts/test-parity-markets.mjs
+      - name: Market 11 - dc btts
+        run: node scripts/test-dc-btts.mjs
+      - name: Market 12 - scoring props
+        run: node scripts/test-scoring-props.mjs
+      - name: Market 13 - half event races
+        run: node scripts/test-half-event-races.mjs
+      - name: Market 14 - team count markets
+        run: node scripts/test-team-count-markets.mjs
+      - name: Market 15 - player booking contracts
+        run: node scripts/test-player-booking-contracts.mjs
+      - name: Market 16 - markets
+        run: node scripts/test-markets.mjs
+      - name: Market 17 - timed market acceptance
+        run: node scripts/test-timed-market-acceptance.mjs
+      - name: Market 18 - first half corner settlement
+        run: node scripts/test-first-half-corner-settlement.mjs
+      - name: Market 19 - team interval contracts
+        run: node scripts/test-team-interval-contracts.mjs
+      - name: Market 20 - race none and aiscore
+        run: node scripts/test-race-none-and-aiscore.mjs
+      - name: Market 21 - half period totals
+        run: node scripts/test-half-period-totals.mjs
       - name: Settlement and provider-history tests
         run: |
           node scripts/test-settlement-results.mjs
