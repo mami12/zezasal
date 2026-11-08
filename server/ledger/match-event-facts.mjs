@@ -155,7 +155,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-last-event','half-race','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -210,6 +210,58 @@ export function gradeFirstHalfCornerFacts(contract,facts,{complete=false}={}){
  return contract.side===(leader.team)?'WON':'LOST';
 }
 
+/** Exact half ordering for race/first/last markets. An unlabelled 45+
+ * incident could be first-half stoppage or second-half play, so never
+ * allocate it to a period by guessing. Event lists must already reconcile
+ * against the provider's complete final counters.
+ */
+export function gradeHalfEventFacts(contract,facts,{complete=false}={}){
+ if(!complete||!['half-race','half-first-event','half-last-event'].includes(contract?.kind)||
+    ![1,2].includes(contract.half)||!['goal','corner','card'].includes(contract.event)||
+    !['home','away','none'].includes(contract.side)||!Array.isArray(facts))return null;
+ if(contract.kind==='half-race'&&(!Number.isSafeInteger(contract.target)||
+    contract.target<1||contract.target>100))return null;
+ const first=new Set(['1','h1','1h','1sthalf','firsthalf','half1','firstperiod','1stperiod','period1']);
+ const second=new Set(['2','h2','2h','2ndhalf','secondhalf','half2','secondperiod','2ndperiod','period2']);
+ const events=[];
+ for(const item of facts){
+  const minute=Number(item?.minute),seconds=item?.seconds==null?null:Number(item.seconds);
+  if(!Number.isSafeInteger(minute)||minute<0||minute>130||
+     (seconds!==null&&(!Number.isFinite(seconds)||seconds<0))||
+     !['home','away'].includes(item?.team))return null;
+  const phase=String(item.phase??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  let period;
+  if(first.has(phase)){if(minute>75)return null;period=1;}
+  else if(second.has(phase)){if(minute<45)return null;period=2;}
+  else if(phase)return null;
+  else if(minute<45)period=1;
+  else return null;
+  if(period===contract.half)events.push({minute,seconds,team:item.team});
+ }
+ // Same minute without distinct second-level timestamps has unknown order
+ // between opposing teams; never use a provider's arbitrary array order.
+ events.sort((a,b)=>a.minute-b.minute||
+   (a.seconds!=null&&b.seconds!=null?a.seconds-b.seconds:0));
+ for(let i=1;i<events.length;i++){
+  const a=events[i-1],b=events[i];
+  if(a.minute===b.minute&&(a.seconds==null||b.seconds==null||
+      a.seconds===b.seconds)&&a.team!==b.team)return null;
+ }
+ const decided=winner=>winner===contract.side?'WON':'LOST';
+ const noEvent=()=>contract.noneOffered===true?
+   (contract.side==='none'?'WON':'LOST'):'VOID';
+ if(contract.kind==='half-first-event'||contract.kind==='half-last-event'){
+  if(!events.length)return noEvent();
+  const winner=(contract.kind==='half-first-event'?events[0]:events.at(-1)).team;
+  return decided(winner);
+ }
+ const counts={home:0,away:0};
+ for(const event of events){
+  counts[event.team]++;
+  if(counts[event.team]===contract.target)return decided(event.team);
+ }
+ return noEvent();
+}
 /** Period-sensitive totals require the FULL reconciled event chronology.
  * 45+/90+ incidents belong to the recorded half, not a numeric <=45/<=90
  * cutoff. An unlabelled minute >=45 is ambiguous (it can be 45+ injury
@@ -392,12 +444,17 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   return gradeHalfTotalFacts(c,facts,{complete:true,
     cardColorsVerified:data.card_colors_verified===true});
  }
- if(c.kind==='half-first-event'){
-  if(!full||c.event!=='corner'||c.half!==1)return null;
+ if(['half-first-event','half-last-event','half-race'].includes(c.kind)){
+  if(!full||!['goal','corner','card'].includes(c.event))return null;
   const events=(await execute(`select minute,seconds,team,phase
     from app_match_event_fact where match_id=$1 and provider=$2
-      and kind='corner' and active=true`,[line.match_id,provider])).rows;
-  return gradeFirstHalfCornerFacts(c,events,{complete:true});
+      and kind=$3 and active=true`,[line.match_id,provider,c.event])).rows;
+  // Historical 1H first-corner contracts preserve their existing
+  // proven three-way "None" settlement semantics.
+  if(c.kind==='half-first-event'&&c.event==='corner'&&c.half===1&&
+     c.noneOffered===undefined)
+    return gradeFirstHalfCornerFacts(c,events,{complete:true});
+  return gradeHalfEventFacts(c,events,{complete:true});
  }
  const scopeEnded=full||(Number.isFinite(c.to)&&through>Number(c.to));
  const count=Number(c.cardColor?(c.side==='home'?data.color_home:c.side==='away'?data.color_away:data.color_total):
