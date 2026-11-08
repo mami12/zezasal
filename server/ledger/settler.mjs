@@ -498,6 +498,7 @@ export function pendingEventReason(line,result){
  const contract=line?.live_contract;
  if(!contract)return null;
  if(contract.kind==='player-goal')return 'PLAYER_IDENTITY_OR_PARTICIPATION_UNVERIFIED';
+ if(contract.kind==='half-first-event')return 'FIRST_HALF_EVENT_PHASE_OR_COVERAGE_UNVERIFIED';
  if(!result)return 'FINAL_RESULT_OR_LIVE_FACTS_UNVERIFIED';
  if(['sequence','race','nth-time'].includes(contract.kind))
    return 'EVENT_ORDER_OR_COVERAGE_UNVERIFIED';
