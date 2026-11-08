@@ -550,7 +550,7 @@ export async function settleVerifiedEventFacts({
    limit $1`,[cap]);
  if(!rows.length)return {examined:0,graded:0,closed:[]};
  const ids=[...new Set(rows.map(l=>l.match_id))];
- const finals=(await runQuery('select match_id,home_score,away_score from app_match_result where match_id=any($1::bigint[])',[ids])).rows;
+ const finals=(await runQuery('select match_id,home_score,away_score,corners_home,corners_away,cards_home,cards_away from app_match_result where match_id=any($1::bigint[])',[ids])).rows;
  const results=new Map(finals.map(r=>[String(r.match_id),r]));
  const tickets=new Set();let graded=0;
  for(const line of rows){
