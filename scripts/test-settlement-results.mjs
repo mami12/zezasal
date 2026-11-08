@@ -95,6 +95,18 @@ assert.equal(hasRequiredSettlementEvidence({market_name:'Corners. Total'},{
   ...resolved,corners_home:null}),false);
 assert.equal(hasRequiredSettlementEvidence({market_name:'Total Cards'},{
   ...resolved,cards_away:null}),false);
+for(const unsafe of ['Home team total cards','Away team total cards','1st half total cards',
+ '2nd half total cards','Home team exact corners','Away team exact corners',
+ '1st half exact corners','Home team exact goals']){
+ const line={market_name:unsafe,line:'2.5',outcome_key:'Over',outcome_name:'Over',builder_legs:null};
+ assert.equal(hasRequiredSettlementEvidence(line,resolved),false,unsafe+' cannot use full-match totals');
+ assert.equal(gradeLine(line,resolved),null,unsafe+' cannot pay from unrelated totals');
+}
+const verifiedGlobalCards={market_name:'Total Cards',line:'2.5',outcome_key:'Over',
+ outcome_name:'Over',builder_legs:null};
+assert.equal(gradeLine(verifiedGlobalCards,resolved),'WON',
+ 'Full-time total cards still uses the verified full-match card count');
+
 assert.equal(hasRequiredSettlementEvidence({market_name:'Full time result (Early payout 1:0)'},resolved),false,
   'early payout cannot be graded solely from final score');
 assert.equal(hasRequiredSettlementEvidence({market_name:'Full time result'},resolved),true);
