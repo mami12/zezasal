@@ -41,6 +41,7 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
+import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
@@ -126,6 +127,10 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw badRequest('Ky kombinim Rezultati + Të dy ekipet shënojnë nuk është identifikuar plotësisht.');
   }
 
+  if(isDcBttsMarket(row.market_name)&&
+     !parseDcBttsOutcome(row.outcome_name,row.outcome_key))
+    throw Object.assign(badRequest('Kombinimi Double Chance + BTTS nuk ka opsion të identifikueshëm.'),{
+      code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   // admin overrides win over the feed: a suspended match/market/outcome blocks the bet, and
   // a pinned price is the price the ticket gets
   const matchOverride = overrides.matchOverride(matchId);
