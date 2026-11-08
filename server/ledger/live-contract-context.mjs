@@ -43,13 +43,34 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   return null;
  }
  const live=String(match.service??'').toUpperCase()==='LIVE';
- const current=contract.event==='goal'?goals:contract.event==='corner'?corners:null;
+ const cardSnapshot=line.raceCardSnapshot;
+ const verifiedCards=cardSnapshot?{
+  home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)
+ }:null;
+ const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
+  contract.event==='card'?verifiedCards:null;
  if(live&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
   const observedAt=time(match.score_at);
   const clockAt=time(match.clock_at);
   if((contract.event==='goal'&&(goals.home==null||goals.away==null||observedAt===null))||
       clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
       (observedAt!==null&&(at-observedAt>90000||observedAt-at>5000)))throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
+ }
+ if(live&&contract.kind==='race'){
+  if(contract.event==='card'){
+   const observed=time(cardSnapshot?.observed_at);
+   const confirmed=time(cardSnapshot?.confirmed_at);
+   const through=cardSnapshot?.through_minute==null?null:Number(cardSnapshot.through_minute);
+   // Never sell an already-decided card race from stale/missing aggregates.
+   if(!current||current.home===null||current.away===null||
+      observed===null||confirmed===null||confirmed>observed||
+      at-observed>45000||observed-at>5000||
+      through===null||!Number.isFinite(through)||clock===null||
+      through<Math.floor(clock))
+     throw fail('Mungon historiku i freskët dhe i konfirmuar i kartonëve për këtë garë LIVE.');
+  }
+  if(current?.home==null||current?.away==null)
+   throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
  }
  if(live&&contract.kind==='half-first-event'){
   // The first-half first corner is already decided after ANY corner in 1H.
