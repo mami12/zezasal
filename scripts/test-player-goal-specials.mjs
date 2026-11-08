@@ -30,7 +30,7 @@ for(const line of [
  select('Player Total Goals · Yasin Zor','Over'),
  select('Player Total Goals · Yasin Zor','Over 1.5','2.5'),
  select('Player to Score 2 or More Goals','Yes'),
- select('Player to Score in 1st Half · Yasin Zor','Yes', '',2)
+ {...select('Player to Score in 1st Half · Yasin Zor','Yes'),period:2}
 ]){
  const contract=parsePlayerGoalSpecial(line);
  if(line.period===2)assert.equal(contract,null);
@@ -53,8 +53,8 @@ assert.equal(verdict('Player to Score a Hat Trick · Yasin Zor','No'),'WON');
 assert.equal(verdict('Player to Score in Both Halves · Yasin Zor','Yes'),'WON');
 assert.equal(verdict('Player to Score in 2nd Half · Yasin Zor','No'),'LOST');
 assert.equal(verdict('Player to Score in 1st Half · Yasin Zor','Yes',
- [{...facts[0],own_goal:true},...facts.slice(1)]),null,
- 'Own goal does not prove first-half named-player scoring');
+ [{...facts[0],own_goal:true},...facts.slice(1)]),'LOST',
+ 'Only the second-half goal is the named scorer; first-half own goal is ignored');
 assert.equal(verdict('Player to Score 2 or More Goals · Mystery','No',
  facts),null,'A missing player is not proof of participation');
 assert.equal(verdict('Player Total Goals · Mystery','Under 0.5',
