@@ -7,7 +7,7 @@
  * half-specific and either/both-halves selections are distinct contracts.
  */
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
- .toLowerCase().replace(/[.–—:]+/g,' ').replace(/\s+/g,' ').trim();
+ .toLowerCase().replace(/[.–—:-]+/g,' ').replace(/\s+/g,' ').trim();
 const YES=new Set(['yes','po']),NO=new Set(['no','jo']);
 const resultChoice=v=>YES.has(norm(v))?true:NO.has(norm(v))?false:null;
 const int=v=>v!==null&&v!==undefined&&v!==''&&Number.isSafeInteger(Number(v))&&
