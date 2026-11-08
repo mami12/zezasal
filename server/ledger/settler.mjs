@@ -22,6 +22,7 @@ import { eventMarketRequirement } from './event-market-policy.mjs';
 import { isStatisticMarket, hasStatisticEvidence, gradeStatisticLine } from './statistic-markets.mjs';
 import {goalTotalContract} from './goal-total-contract.mjs';
 import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
+import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
@@ -48,7 +49,7 @@ export function classify(marketName = '') {
   if (isTotalBttsMarket(marketName)) return 'TOTAL_BTTS';
   if (isResultBttsMarket(marketName)) return 'RESULT_BTTS';
   const s = String(marketName).toLowerCase();
-  if (/half\s*time\s*[\/\-]?\s*full\s*time|\bht\s*[\/\-]?\s*ft\b/i.test(s)) return 'HT_FT';
+  if (isHtFtMarket(marketName)) return 'HT_FT';
   if (/correct score|exact score/i.test(s)) return 'CORRECT_SCORE';
   if (/odd[\s/]*even|tek[\s/]*cift/i.test(s)) return 'ODD_EVEN';
   if (/draw no bet|\bdnb\b/i.test(s)) return 'DNB';
@@ -101,7 +102,13 @@ export function hasRequiredSettlementEvidence(line, result) {
   }
   const family = goalTotalContract(line,result)?'TOTAL':classify(marketName);
   if (family === 'CORNER_1X2' && (result.corners_home == null || result.corners_away == null)) return false;
-  if (family === 'HT_FT' && (result.half_home_score == null || result.half_away_score == null)) return false;
+  if (family === 'HT_FT') {
+    // 1/X and 2/X are fully decidable whenever verified HT and FT
+    // scoreboards exist. A missing or contradictory scoreboard is not a loss.
+    const option=parseHtFtOutcome(line.outcome_name,line.outcome_key);
+    return gradeHtFt(option,result.half_home_score,result.half_away_score,
+      result.home_score,result.away_score)!==null;
+  }
   if (family === 'BANDS_EXACT') {
     const isCorner = /corner/i.test(marketName);
     // An unrecognized qualifier could be a real team name rather than the
@@ -312,18 +319,9 @@ export function gradeLine(line, result) {
     }
 
     case 'HT_FT': {
-      if (result.half_home_score == null || result.half_away_score == null) return null;
-      const htHome = Number(result.half_home_score), htAway = Number(result.half_away_score);
-      const htRes = htHome > htAway ? '1' : htAway > htHome ? '2' : 'X';
-      const ftRes = home > away ? '1' : away > home ? '2' : 'X';
-      const raw = String(line.outcome_name ?? line.outcome_key ?? '').trim().toUpperCase();
-      const compact = raw.replace(/[^12X]/gi, '');
-      const expectedCompact = `${htRes}${ftRes}`;
-      if (compact === expectedCompact) return 'WON';
-      const expectedSlash = `${htRes}/${ftRes}`;
-      const normalizedSlash = raw.replace(/[\s\-_]+/g, '/');
-      if (normalizedSlash.includes(expectedSlash)) return 'WON';
-      return 'LOST';
+      const option=parseHtFtOutcome(line.outcome_name,line.outcome_key);
+      return gradeHtFt(option,result.half_home_score,result.half_away_score,
+        result.home_score,result.away_score);
     }
 
     case 'CORNER_1X2': {
