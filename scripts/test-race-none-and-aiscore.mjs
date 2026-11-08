@@ -1,3 +1,4 @@
+import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
 import {liveContract,gradeLiveContract,gradeFromAcceptedCounters} from '../server/ledger/live-contract-rules.mjs';
 import {frozenLiveContract} from '../server/ledger/live-contract-context.mjs';
