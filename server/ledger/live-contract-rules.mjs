@@ -442,7 +442,8 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
-  if(contract.event!=='card')return null;
+  if(contract.event!=='card'||!['over','under','exact','range','atLeast',
+    'window','window-total','half-total'].includes(contract.kind))return null;
   return {...contract,cardColor:yellow?'yellow':'red'};
  }
  return contract;
@@ -473,7 +474,12 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
  if(!contract||!['interval-result','team-total-goals','window','sequence','race','last-event','over','under','exact','range','atLeast'].includes(contract.kind))return null;
  const {event}=contract;
  const ordered=sortEvents(Array.isArray(evidence.events)?evidence.events:[],event);
- const clock=number(evidence.clock),count=number(eventCount(evidence.counts,event));
+ const clock=number(evidence.clock);
+ // Never use the combined match total for a home/away-only selection.
+ // A color-qualified card also requires an independently verified colored
+ // chronology; the regular LIVE scoreboard cannot establish yellow vs red.
+ const count=contract.cardColor?null:number(contract.side?
+   evidence.teams?.[event]?.[contract.side]:eventCount(evidence.counts,event));
  if(contract.kind==='team-total-goals'){
   const side=contract.side;
   if(!['home','away'].includes(side)||!['over','under'].includes(contract.choice))return null;
@@ -511,7 +517,7 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
   return contract.side===result?'WON':'LOST';
  }
  if(contract.kind==='window'){
-  if(!ordered)return null;
+  if(contract.cardColor||!ordered)return null; // use verified color-specific SQL facts
   if(contract.side&&ordered.events.some(e=>!['home','away'].includes(e.team)))return null;
   const events=contract.side?ordered.events.filter(e=>e.team===contract.side):ordered.events;
   // A positive event can be proven by an event that is individually verified.
