@@ -164,11 +164,25 @@ export async function persistProviderMarketDefinitions(rows,{execute,chunkSize=2
 /** A bounded, single-flight retry queue. No waiting on DB in the odds stream. */
 export function createProviderOfferArchive({execute,ready=()=>true,maxTracked=60000,
  onError=e=>console.warn('[provider offer archive]',e.message)}={}){
- const written=new Map(),pending=new Map();
- let active=null,failed=0,lastError=null,lastSavedAt=null,recorded=0;
+ const written=new Map(),pending=new Map(),observed=new Map();
+ let active=null,failed=0,lastError=null,lastSavedAt=null,recorded=0,skippedUnchanged=0;
  const cap=Math.max(1000,Number(maxTracked)||60000);
  const id=q=>[q.match_id,q.market_key,q.line,q.outcome_key].join('|');
  const sig=q=>JSON.stringify(q);
+ // A simple raw snapshot fingerprint is cheaper than recomputing dozens of
+ // market parsers on every identical provider odds poll. The append-on-change
+ // archive intentionally ignores top-level source freshness timestamps.
+ const rawKey=raw=>{
+  const id=Number(raw?.matchId??raw?.match_id);
+  const market=raw?.marketKey??raw?.market_key;
+  const outcome=raw?.outcomeKey??raw?.outcome_key;
+  if(!Number.isSafeInteger(id)||id<=0||!market||!outcome)return null;
+  return [id,market,String(raw.line??''),outcome].join('|');
+ };
+ const rawSignature=raw=>{
+  const {updatedAt:_at,updated_at:_at2,...stable}=raw;
+  return JSON.stringify(stable);
+ };
  async function flush(){
   if(active)return active;
   if(!ready()||!pending.size)return {pending:pending.size};
@@ -197,14 +211,24 @@ export function createProviderOfferArchive({execute,ready=()=>true,maxTracked=60
  function observe(rows){
   if(!ready())return;
   for(const raw of rows??[]){
+   if(!raw||typeof raw!=='object')continue;
+   const candidate=rawKey(raw),fingerprint=candidate?rawSignature(raw):null;
+   if(candidate&&observed.get(candidate)===fingerprint&&
+      (written.has(candidate)||pending.has(candidate))){
+    skippedUnchanged++;continue;
+   }
    const quote=normalizeProviderOffer(raw);if(!quote)continue;
    const key=id(quote),signature=sig(quote);
+   if(candidate){
+    observed.delete(key);observed.set(key,fingerprint);
+    while(observed.size>cap)observed.delete(observed.keys().next().value);
+   }
    if(written.get(key)===signature){pending.delete(key);continue;}
    pending.delete(key);pending.set(key,{signature,quote});
    if(pending.size>cap)pending.delete(pending.keys().next().value);
   }
   if(pending.size&&!active)void flush();
  }
- const status=()=>({pending:pending.size,recorded,failed,lastError,lastSavedAt});
+ const status=()=>({pending:pending.size,recorded,failed,lastError,lastSavedAt,skippedUnchanged});
  return {observe,flush,status};
 }
