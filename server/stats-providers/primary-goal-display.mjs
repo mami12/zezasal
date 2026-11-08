@@ -25,7 +25,15 @@ export function primaryGoalDisplay(coverage,facts,row){
   if(!id||used.has(id)||!Number.isSafeInteger(minute)||minute<0||minute>130||
      !['home','away'].includes(fact.team))return null;
   used.add(id);
-  events.push({id,type:'goal',team:fact.team,minute,phase:fact.phase??null});
+  // Zizobet stores 45+2 as minute=47 with explicit H1, and 90+3 as
+  // minute=93 with explicit H2. Display those in the 31-45+ / 76-90+
+  // buckets, not the following half or as overtime.
+  const phase=String(fact.phase??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const first=['h1','1sthalf','firsthalf','1h','1'].includes(phase);
+  const second=['h2','2ndhalf','secondhalf','2h','2'].includes(phase);
+  const displayMinute=first&&minute>45&&minute<=75?45:
+    second&&minute>90&&minute<=120?90:minute;
+  events.push({id,type:'goal',team:fact.team,minute:displayMinute,phase:fact.phase??null});
   const player=typeof fact.player_name==='string'&&fact.player_name.trim()?
    fact.player_name.trim():
    fact.aiscore_verified===true&&typeof fact.aiscore_player_name==='string'&&
