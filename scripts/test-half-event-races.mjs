@@ -26,6 +26,20 @@ for(const [market,outcome,expected] of [
  assert.equal(gradeHalfEventFacts(contract,corners,{complete:true}),expected,market);
  assert.equal(gradeHalfEventFacts(contract,corners,{complete:false}),null);
 }
+
+const firstOnly=[{team:'home',minute:13,phase:'H1',seconds:null}];
+for(const [market,choice,offered,expected] of [
+ ['2nd half - first corner','1',false,'VOID'],
+ ['2nd half - first corner','1',true,'LOST'],
+ ['2nd half - last goal','2',false,'VOID'],
+ ['2nd half - last goal','2',true,'LOST'],
+ ['2nd half - first corner','None',false,'WON']
+]){
+ const contract=liveContract({...line(market,choice),halfNoneOffered:offered});
+ assert.equal(contract?.noneOffered,offered||choice==='None',market+' frozen None');
+ const actual=gradeHalfEventFacts(contract,firstOnly,{complete:true});
+ assert.equal(actual,expected,market+' '+choice+' '+String(offered));
+}
 const ambiguous=[...corners,{team:'away',minute:46,phase:null}];
 const race=liveContract(line('1st half - Race to 2 corners','1'));
 assert.equal(gradeHalfEventFacts(race,ambiguous,{complete:true}),null,
