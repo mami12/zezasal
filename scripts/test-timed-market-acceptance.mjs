@@ -33,6 +33,14 @@ for(const line of [
 }
 assert.equal(parseIntervalCount(pick('Total corners in minutes 30-45 (15-minute interval)','Over','0.5'))?.kind,
  'window-total','Existing provider-minute windows must keep working');
+assert.deepEqual((()=>{
+ const c=parseIntervalCount(pick('Total corners in minutes 30-45 (15-minute interval)','Over','0.5'));
+ return [c.from,c.to];
+})(),[30,44],'30-45 in 15-minute clock notation ends at 44:59, not 45+');
+assert.deepEqual((()=>{
+ const c=parseIntervalCount(pick('Total corners in minutes 1-15 (15-minute interval)','Over','0.5'));
+ return [c.from,c.to];
+})(),[1,15],'1-15 labelled 15-minute market is inclusive in the provider notation');
 assert.equal(parseTimedResultMarket(pick('00:00 - 09:59 min. - Result','1'))?.kind,'interval-result');
 assert.equal(liveContract(pick('Next Goal 2nd','2'),{counts:{goal:{home:1,away:0}}})?.target,2);
 assert.equal(liveContract(pick('Which team wins race to 3 corners','1'))?.kind,'race');
