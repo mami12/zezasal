@@ -170,6 +170,20 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw err;
   }
 
+  let contract;
+  try {
+    contract=frozenLiveContract({...row,market_name:row.market_name??row.marketName??parsed.marketKey,
+      outcome_name:row.outcome_name??parsed.outcomeKey},match);
+  } catch(error) {
+    if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
+      error.outcomeId=selection?.outcomeId;
+      error.marketName=row.market_name??parsed.marketKey;
+      error.outcomeName=row.outcome_name??parsed.outcomeKey;
+      // A slip with several selections must identify the rejected one.
+      error.message=`${error.marketName} (${error.outcomeName}): ${error.message}`;
+    }
+    throw error;
+  }
   return {
     matchId: String(matchId),
     marketKey: parsed.marketKey,
@@ -179,7 +193,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     marketName: row.market_name ?? parsed.marketKey,
     matchName: `${match.home} vs ${match.away}`,
     price,
-    liveContract:frozenLiveContract({...row,market_name:row.market_name??row.marketName??parsed.marketKey,outcome_name:row.outcome_name??parsed.outcomeKey},match),
+    liveContract:contract,
   };
 }
 
