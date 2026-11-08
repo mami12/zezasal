@@ -208,7 +208,8 @@ export function parseClockWindowTotal(line){
  const under=label.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
  if(!over&&!under)return null;
  const named=(over??under)[1],raw=line.line??line.specifier;
- const threshold=number(String(named??raw??m[6]??'').replace(',','.'));
+ const supplied=raw!=null&&String(raw).trim()!==''?raw:null;
+ const threshold=number(String(named??supplied??m[6]??'').replace(',','.'));
  const inTitle=number(String(m[6]??'').replace(',','.'));
  if(threshold===null||threshold<0||threshold>300||!Number.isInteger(threshold*2)||
     (inTitle!==null&&inTitle!==threshold))return null;
