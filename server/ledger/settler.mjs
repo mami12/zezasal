@@ -22,6 +22,7 @@ import { eventMarketRequirement } from './event-market-policy.mjs';
 import { isStatisticMarket, hasStatisticEvidence, gradeStatisticLine } from './statistic-markets.mjs';
 import {goalTotalContract} from './goal-total-contract.mjs';
 import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
+import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
@@ -42,7 +43,7 @@ const norm = (s) =>
 /** which family a market belongs to, from the name we stored with the line */
 export function classify(marketName = '') {
   if (isFirstHalfResultBtts(marketName)) return 'HALF_RESULT_BTTS';
-  if (/double chance.*both.*score|both.*score.*double chance|dc.*btts|btts.*dc/i.test(marketName)) return 'DC_BTTS';
+  if (isDcBttsMarket(marketName)) return 'DC_BTTS';
   if (isResultTotalMarket(marketName)) return 'RESULT_TOTAL';
   if (isTotalBttsMarket(marketName)) return 'TOTAL_BTTS';
   if (isResultBttsMarket(marketName)) return 'RESULT_BTTS';
@@ -363,15 +364,8 @@ export function gradeLine(line, result) {
     }
 
     case 'DC_BTTS': {
-      const clean = norm(line.outcome_name ?? line.outcome_key);
-      const bttsYes = clean.includes('yes') || clean.includes('po') || clean.includes('gg');
-      const bttsNo = clean.includes('no') || clean.includes('jo') || clean.includes('ng');
-      const dc1x = clean.includes('1x') || clean.includes('homeordraw');
-      const dc12 = clean.includes('12') || clean.includes('homeoraway');
-      const dcx2 = clean.includes('x2') || clean.includes('draworaway');
-      const dcSatisfied = (dc1x && (homeWin || draw)) || (dc12 && (homeWin || awayWin)) || (dcx2 && (awayWin || draw));
-      const bttsSatisfied = bttsYes ? bothScored : bttsNo ? !bothScored : false;
-      return decide(dcSatisfied && bttsSatisfied);
+      const selected=parseDcBttsOutcome(line.outcome_name,line.outcome_key);
+      return gradeDcBtts(selected,home,away);
     }
 
     case 'CLEAN_SHEET': {
