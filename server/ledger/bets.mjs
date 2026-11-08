@@ -41,6 +41,7 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
+import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
 // Prematch prices are refreshed hourly (SUBSCRIBE/PREMATCH_REFRESH_MS) unless the fixture is
@@ -172,6 +173,22 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw err;
   }
 
+  // Full-time foul/shot markets are backed by the verified statistics
+  // providers. Never freeze them as a time-ordered incident contract or
+  // accept an unrecognized player/half statistic with no settlement rule.
+  if(isStatisticMarket(row)){
+    const stat=statisticMarketContract(row);
+    const selected=String(row.outcome_name??row.outcome_key??'')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+    const validChoice=stat?.scope==='result'?
+      /^(?:1|x|2|home|away|draw)$/.test(selected)||
+      selected===String(match.home??'').trim().toLowerCase()||
+      selected===String(match.away??'').trim().toLowerCase():
+      /^(?:over|under)(?:\b|\s)/.test(selected);
+    if(!stat?.supported||!validChoice)
+      throw Object.assign(badRequest('Këtij tregu i mungon një rregull i verifikuar për statistikën.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  }
   // Freeze whether the actual quoted market includes a third "Neither"
   // selection. Two-way races keep their original VOID rule when X is never
   // reached; three-way races pay Neither and lose on 1/2 instead.
