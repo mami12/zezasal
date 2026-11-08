@@ -14,7 +14,7 @@ const yesNo=line=>{
  if(['no','jo'].includes(label))return false;
  return null;
 };
-const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','neither','asnjera','asnje skuader','x','draw','no goal','no corner','no more goals','no more corners','no team'].includes(norm(v))?'none':null;
+const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','neither','asnjera','asnje skuader','x','draw','no goal','no corner','no more goals','no more corners','no card','no more cards','no booking','no bookings','no more bookings','no team'].includes(norm(v))?'none':null;
 const typeOf=name=>/\b(?:corners?|corner kicks?|kornera?)\b/.test(name)?'corner':
  /\b(?:goals?|scores?|golat?|gola?)\b/.test(name)?'goal':
  /\b(?:cards?|bookings?|kartona?)\b/.test(name)?'card':
@@ -373,14 +373,14 @@ export function parseSequenceBet(line,counts={}) {
  // "Next Goal 1st" and "Next Goal 2nd". These refer to goal #1/#2 of
  // the fixture, NOT blindly to current score + 1. Preserve their ordinal.
  // A bare "Next Goal" remains the live next goal from the accepted score.
- const providerOrdinal=name.match(/^next\s+(goal|corner)\s+(\d{1,3})(?:st|nd|rd|th)?$/);
+ const providerOrdinal=name.match(/^next\s+(goal|corner|card|booking)\s+(\d{1,3})(?:st|nd|rd|th)?$/);
  // Do not collapse a malformed numbered/period-specific NEXT offer into
  // the unnamed live-next market. Its meaning is unsupported, so hold it.
- if(/^next\s+(?:goal|corner)\s+\d/.test(name)&&!providerOrdinal)return null;
- if(/^next\s+(?:goal|corner)\b/.test(name)&&/\b(?:half|period)\b/.test(name))return null;
- const isNext=/^(?:next|who (?:scores|takes) (?:the )?next)\s+(?:goal|corner)\b|^(?:which team )?(?:scores|wins) next (?:goal|corner)/.test(name);
- const numbered=name.match(/^(?:(?:who (?:scores|takes) (?:the )?)|(?:which team (?:scores|wins) (?:the )?))?(\d+)(?:st|nd|rd|th)?\s+(?:goal|corner)\b|^(?:(?:who (?:scores|takes)|which team (?:scores|wins)) (?:the )?)?(?:goal|corner)\s*(\d+)\b|^which team (?:scores|wins) (?:the )?goal (\d+)\b/);
- const first=/^(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?first\s+(?:goal|corner)\b/.test(name);
+ if(/^next\s+(?:goal|corner|card|booking)\s+\d/.test(name)&&!providerOrdinal)return null;
+ if(/^next\s+(?:goal|corner|card|booking)\b/.test(name)&&/\b(?:half|period)\b/.test(name))return null;
+ const isNext=/^(?:next|who (?:scores|takes) (?:the )?next)\s+(?:goal|corner|card|booking)\b|^(?:which team )?(?:scores|wins) next (?:goal|corner|card|booking)/.test(name);
+ const numbered=name.match(/^(?:(?:who (?:scores|takes) (?:the )?)|(?:which team (?:scores|wins) (?:the )?))?(\d+)(?:st|nd|rd|th)?\s+(?:goal|corner|card|booking)\b|^(?:(?:who (?:scores|takes)|which team (?:scores|wins)) (?:the )?)?(?:goal|corner|card|booking)\s*(\d+)\b|^which team (?:scores|wins) (?:the )?goal (\d+)\b/);
+ const first=/^(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?first\s+(?:goal|corner|card|booking)\b/.test(name);
  const reach=name.match(/^(?:which team\s+)?(?:reaches|gets|takes|scores|receives)\s+(\d{1,3})\s+(goals?|corners?|cards?)\s+first\b/);
  const race=name.match(/\brace to (\d{1,3}) (goals?|corners?|cards?)\b/);
  if(!isNext&&!providerOrdinal&&!numbered&&!race&&!first&&!reach)return null;
@@ -404,7 +404,8 @@ export function parseSequenceBet(line,counts={}) {
   target=home+away+1;
  }
  if(!Number.isSafeInteger(target)||target<1||target>100)return null;
- return {version:1,kind:'sequence',event,target,side};
+ return {version:1,kind:'sequence',event,target,side,
+  noneOffered:side==='none'||line.sequenceNoneOffered===true};
 }
 /** Exact native HOME/AWAY aggregate contracts. These use the chosen
  * team's incident count, never both teams combined. Color-qualified cards
