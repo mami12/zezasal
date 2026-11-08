@@ -304,10 +304,12 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
       const backup=await statsProviders.recoverHistoricalMatch?.({home,away,start_at:targetDate,service:'PREMATCH'});
       if(backup){
         parsed={homeScore:backup.homeScore,awayScore:backup.awayScore,
-          halfHomeScore:null,halfAwayScore:null,cornersHome:null,cornersAway:null,
-          cardsHome:null,cardsAway:null,statistics:{},
+          halfHomeScore:null,halfAwayScore:null,
+          cornersHome:backup.cornersHome,cornersAway:backup.cornersAway,
+          cardsHome:backup.cardsHome,cardsAway:backup.cardsAway,
+          statistics:backup.statistics??{},
           goalEvents:backup.evidence.events.filter(event=>event.type==='goal'&&!event.shootout),
-          goalTimelineAvailable:backup.evidence.complete===true};
+          goalTimelineAvailable:backup.evidence.complete===true&&backup.evidence.goalsAvailable===true};
         source=backup.source;
       }
     }catch(error){console.warn('[recovery] configured history providers unavailable:',error.message);}
