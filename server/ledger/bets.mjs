@@ -48,6 +48,7 @@ import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
 import {isPlayerGoalSpecial,parsePlayerGoalSpecial} from './player-goal-specials.mjs';
+import {playerGoalLiveGuard} from './player-goal-live-guard.mjs';
 import {isPeriodGoalTotal,parsePeriodGoalTotal} from './period-goal-totals.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
@@ -199,6 +200,24 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(!playerGoalSpecial)
       throw Object.assign(badRequest('Mungon emri i lojtarit ose limiti i saktë i golave.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+    if(String(match.service??'').toUpperCase()==='LIVE'){
+      const observed=Date.now();
+      const coverage=(await executor(`select count_home,count_away,through_minute,
+        observed_at,confirmed_at from app_match_event_coverage
+        where match_id=$1 and provider='zizobet' and kind='goal' limit 1`,
+        [matchId])).rows[0]??null;
+      const facts=(await executor(`select minute,phase,team,player_id,player_name,
+        aiscore_player_id,aiscore_player_name,aiscore_verified,own_goal
+        from app_match_event_fact where match_id=$1 and provider='zizobet'
+          and kind='goal' and active=true order by minute,provider_event_id limit 250`,
+        [matchId])).rows;
+      const verified=playerGoalLiveGuard(playerGoalSpecial,coverage,facts,match,{now:observed});
+      if(!verified.allowed)
+        throw Object.assign(badRequest('Golashënuesi LIVE nuk ka kronologji të freskët ose tregu ka përfunduar.'),{
+          code:verified.reason==='PLAYER_GOAL_MARKET_ALREADY_DECIDED'?
+            'MARKET_DECIDED':'MARKET_EVIDENCE_UNSUPPORTED',
+          outcomeId:selection?.outcomeId,reason:verified.reason});
+    }
     if(String(match.service??'').toUpperCase()==='LIVE'&&
        playerGoalSpecial.mode==='period'){
       const now=Date.now(),stamp=Date.parse(match.clock_at??'');
