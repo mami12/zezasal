@@ -13,6 +13,9 @@ const history={source:'fotmob',kind:'corner',final:true,complete:true,
   {id:'c3',type:'corner',team:'home',minute:23}
  ]};
 assert.ok(validateHistoricalTimedEvents(history));
+assert.equal(validateHistoricalTimedEvents({...history,events:[
+ {...history.events[0],phase:'Second Half'},...history.events.slice(1)]}),null,
+ 'A second-half incident reported as minute ten is not a verified absolute minute');
 assert.equal(validateHistoricalTimedEvents({...history,events:history.events.slice(1)}),null,
  'Partial timeline must not authorize a negative/positive corner settlement');
 assert.equal(validateHistoricalTimedEvents({...history,events:[
