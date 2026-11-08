@@ -42,6 +42,7 @@ import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
+import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isStatisticMarket,statisticMarketContract} from './statistic-markets.mjs';
 
 const MIN_STAKE = 100; // LEK
@@ -127,6 +128,12 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw badRequest('Ky kombinim Rezultati + Të dy ekipet shënojnë nuk është identifikuar plotësisht.');
   }
 
+  // HT/FT is two explicit 1-X-2 results. Decode the provider selection
+  // now rather than charging the wallet for an unknowable text label.
+  if(isHtFtMarket(row.market_name)&&
+     !parseHtFtOutcome(row.outcome_name,row.outcome_key))
+    throw Object.assign(badRequest('Opsioni Pjesa e parë / Fundi i ndeshjes nuk u njoh.'),{
+      code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   if(isDcBttsMarket(row.market_name)&&
      !parseDcBttsOutcome(row.outcome_name,row.outcome_key))
     throw Object.assign(badRequest('Kombinimi Double Chance + BTTS nuk ka opsion të identifikueshëm.'),{
