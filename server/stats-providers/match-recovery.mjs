@@ -191,7 +191,9 @@ export function parseFotMobPayload(summary, details = null) {
 
   // Normalized goal events for player scorer grading
   const goalEvents = events
-    .filter(e => e.type === 'Goal' && e.isPenaltyShootoutEvent !== true)
+    .filter(e => e.type === 'Goal' && e.isPenaltyShootoutEvent !== true &&
+      e.isDisallowed!==true && e.cancelled!==true && e.canceled!==true &&
+      !/cancel|disallow|overturn/i.test(String(e.status??e.goalDescription??'')))
     .map((e, idx) => ({
       disabled: false,
       id: String(e.eventId || `goal-${e.time}-${idx}`),
