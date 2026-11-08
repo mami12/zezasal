@@ -393,7 +393,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        // FotMob names can fill only one-to-one Zizobet scorer slots.
        // Missing or conflicting goals are never imported as primary events.
        const matched=matchedSupplementalScorers(primaryFacts,
-        parsed.goalEvents.map(e=>({minute:e.minute,team:e.team,player:e.player,own:e.own})));
+        parsed.goalEvents.map(e=>({minute:Number(e.minute)+Number(e.injury??0),team:e.team,player:e.player,own:e.own})));
        const used=new Set((entry.scorers??[]).map(e=>e.team+'|'+e.minute));
        entry.scorers=[...(entry.scorers??[]),
         ...matched.filter(e=>!used.has(e.team+'|'+e.minute))];
