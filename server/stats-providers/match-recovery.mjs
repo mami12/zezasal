@@ -82,21 +82,25 @@ export function extractTeamNames(matchName, row = null) {
 /**
  * Look up a match in FotMob by team names across target dates.
  */
-export async function findFotMobFixture(home, away, targetDates) {
-  for (const dateStr of targetDates) {
-    const data = await fetchFotMobDate(dateStr);
-    if (!data?.leagues) continue;
-    for (const league of data.leagues) {
-      for (const m of league.matches || []) {
-        const mHome = m.home?.name || m.home?.shortName;
-        const mAway = m.away?.name || m.away?.shortName;
-        if (teamsMatch(home, mHome) && teamsMatch(away, mAway)) {
-          return { match: m, league: league.name, dateStr };
-        }
+export async function findFotMobFixture(home,away,targetDates,expectedKickoff=null){
+  const matches=new Map();
+  const expected=Date.parse(expectedKickoff??'');
+  for(const dateStr of targetDates){
+    const data=await fetchFotMobDate(dateStr);
+    if(!Array.isArray(data?.leagues))continue;
+    for(const league of data.leagues){
+      for(const match of league.matches??[]){
+        const homeName=match.home?.name??match.home?.shortName;
+        const awayName=match.away?.name??match.away?.shortName;
+        if(!teamsMatch(home,homeName)||!teamsMatch(away,awayName))continue;
+        const kickoff=Date.parse(match.time?.utcTime??match.time?.utc??match.time??'');
+        if(Number.isFinite(expected)&&Number.isFinite(kickoff)&&Math.abs(kickoff-expected)>7200000)continue;
+        if(match.id!=null)matches.set(String(match.id),{match,league:league.name,dateStr});
       }
     }
   }
-  return null;
+  // Ambiguous team/date matches must never authorize a financial result.
+  return matches.size===1?[...matches.values()][0]:null;
 }
 
 /**
@@ -282,7 +286,7 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
   const dates = candidateDateStrings(targetDate);
 
   // 1. FotMob is the historical fallback, never an odds source.
-  const found = await findFotMobFixture(home, away, dates);
+  const found = await findFotMobFixture(home, away, dates, targetDate);
   let parsed=null, source=null;
   if(found?.match){
     const details=await fetchFotMobDetails(found.match.id);
@@ -341,6 +345,7 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
     goals.filter(e=>e.team==='away').length===awayScore;
   const uniqueIds=new Set(goals.map(e=>String(e.id)));
   const fullTimeline=parsed.goalTimelineAvailable===true&&scoreMatches&&
+    !goals.some(event=>event.own===true&&source==='fotmob')&&
     uniqueIds.size===goals.length&&goals.every(e=>
       (e.team==='home'||e.team==='away')&&Number.isInteger(e.minute)&&e.minute>=0&&e.minute<=130);
   if(fullTimeline){
