@@ -396,7 +396,7 @@ export async function recoverPendingMatch(matchId, { matchName = null, placedAt 
       }
     }
     for(const field of ['shots','shotsOnTarget','fouls','possession']){
-      if(!parsed.statistics?.[field]?.home&&!parsed.statistics?.[field]?.away&&
+      if(parsed.statistics?.[field]?.home==null&&parsed.statistics?.[field]?.away==null&&
         extra.statistics?.[field]?.home!=null&&extra.statistics?.[field]?.away!=null){
         parsed.statistics??={};
         parsed.statistics[field]=extra.statistics[field];
