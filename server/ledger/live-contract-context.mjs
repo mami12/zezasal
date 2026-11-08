@@ -56,6 +56,18 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
       (observedAt!==null&&(at-observedAt>90000||observedAt-at>5000)))throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
  }
+ if(live&&contract.kind==='player-card'){
+  const snapshot=line.playerCardSnapshot;
+  const observed=time(snapshot?.observed_at),confirmed=time(snapshot?.confirmed_at);
+  const through=snapshot?.through_minute==null?null:Number(snapshot.through_minute);
+  if(clock===null||!snapshot||observed===null||confirmed===null||
+     confirmed>observed||at-observed>45000||observed-at>5000||
+     !Number.isFinite(through)||through<Math.floor(clock))
+    throw fail('Mungon historiku i freskët dhe i konfirmuar i kartonëve për lojtarin LIVE.');
+  if(snapshot.booked===true)
+    throw Object.assign(new Error('Lojtari e ka marrë kartonin; tregu ka përfunduar.'),{
+      status:400,code:'MARKET_DECIDED'});
+ }
  if(live&&contract.kind==='race'){
   if(contract.event==='card'){
    const observed=time(cardSnapshot?.observed_at);
