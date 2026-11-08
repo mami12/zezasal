@@ -118,7 +118,10 @@ export function normalizeEvents(data,source){
    minute:minute??NaN,seconds:zizobetEventSeconds(e.clk,minute),
    player:typeof e.pl==='string'?e.pl.trim()||null:null,
    playerId:e.playerId??e.player_id??null,
-   phase:e.phase??null,updatedAt:e.updated_uts??null};
+   // The provider's 45+N notation unambiguously belongs to first-half
+   // stoppage. Keep it as phase evidence: 45+2 must not be treated as 2H.
+   phase:e.phase??(/^45\s*\+\s*[1-9]\d?$/.test(String(e.gt??'').trim())?'1st half':null),
+   updatedAt:e.updated_uts??null};
  });
  const unique=new Map();for(const event of events){const key=String(event.id),old=unique.get(key);if(!old||Number(event.updatedAt??0)>=Number(old.updatedAt??0)||!Number.isFinite(Number(old.updatedAt)))unique.set(key,event);}
  const retained=[...unique.values()].filter(e=>!e.disabled);
