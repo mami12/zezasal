@@ -6,6 +6,7 @@ import {goalTotalContract} from './goal-total-contract.mjs';
 import {parseParityMarket} from './parity-markets.mjs';
 import {parseMultiCornerContract} from './multi-corners.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
+import {parsePlayerOrdinalScorer} from './player-ordinal-scorer.mjs';
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const number=v=>v==null||v===''||!Number.isFinite(Number(v))?null:Number(v);
 const yesNo=line=>{
@@ -470,7 +471,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const yellow=/\byellow\s+cards?\b/.test(name),red=/\bred\s+cards?\b/.test(name);
  const ambiguous=/\b(?:second\s+yellow|yellow\s+red)\b/.test(name);
  if((yellow&&red)||ambiguous)return null;
- const contract=parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
+ const contract=parsePlayerOrdinalScorer(line)??parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
