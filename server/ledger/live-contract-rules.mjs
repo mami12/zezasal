@@ -8,6 +8,7 @@ import {parseMultiCornerContract} from './multi-corners.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
 import {parsePlayerOrdinalScorer} from './player-ordinal-scorer.mjs';
 import {parsePlayerGoalSpecial} from './player-goal-specials.mjs';
+import {parseHalfExactMarket} from './half-exact-markets.mjs';
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const number=v=>v==null||v===''||!Number.isFinite(Number(v))?null:Number(v);
 const yesNo=line=>{
@@ -478,7 +479,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const contract=parsePlayerOrdinalScorer(line)??parsePlayerGoalSpecial(line)??parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
-  parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
+  parseHalfExactMarket(line)??parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseMultiCornerContract(line)??parseCornerComparison(line)??parseTeamCountMarket(line)??parseCountMarket(line);
  // Foul totals come from verified match statistics, not from the
  // sparse provider incident timeline. Time/ordinal foul wagers are not
@@ -488,7 +489,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
   if(contract.event!=='card'||!['over','under','exact','range','atLeast',
-    'window','window-total','half-total','player-card'].includes(contract.kind))return null;
+    'window','window-total','half-total','half-exact-count','player-card'].includes(contract.kind))return null;
   return {...contract,cardColor:yellow?'yellow':'red'};
  }
  return contract;
