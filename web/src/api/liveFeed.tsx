@@ -1,6 +1,7 @@
 import {OutcomeFeedContext,createOutcomeStore} from './outcomeFeed';
 import {bindFeedScope,hasFeedInterest,hasDetailFeedInterest} from './feedScope';
 import {createSourceReopenTracker} from './sourceReopen';
+import {materialQuoteChange,mergeChangedFlags} from './quote-dedup.mjs';
 import {setCatalogRows,setCategoryPolicies,setScopeBlocks} from '../../../server/market-catalog.mjs';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
@@ -145,6 +146,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
     setRejectedOutcomes(previous=>({...previous,...Object.fromEntries(ids.filter(Boolean).map(id=>[id,at]))}));
   },[]);
   const prevOdds = useRef<Record<string, number>>({});
+  const prevQuoteFacts=useRef<Record<string,{price:number;validUntil?:number|null;suspended?:boolean;quoteSuspended?:boolean}>>({});
   const prevOddsAt = useRef<Record<string, number>>({});
   const prevMarketAt = useRef<Record<string, number>>({});
   const prevMatchAt = useRef<Record<string, number>>({});
@@ -312,7 +314,16 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
           if (!Number.isFinite(rawPrice) || rawPrice < 1 || rawPrice > 9999999999.9999) continue;
           const next = frozenSelectionPrice(rawPrice);
           const before = prevOdds.current[outcomeId];
+          const fingerprint={
+            price:next,validUntil:outcome.priceValidUntil,
+            suspended:outcome.suspended,quoteSuspended:outcome.quoteSuspended
+          };
+          // An identical retry / MQTT snapshot must not re-render thousands
+          // of React odds buttons. A changed expiry or suspension is material.
+          const changedQuote=materialQuoteChange(prevQuoteFacts.current[outcomeId],fingerprint);
+          prevQuoteFacts.current[outcomeId]=fingerprint;
           prevOdds.current[outcomeId] = next;
+          if(!changedQuote)continue;
           deltas[outcomeId] = { outcomeId, newOdds: next, direction: before === undefined || next >= before ? 'up' : 'down', at: incomingAt, changed:before !== undefined && before !== next,priceValidUntil:outcome.priceValidUntil,quoteSuspended:outcome.quoteSuspended };
         }
 
@@ -333,8 +344,8 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
 
       // React coalesces updates within the current event; no extra timer delays prices.
       if(Object.keys(deltas).length)setOddsDeltas(previous=>{const next={...previous};for(const[id,delta]of Object.entries(deltas))if((delta.at??0)>=(previous[id]?.at??0))next[id]=delta;return next;});
-      if (Object.keys(outcomeLocks).length) setLockedOutcomes(prev => ({ ...prev, ...outcomeLocks }));
-      if (Object.keys(marketLocks).length) setLockedMarkets(prev => ({ ...prev, ...marketLocks }));
+      if (Object.keys(outcomeLocks).length) setLockedOutcomes(prev => mergeChangedFlags(prev,outcomeLocks));
+      if (Object.keys(marketLocks).length) setLockedMarkets(prev => mergeChangedFlags(prev,marketLocks));
       // Reopen a locally refused choice only after a newer, explicitly active
       // provider price. A mere render or an old REST quote cannot reopen it.
       if (Object.keys(deltas).length) setRejectedOutcomes(previous=> {
@@ -371,7 +382,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
         prevRiskAt.current[id] = at;
         locks[id] = locked;
       }
-      setRiskLockedOutcomes(prev => ({ ...prev, ...locks }));
+      setRiskLockedOutcomes(prev => mergeChangedFlags(prev,locks));
     });
     socket.on('combos:settings', (payload: {enabled?: boolean}) => {
       if (typeof payload?.enabled === 'boolean') setCombosEnabled(payload.enabled);
