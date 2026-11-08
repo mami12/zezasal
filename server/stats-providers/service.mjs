@@ -5,6 +5,7 @@ import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mj
 import {supportedContract} from '../ledger/event-evidence.mjs';
 import {canonical,uniqueFixture,teamsMatch,goalCapabilities,normalizeBsd,normalizeApiFootball,normalizeSportApi,normalizeWorld,normalizeGoalApi} from './adapters.mjs';
 import {findFotMobFixture,fetchFotMobDetails,parseFotMobPayload,candidateDateStrings} from './match-recovery.mjs';
+import {apiFootballTimedIncidents,bsdTimedIncidents,sportApiTimedIncidents,goalApiTimedIncidents} from './historical-incidents.mjs';
 const query=async(...a)=>(await import('../db.mjs')).query(...a);
 const specs={bsd:{base:'https://sports.bzzoiro.com/api/v2',env:'BSD_API_KEY',header:'Authorization',prefix:'Token ',day:1000,month:14000},worldcup26:{base:'https://worldcup26.ir',day:500,month:10000},sportapi:{base:'https://sportapi.ai/api',env:'SPORTAPI_API_KEY',header:'X-Api-Key',day:2000,month:14000},goalapi:{base:'https://api.goal-api.com/v1',env:'GOALAPI_API_KEY',header:'Authorization',prefix:'Bearer ',day:1000,month:31000},apifootball:{base:'https://v3.football.api-sports.io',env:'APIFOOTBALL_API_KEY',header:'x-apisports-key',day:100,month:3100}};
 const refreshMs=10*60*1000,requiredStats=['shotsOnTarget','fouls','shots','corners'];
@@ -116,22 +117,22 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   if(provider==='bsd'){
    const f=await get(`/events/${m.id}/`),availability=await get(`/events/${m.id}/availability/`);
    const inc=await get(`/events/${m.id}/incidents/`),stats=await get(`/events/${m.id}/stats/`),lineups=await get(`/events/${m.id}/lineups/`);
-   return normalizeBsd(f,inc,stats,lineups,availability);
+   return {...normalizeBsd(f,inc,stats,lineups,availability),...bsdTimedIncidents(inc.incidents)};
   }
   if(provider==='goalapi'){
    const detail=await get('/fixtures/'+m.id),e=await get('/fixtures/'+m.id+'/events'),l=await get('/fixtures/'+m.id+'/lineups');
    if(!detail.success||String(detail.data?.id)!==String(m.id)||!e.success||!Array.isArray(e.data)||!l.success)throw Error('STATS_INVALID_RESPONSE');
    if((e.count!=null&&e.count!==e.data.length)||e.pagination?.hasMore)throw Error('STATS_INCOMPLETE_PAGES');
-   return normalizeGoalApi(detail.data,e.data,l.data??{});
+   return {...normalizeGoalApi(detail.data,e.data,l.data??{}),...goalApiTimedIncidents(e.data)};
   }
   if(provider==='apifootball'){
    const f=(await get('/fixtures?id='+m.id)).response?.[0];if(!f)throw Error('STATS_NO_FIXTURE');
    const e=await get('/fixtures/events?fixture='+m.id),l=await get('/fixtures/lineups?fixture='+m.id);
-   return normalizeApiFootball(f,e.response??[],l.response??[]);
+   return {...normalizeApiFootball(f,e.response??[],l.response??[]),...apiFootballTimedIncidents(e.response??[],f)};
   }
   if(provider==='sportapi'){
    const f=(await get('/fixtures/'+m.id)).fixture,e=await get(`/fixtures/${m.id}/events`),l=await get(`/fixtures/${m.id}/lineups`);
-   if(!f)throw Error('STATS_NO_FIXTURE');return normalizeSportApi(f,e.data??[],l);
+   if(!f)throw Error('STATS_NO_FIXTURE');return {...normalizeSportApi(f,e.data??[],l),...sportApiTimedIncidents(e.data??[])};
   }
   const d=await get(`/get/soccer/${m.league}/scoreboard?dates=${String(m.start).slice(0,10).replaceAll('-','')}`),f=d.events?.find(x=>String(x.id)===String(m.id));if(!f)throw Error('STATS_NO_FIXTURE');
   const plays=[];for(let pageIndex=1;pageIndex<=25;pageIndex++){
@@ -412,7 +413,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       .map(field=>[field,validPair(field)]).filter(([,pair])=>pair));
     return {source:provider,homeScore:Number(evidence.homeScore),awayScore:Number(evidence.awayScore),
       cornersHome:corners?.home??null,cornersAway:corners?.away??null,
-      cardsHome:cards?.home??null,cardsAway:cards?.away??null,statistics,evidence};
+      cardsHome:cards?.home??null,cardsAway:cards?.away??null,statistics,evidence,
+      cornerEvents:evidence.cornerEvents??[],cardEvents:evidence.cardEvents??[],
+      cornerTimelineAvailable:evidence.cornerTimelineAvailable===true,
+      cardTimelineAvailable:evidence.cardTimelineAvailable===true};
    }catch(error){
     health.providers[provider]={...(health.providers[provider]??{}),
       lastError:/^STATS_[A-Z_0-9]+$/.test(error.message)?error.message:'STATS_UNAVAILABLE'};
