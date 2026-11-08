@@ -176,6 +176,11 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // reached; three-way races pay Neither and lose on 1/2 instead.
   const raceName=String(row.market_name??row.marketName??'');
   const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
+  const isLast=/^(?:(?:which|what) team (?:will )?(?:score|take|receive) (?:the )?)?last (?:goal|corner|card)$|^(?:last (?:goal|corner|card) (?:by|scored by|taken by)|team (?:to )?(?:score|take|receive) (?:the )?last (?:goal|corner|card))$/i.test(raceName);
+  const lastNoneOffered=isLast&&quotedOffers.some(o=>
+    o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
+    /^(?:none|neither|no team|no one|asnj[eë]ra|asnje skuader|x|draw)$/i.test(
+      String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
   const raceNoneOffered=isRace&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
     /^(?:none|neither|no team|no one|asnj[eë]ra|asnje skuader|x|draw)$/i.test(
@@ -197,7 +202,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,raceCardSnapshot},match);
+      raceNoneOffered,lastNoneOffered,raceCardSnapshot},match);
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
