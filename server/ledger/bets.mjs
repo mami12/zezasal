@@ -241,6 +241,13 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   }
 
   const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
+  const isSequenceMarket=!isRace&&
+    /\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+(?:goals?|corners?|cards?|bookings?)\b|\b(?:goals?|corners?|cards?|bookings?)\s+\d+\b/i.test(raceName);
+  const isCardSequence=isSequenceMarket&&/\b(?:cards?|bookings?)\b/i.test(raceName);
+  const sequenceNoneOffered=isSequenceMarket&&quotedOffers.some(o=>
+    o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
+    /^(?:none|neither|no team|no one|no goal|no more goals?|no corner|no more corners?|no cards?|no more cards?|no bookings?|x|draw)$/i.test(
+      String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
   const isLast=/^(?:(?:which|what) team (?:will )?(?:score|take|receive) (?:the )?)?last (?:goal|corner|card)$|^(?:last (?:goal|corner|card) (?:by|scored by|taken by)|team (?:to )?(?:score|take|receive) (?:the )?last (?:goal|corner|card))$/i.test(raceName);
   const lastNoneOffered=isLast&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
@@ -254,7 +261,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // Only a confirmed, recent primary card incident coverage can establish
   // whether Race to X Cards has already ended at LIVE placement.
   let raceCardSnapshot=null;
-  if(isRace&&/\brace to \d+ cards?\b/i.test(raceName)&&
+  if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence)&&
      String(match.service??'').toUpperCase()==='LIVE'){
     try{
       raceCardSnapshot=(await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at
@@ -306,7 +313,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
+      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
