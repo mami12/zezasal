@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {parseEventWindow,parseSequenceBet,parseCountMarket,gradeLiveContract,gradeFromAcceptedCounters} from '../server/ledger/live-contract-rules.mjs';
+import {parseEventWindow,parseSequenceBet,parseLastEvent,parseCountMarket,gradeLiveContract,gradeFromAcceptedCounters} from '../server/ledger/live-contract-rules.mjs';
 
 const windowLine=(market,side)=>({market_name:market,outcome_name:side});
 const w=parseEventWindow(windowLine('Will there be a goal in minutes 20-45','Yes'));
@@ -63,6 +63,23 @@ assert.equal(gradeLiveContract({...race,side:'away'},corners),'LOST');
 assert.equal(gradeLiveContract(race,{...corners,coverage:{cornerThrough:10}}),null);
 assert.equal(gradeLiveContract({...race,target:6},corners,{ended:true}),null,'Unreached race needs the official cancellation rule');
 assert.equal(gradeLiveContract(w,obs('goal',[],15,15),{ended:true}),null,'Abandoned early match is not an elapsed window');
+// Last goal/corner/card are final-event bets: never declare a winner before FT.
+for(const [name,event] of [['Last Goal','goal'],['Last Corner','corner'],['Last Card','card']]){
+ const last=parseLastEvent(windowLine(name,'1'));
+ assert.equal(last.kind,'last-event');
+ assert.equal(last.event,event);
+ const frame=obs(event,[10,20],90,90);
+ frame.events[0].team='home';frame.events[1].team='away';
+ assert.equal(gradeLiveContract(last,frame),null,'Last event is unknowable before FT');
+ assert.equal(gradeLiveContract(last,frame,{ended:true}),'LOST');
+ assert.equal(gradeLiveContract({...last,side:'away'},frame,{ended:true}),'WON');
+ assert.equal(gradeLiveContract({...last,side:'none'},frame,{ended:true}),'LOST');
+ assert.equal(gradeLiveContract({...last,noneOffered:true},obs(event,[],90,90),{ended:true}),'LOST');
+ assert.equal(gradeLiveContract({...last,side:'none',noneOffered:true},obs(event,[],90,90),{ended:true}),'WON');
+ assert.equal(gradeLiveContract(last,obs(event,[],90,90),{ended:true}),'VOID');
+}
+assert.equal(parseLastEvent(windowLine('2nd Half Last Goal','1')),null);
+assert.equal(parseLastEvent(windowLine('Last Goalscorer','1')),null);
 const over=parseCountMarket(windowLine('Total Goals','Over'));assert.equal(over,null,'Missing threshold cannot be invented');
 const o=parseCountMarket({...windowLine('Total Goals','Over'),line:'2.5'});
 assert.equal(gradeLiveContract(o,{counts:{goal:3}}),'WON');
