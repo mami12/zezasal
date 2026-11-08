@@ -4,6 +4,7 @@ import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
 import {gradeHandicapContract,gradeHalfCornerHandicapFacts} from './handicap-contracts.mjs';
 import {gradePlayerOrdinalScorerFacts} from './player-ordinal-scorer.mjs';
 import {gradePlayerGoalSpecial} from './player-goal-specials.mjs';
+import {gradeHalfExactFacts} from './half-exact-markets.mjs';
 import {gradeHalfCombination} from './half-combinations.mjs';
 import {gradePeriodGoalTotal} from './period-goal-totals.mjs';
 /**
@@ -162,7 +163,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-ordinal-goal','player-goal-special','player-card','half-combo','period-goal-total','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','score-handicap','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-ordinal-goal','player-goal-special','player-card','half-combo','period-goal-total','half-first-event','half-last-event','half-race','half-parity','half-exact-count','multi-corners','corner-comparison','score-handicap','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -497,6 +498,15 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='corner' and active=true`,[line.match_id,provider]);
   return gradeHalfParityFacts(c,facts,{complete:true});
+ }
+ if(c.kind==='half-exact-count'){
+  if(!full||!['corner','card'].includes(c.event))return null;
+  const {rows:facts}=await execute(`select minute,seconds,team,phase,card_color
+    from app_match_event_fact
+    where match_id=$1 and provider=$2 and kind=$3 and active=true`,
+    [line.match_id,provider,c.event]);
+  return gradeHalfExactFacts(c,facts,{complete:true,
+    cardColorsVerified:data.card_colors_verified===true});
  }
  if(c.kind==='half-total'){
   if(!full||!['corner','card'].includes(c.event))return null;
