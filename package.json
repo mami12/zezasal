@@ -73,6 +73,7 @@
     "test:board-markets": "node web/tests/boardMarkets.test.mjs && node scripts/test-board-markets-browser.mjs",
     "test:feed-route": "node scripts/test-feed-route-interest.mjs",
     "test:scoped-socket": "node scripts/test-scoped-socket-work.mjs",
+    "test:market-coverage": "node scripts/test-market-coverage.mjs",
     "test:protected": "node scripts/test-protected-requirements.mjs",
     "test:protected:browser": "node scripts/test-protected-requirements.mjs --browser",
     "test:protected:simulation": "node scripts/test-protected-requirements.mjs --simulation"
