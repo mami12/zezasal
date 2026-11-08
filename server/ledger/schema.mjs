@@ -225,6 +225,8 @@ alter table app_ticket_line add column if not exists builder_legs jsonb;
 alter table app_ticket_line add column if not exists live_contract jsonb;
 -- Always retain the original provider offer and the exact accepted structured terms.
 alter table app_ticket_line add column if not exists accepted_contract jsonb;
+-- Informational only: a missing evidence reason never authorizes a payout.
+alter table app_ticket_line add column if not exists settlement_reason text;
 create index if not exists app_ticket_line_ticket_idx on app_ticket_line (ticket_id);
 create index if not exists app_ticket_line_match_idx  on app_ticket_line (match_id);
 
