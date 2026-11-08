@@ -51,6 +51,18 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
       (observedAt!==null&&(at-observedAt>90000||observedAt-at>5000)))throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
  }
+ if(live&&contract.kind==='half-first-event'){
+  // The first-half first corner is already decided after ANY corner in 1H.
+  // A live bettor must not wager on a past incident, or use an old total
+  // when the current feed/clock cannot establish a reliable zero baseline.
+  const clockAt=time(match.clock_at),scoreAt=time(match.score_at);
+  if(clock===null||clock>=45||clockAt===null||at-clockAt>45000||clockAt-at>5000||
+     scoreAt===null||at-scoreAt>90000||scoreAt-at>5000||
+     corners.home==null||corners.away==null)
+    throw fail('Mungon numri ose ora live e konfirmuar për kornerin e parë të pjesës së parë.');
+  if(corners.home+corners.away>0)
+    throw fail('Korneri i parë i pjesës së parë ka ndodhur tashmë.');
+ }
  if(contract.kind==='sequence'&&current?.home!=null&&current?.away!=null&&
     contract.target<=current.home+current.away)throw fail('Goli/korneri i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='nth-time'&&current?.home!=null&&current?.away!=null&&
