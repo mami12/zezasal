@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import {gradeMultiCornerFacts} from './multi-corners.mjs';
 import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
+import {gradeHandicapContract} from './handicap-contracts.mjs';
 /**
  * Persistent PRIMARY-feed football incidents. Provider IDs and player names are
  * preserved verbatim. Only an incident list reconciled with the same provider's
@@ -157,7 +158,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-parity','multi-corners','corner-comparison','score-handicap','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -661,6 +662,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  * primary timeline. Conflicting historical verdicts are never paid.
  */
 export async function gradeStoredEventContract(line,result,{execute}={}){
+ if(line?.live_contract?.kind==='score-handicap')
+  return gradeHandicapContract(line.live_contract,result);
  const primary=await gradeSingleEventProvider(line,result,{execute,provider:'zizobet'});
  if(primary!==null)return primary;
  if(!result||!['goal','corner','card'].includes(line?.live_contract?.event)||
