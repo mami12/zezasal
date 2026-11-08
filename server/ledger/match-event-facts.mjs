@@ -155,7 +155,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-last-event','half-race','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-card','half-first-event','half-last-event','half-race','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -540,6 +540,30 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   // Simultaneous or minute-only indistinguishable milestones require review.
   if(h!==null&&a!==null&&h===a)return null;
   return decision(c.side===(h!==null&&(a===null||h<a)?'home':'away'));
+ }
+ if(c.kind==='player-card'){
+  if(typeof c.choice!=='boolean'||(!c.playerName&&!c.playerId))return null;
+  if(c.cardColor&&data.card_colors_verified!==true)return null;
+  const person=v=>{
+   const raw=String(v??'').trim();
+   const pieces=raw.includes(',')?raw.split(',').map(x=>x.trim()).reverse():[raw];
+   return pieces.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+     .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  };
+  const expected=person(c.playerName);
+  const {rows:actors}=await execute(
+    "select player_id,player_name,card_color from app_match_event_fact "+
+    "where match_id=$1 and provider=$2 and kind='card' and active=true",
+    [line.match_id,provider]);
+  const booked=actors.some(actor=>
+    (!c.cardColor||actor.card_color===c.cardColor)&&
+    (c.playerId!=null&&actor.player_id!=null?
+      String(c.playerId)===String(actor.player_id):
+      !!expected&&person(actor.player_name)===expected));
+  if(booked)return c.choice?'WON':'LOST';
+  // Absent bookings do not prove that the named player entered the pitch.
+  // The non-participation/void rule still needs verified lineup facts.
+  return null;
  }
  if(c.kind==='player-goal'){
   if((!c.playerName&&!c.playerId)||typeof c.choice!=='boolean')return null;
