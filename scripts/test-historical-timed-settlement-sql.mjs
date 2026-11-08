@@ -25,6 +25,22 @@ assert.equal(validateHistoricalTimedEvents({...history,events:[
   {...history.events[0],injury:2},history.events[1],history.events[2]]}),null,
  'Unknown stoppage semantics are not settled as normal minutes');
 
+const stoppage=validateHistoricalTimedEvents({...history,events:[
+ {...history.events[0],minute:45,injury:3,phase:null},
+ {...history.events[1],minute:90,injury:2,phase:null},
+ history.events[2]
+]});
+assert.ok(stoppage,'45+3 and 90+2 with explicit football-clock notation are verifiable');
+assert.deepEqual(stoppage.facts.slice(0,2).map(f=>f.phase),['H1','H2'],
+ '45+3 belongs to the first half, 90+2 to the second');
+assert.equal(validateHistoricalTimedEvents({...history,events:[
+ {...history.events[0],minute:45,injury:3,phase:'H2'},
+ ...history.events.slice(1)
+]}),null,'A contradictory provider phase must never pass');
+assert.equal(validateHistoricalTimedEvents({...history,events:[
+ {...history.events[0],minute:40,injury:3},...history.events.slice(1)
+]}),null,'Added time at an arbitrary minute is not verified football clock syntax');
+
 const fm=fotMobTimedIncidents([
  {type:'Corner',eventId:17,isHome:true,time:'10'},
  {type:'Card',eventId:18,isHome:false,time:'20',card:'Yellow',player:{id:99,name:'Card Recipient'}}
@@ -33,6 +49,14 @@ assert.deepEqual([fm.cornerEvents.length,fm.cardEvents.length],[1,1]);
 assert.equal(fm.cardEvents[0].cardColor,'yellow');
 assert.equal(fm.cardEvents[0].playerName,'Card Recipient');
 assert.equal(fm.cardEvents[0].playerId,'99');
+const injuryEvents=fotMobTimedIncidents([
+ {type:'Corner',isHome:true,time:'45+2',player:{id:7,name:'Player One'}},
+ {type:'Corner',isHome:true,time:'45+4',player:{id:7,name:'Player One'}}
+]);
+assert.deepEqual(injuryEvents.cornerEvents.map(f=>[f.minute,f.injury]),[[45,2],[45,4]]);
+assert.notEqual(injuryEvents.cornerEvents[0].id,injuryEvents.cornerEvents[1].id,
+ 'Two distinct added-time corners by the same player are not collapsed');
+
 const ap=apiFootballTimedIncidents([
  {type:'Card',detail:'Red Card',team:{id:12},time:{elapsed:42},player:{id:73,name:'Sent Off Player'}}
 ],{teams:{home:{id:11},away:{id:12}}});
