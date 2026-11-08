@@ -155,7 +155,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','half-first-event','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -317,6 +317,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   exists(select 1 from app_live_event_recovery g
     where g.match_id=$1 and g.status='AWAITING_BACKUP_API' and $9::uuid=any(g.line_ids)
       and $16::text='zizobet') as open_recovery_gap,
+   (select team from ordered where ordinal=(select max(ordinal) from ordered)) as last_team,
+   (select same_time from ordered where ordinal=(select max(ordinal) from ordered)) as last_same_time,
    (select team from ordered where ordinal=$8) as nth_team,
    (select minute from ordered where ordinal=$8) as nth_minute,
    (select same_time from ordered where ordinal=$8) as nth_same_time,
@@ -448,6 +450,14 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   }
   if(!full)return null;
   return c.choice==='none'?'WON':'LOST';
+ }
+ if(c.kind==='last-event'){
+  if(!full||!['home','away','none'].includes(c.side))return null;
+  if(data.last_team!=null){
+   if(Number(data.last_same_time)>1)return null;
+   return decision(data.last_team===c.side);
+  }
+  return c.noneOffered===true?(c.side==='none'?'WON':'LOST'):'VOID';
  }
  if(c.kind==='sequence'){
   if(data.nth_team!=null){
