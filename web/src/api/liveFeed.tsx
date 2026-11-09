@@ -12,6 +12,7 @@ import type { Match, MatchEvent, OddsDelta } from '../types';
 import { frozenSelectionPrice } from '../../../server/ledger/system-columns.mjs';
 import { mergeMatchFacts, snapshotTime, timestamp } from './matchSync';
 import {optionalFeedNumber} from './feedNumbers';
+import {retainEventPlayerNames} from '../utils/eventPlayers';
 
 /**
  * One shared Socket.IO connection for the whole board.
@@ -173,7 +174,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
     });
     if(timelines.length)setMatchEvents(previous=>{
       const ids=new Set(timelines.map(match=>String(match.id)));
-      return [...previous.filter(event=>!ids.has(event.matchId)),...timelines.flatMap(match=>match.events??[])].slice(-500);
+      return [...previous.filter(event=>!ids.has(event.matchId)),...timelines.flatMap(match=>retainEventPlayerNames(match.events??[], previous.filter(event=>event.matchId===String(match.id))))].slice(-500);
     });
     const patches: Record<string, LivePatch> = {};
     const deltas: Record<string, OddsDelta> = {};
@@ -484,7 +485,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
       setLivePatches(prev => ({ ...prev, [key]: mergeMatchFacts(prev[key], patch) }));
       if(Array.isArray(info.events)&&snapshotTime(patch)>=(prevTimelineAt.current[key]??0)){
         prevTimelineAt.current[key]=snapshotTime(patch);
-        setMatchEvents(prev=>[...prev.filter(event=>event.matchId!==key),...info.events.filter((event:any)=>event.matchId===key&&Number.isFinite(event.minute))].slice(-500));
+        setMatchEvents(prev=>[...prev.filter(event=>event.matchId!==key),...retainEventPlayerNames(info.events.filter((event:MatchEvent)=>event.matchId===key&&Number.isFinite(event.minute)),prev.filter(event=>event.matchId===key))].slice(-500));
       }
     });
 
