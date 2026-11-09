@@ -80,7 +80,8 @@
     "test:market-coverage": "node scripts/test-market-coverage.mjs",
     "test:protected": "node scripts/test-protected-requirements.mjs",
     "test:protected:browser": "node scripts/test-protected-requirements.mjs --browser",
-    "test:protected:simulation": "node scripts/test-protected-requirements.mjs --simulation"
+    "test:protected:simulation": "node scripts/test-protected-requirements.mjs --simulation",
+    "simulimi": "node scripts/simulimi.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
