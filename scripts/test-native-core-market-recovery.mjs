@@ -6,6 +6,7 @@ import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal,gradeHtFtTotal}
  from '../server/ledger/ht-ft-total.mjs';
 import {gradeMixedTotal} from '../server/ledger/mixed-combos.mjs';
 import {parseCornerComparison,isCornerHtFtMarket} from '../server/ledger/corner-comparisons.mjs';
+import {isTeamComparisonMarket,parseTeamComparison,gradeTeamComparison} from '../server/ledger/team-comparison.mjs';
 import {gradeResultBtts} from '../server/ledger/result-btts.mjs';
 import {gradeLine,hasRequiredSettlementEvidence} from '../server/ledger/settler.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
@@ -119,6 +120,27 @@ for(const [title,choice,line,want] of [
  const q=quote(title,choice,line);
  assert.equal(gradeLine(q,score),want,'Basic market must survive cleanup: '+title);
 }
+for(const [title,selection,drawOffered,expected] of [
+ ['Most corners','1',true,'WON'],
+ ['Most corners','2',true,'LOST'],
+ ['Most corners','X',true,'LOST'],
+ ['Most cards','X',true,'WON'],
+ ['Most cards','1',true,'LOST'],
+ ['Most cards','1',false,'VOID'],
+ ['Most cards','2',false,'VOID'],
+ ['Most cards','1',null,null]
+]){
+ const q=quote(title,selection);
+ assert.equal(isTeamComparisonMarket(q),true);
+ const c=parseTeamComparison(q,{drawOffered});
+ assert.ok(c,title+' '+selection);
+ assert.equal(gradeTeamComparison(c,score),expected);
+ assert.equal(await gradeStoredEventContract({live_contract:c},score),expected);
+ assert.equal(gradeLine({...q,live_contract:c},score),expected);
+}
+assert.equal(parseTeamComparison(quote('Most cards','No'),{drawOffered:true}),null);
+assert.equal(parseTeamComparison(quote('Most cards','X'),{drawOffered:false}),null);
+assert.equal(parseTeamComparison(quote('2nd half Most corners','1')) ,null);
 assert.equal(gradeMixedTotal('Result and Total',null,3,2),null);
 assert.equal(gradeResultBtts(null,3,2),null);
 assert.equal(gradeLine(quote('Matchbet and Totals','1 & Over 4.5'),{
