@@ -72,7 +72,7 @@ export function auditOffer(row){
  }
  const c=liveContract(row,{clock:0,counts:{goal:{home:0,away:0},corner:{home:0,away:0},card:{home:0,away:0}},teams:{}});
  if(c&&SUPPORTED_FACT_KINDS.has(c.kind)){
-  if(['player-goal','nth-time','sequence','race','window','window-total','interval-result','interval-leader'].includes(c.kind))
+  if(['player-goal','nth-time','sequence','race','window','window-total','interval-result','interval-leader','interval-first-event'].includes(c.kind))
    return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': kerkon Timeline te rakorduar dhe identitet te verifikuar');
   if(c.event==='card'||c.event==='foul')
    return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': ngjyra/lloji i kartonit ose faullit kerkon prova');
