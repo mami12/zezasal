@@ -221,10 +221,10 @@ function runAssertions(){
   assert.equal(gradeLine({builder_legs:legs},A.score),'LOST');
  });
  for(const [name,line,scenario,expected] of [
-  ['Next Goal home',bet('Next Goal','1',{toString:()=>''}),H,'WON'],
+  ['Next Goal home',bet('Next Goal','1'),H,'WON'],
   ['Next Goal away',bet('Next Goal','2'),H,'LOST'],
   ['Next Corner home',bet('Next Corner','1'),H,'WON'],
-  ['Race to 2 goals home',bet('Which team wins race to 2 goals','1',{},{raceNoneOffered:true}),H,'WON'],
+  ['Race to 2 goals home',bet('Which team wins race to 2 goals','1','',{raceNoneOffered:true}),H,'WON'],
   ['Race to 2 goals none',bet('Which team wins race to 2 goals','None','',{raceNoneOffered:true}),Z,'WON'],
   ['Goal interval yes',bet('Will there be a goal in minutes 10-20','Yes'),H,'WON'],
   ['Goal interval no',bet('Will there be a goal in minutes 10-20','No'),H,'LOST'],
