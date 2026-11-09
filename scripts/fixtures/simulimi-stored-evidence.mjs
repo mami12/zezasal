@@ -77,7 +77,7 @@ export function syntheticEventQuery(fixture) {
   if(/from app_match_event_fact/.test(sql)) {
    // The stored grader asks for the raw fact chronology only after it has
    // checked complete coverage and reconciled the team's final event counts.
-   const kind=args[2]??null;
+   const kind=args[2]??sql.match(/\bkind='(goal|corner|card)'/)?.[1]??null;
    return {rows:kind?facts.filter(e=>e.kind===kind):facts};
   }
   if(/select 1 from app_match_event_coverage/.test(sql))return {rows:[{ok:1}]};
