@@ -174,7 +174,8 @@ try{
  {
   const h=await harness({env:{BSD_API_KEY:'test-key'},override:call=>call.path.endsWith('/incidents/')?json({error:'unavailable'},503):null});await h.bet(101);
   await h.service.tick();assert.equal(h.stats(h.service).home.fouls,7);
-  assert.equal(h.calls.filter(c=>c.provider==='worldcup26'&&c.path.endsWith('/scoreboard')).length,1,'fallback reuses discovery scoreboard');h.verify();
+  assert.equal(h.calls.filter(c=>c.provider==='worldcup26'&&c.path.endsWith('/scoreboard')).length,0,
+   'Do not spend a second provider quota on goal-event fallback when Zizobet owns minutes and BSD has all required stats');h.verify();
  }
  // A provider with a conflicting known side is skipped instead of creating a made-up pair.
  {
