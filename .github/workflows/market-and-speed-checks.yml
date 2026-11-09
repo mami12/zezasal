@@ -10,6 +10,15 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/market-and-speed-checks.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "scripts/**"
+      - "web/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/market-and-speed-checks.yml"
   workflow_dispatch:
 
 permissions:
@@ -91,6 +100,20 @@ jobs:
       - name: Market 21 - half period totals
         if: always()
         run: node scripts/test-half-period-totals.mjs
+      - name: Readiness audit and source-backed event regressions
+        if: always()
+        run: |
+          node scripts/test-market-readiness-audit.mjs
+          node scripts/test-verified-live-settlement.mjs
+          node scripts/test-captured-market-titles.mjs
+          node scripts/test-deployment-settlement-audit.mjs
+          node scripts/test-interval-first-goal.mjs
+          node scripts/test-bulk-market-bet-test.mjs
+          node scripts/test-native-core-market-recovery.mjs
+          node scripts/test-market-information-api-probe.mjs
+          node scripts/test-market-coverage.mjs
+          node scripts/test-exact-minute-provider-settlement.mjs
+          node scripts/test-zizobet-partial-interval-evidence.mjs
       - name: Settlement and provider-history tests
         if: always()
         run: |

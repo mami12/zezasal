@@ -25,6 +25,21 @@ for(const [title,choice,expected]of [
  assert.equal(gradeCornerComparisonFacts(c,events,{complete:true}),expected,title+' '+choice);
  assert.equal(gradeCornerComparisonFacts(c,events,{complete:false}),null);
 }
+// Confirmed Zizobet corner history, NOT goal score, decides the native
+// Corners Halftime/Fulltime two-result selection.
+for(const [code,expectation] of [
+ ['1/1','WON'],['1/X','LOST'],['X/1','LOST'],['2/2','LOST'],['11','WON']
+]){
+ const q={market_name:'Corners Halftime/Fulltime',outcome_name:code};
+ const c=liveContract(q);
+ assert.equal(c?.mode,'ht-ft');
+ assert.equal(gradeCornerComparisonFacts(c,events,{complete:true}),expectation);
+ assert.equal(gradeCornerComparisonFacts(c,events,{complete:false}),null);
+}
+assert.equal(parseCornerComparison({market_name:'Corners Halftime/Fulltime',
+ outcome_name:'1/1',period:1}),null);
+assert.equal(parseCornerComparison({market_name:'Corners Halftime/Fulltime',
+ outcome_name:'Unknown'}),null);
 assert.equal(parseCornerComparison({market_name:'1st Half Corners Result',outcome_name:'1',period:2}),null);
 const weird=[...events,{team:'home',minute:45,phase:null}];
 const half=liveContract({market_name:'Half with Most Corners',outcome_name:'Draw'});
@@ -51,6 +66,11 @@ const execute=async(sql,args)=>{
  if(sql.includes('select minute,seconds,team,phase'))return {rows:events};
  throw Error('Unexpected SQL '+sql.slice(0,120));
 };
+assert.equal(await gradeStoredEventContract({id:'00000000-0000-4000-8000-000000000004',
+ match_id:99,live_contract:liveContract({market_name:'Corners Halftime/Fulltime',outcome_name:'1/1'})},
+ {home_score:0,away_score:6,corners_home:4,corners_away:2},
+ {execute}),'WON',
+ 'Native corner HT/FT must use original corner timeline, regardless of match-goal result');
 assert.equal(await gradeStoredEventContract({id:'00000000-0000-4000-8000-000000000003',
  match_id:99,live_contract:half},{home_score:2,away_score:0,corners_home:4,corners_away:2},
  {execute}),'WON','Verified 1H/2H corner counts settle draw of halves');

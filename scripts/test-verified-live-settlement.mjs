@@ -1,4 +1,7 @@
+import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
+import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
+import {gradeLine,hasRequiredSettlementEvidence} from '../server/ledger/settler.mjs';
 import {
  primaryLiveDecision,verifiedSecondLiveDecision,settleVerifiedLiveProposals,
  VERIFIED_LIVE_PROPOSALS_SQL
@@ -33,6 +36,23 @@ const row={
  open_recovery_gap:false,
 };
 assert.equal(verifiedSecondLiveDecision(row,{now}),'WON');
+assert.match(VERIFIED_LIVE_PROPOSALS_SQL,/l\.market_name/,
+ 'Live settlement must select the original quoted provider title');
+for(const market_name of ['Next Goal (OT only!)','Next Goal (ET only!)',
+ 'Race to 3 goals (overtime)','First Corner (extra time)']){
+ const oldTicket={...row,market_name};
+ assert.equal(verifiedSecondLiveDecision(oldTicket,{now}),null,
+  'Pre-existing OT/ET contract cannot be paid from regulation live frames');
+ assert.equal(await gradeStoredEventContract({id:'old-quote',match_id:1,
+    live_contract:contract,market_name},null,{
+   execute:()=>{throw Error('OT/ET old bet must not query primary regulation facts');}
+  }),null,'Historical settlement must hold a mis-frozen OT/ET contract');
+ assert.equal(hasRequiredSettlementEvidence({market_name,outcome_name:'1'},{
+  home_score:3,away_score:1,half_home_score:1,half_away_score:0}),false);
+ assert.equal(gradeLine({market_name,outcome_name:'1'},{
+  home_score:3,away_score:1,half_home_score:1,half_away_score:0}),null);
+}
+
 assert.equal(verifiedSecondLiveDecision({...row,open_recovery_gap:true},{now}),null);
 assert.equal(verifiedSecondLiveDecision({...row,second_seen_at:new Date(now-24500)},{now}),null,
  'A second observation must be at least five seconds after the first proposal');

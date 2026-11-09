@@ -1,3 +1,4 @@
+import {zizoEventPlayerName} from './zizobet/display-player-name.mjs';
 /** Display only provider-timed incidents; reception time is never an event minute. */
 export function providerTimeline(matchId,rows){
  if(!Array.isArray(rows))return undefined;
@@ -18,8 +19,7 @@ export function providerTimeline(matchId,rows){
   if(!type)continue;
   const text={goal:'Goal',corner:'Corner',yellow_card:'Yellow card',red_card:'Red card'}[type];
   const id=String(row.id??[type,minute,added,team,row.pl??row.player??''].join('|'));
-  const rawPlayer=row.pl??row.player;
-  const player=typeof rawPlayer==='string'?rawPlayer.trim():'';
+  const player=zizoEventPlayerName(row);
   events.set(id,{id,matchId:String(matchId),type,minute,addedMinute:added,minuteLabel:added?minute+'+'+added:String(minute),team,text,...(player?{player}:{})});
  }
  return [...events.values()].sort((a,b)=>a.minute-b.minute||a.addedMinute-b.addedMinute||a.id.localeCompare(b.id));

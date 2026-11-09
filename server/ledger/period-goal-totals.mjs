@@ -17,7 +17,8 @@ const aliases=(name,known)=>[
 export function isPeriodGoalTotal(line){
  const name=norm(line?.market_name??line?.marketName??line?.name);
  if(/(?:\bgoals?\b|\bgoal line\b|\btotal\b)/.test(name)&&
-    /\b(?:player|scorer|asian|handicap|minutes?|corner|card|shots?|foul|result|btts|both|race|next|first goal|last goal|odd|even)\b/.test(name))return false;
+    (/\b(?:player|scorer|asian|handicap|minutes?|corner|card|shots?|foul|result|btts|both|race|next|first goal|last goal|odd|even|double chance|matchbet)\b/.test(name)||
+     /(?:\s&\s|\s\+\s|\bht\s*\/\s*ft\b|\bhalftime\s*\/\s*fulltime\b)/.test(name)))return false;
  return /(?:^|\b)(?:total goals?|goals? total|team [12] goals?|goals?|goal line|over\s*\/\s*under)/.test(name)||
   /^(?:(?:1st|first|2nd|second) half|full time|match) total$/.test(name)||name==='total';
 }

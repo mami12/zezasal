@@ -41,11 +41,14 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
-import {parseCornerComparison} from './corner-comparisons.mjs';
+import {parseCornerComparison,isCornerHtFtMarket} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
+import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal} from './ht-ft-total.mjs';
+import {isTeamComparisonMarket,parseTeamComparison} from './team-comparison.mjs';
+import {isHtFtCorrectScoreMarket,parseHtFtCorrectScore} from './ht-ft-correct-score.mjs';
 import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
 import {isPlayerGoalSpecial,parsePlayerGoalSpecial} from './player-goal-specials.mjs';
 import {playerGoalLiveGuard} from './player-goal-live-guard.mjs';
@@ -141,6 +144,37 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
      !parseHtFtOutcome(row.outcome_name,row.outcome_key))
     throw Object.assign(badRequest('Opsioni Pjesa e parë / Fundi i ndeshjes nuk u njoh.'),{
       code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  if(isCornerHtFtMarket(row)&&!parseCornerComparison(row))
+    throw Object.assign(badRequest('Opsioni për Korne HT/FT nuk identifikon dy rezultate 1/X/2.'),{
+      code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  let teamComparisonContract=null;
+  if(isTeamComparisonMarket(row)){
+    const drawOffered=quotedOffers.some(o=>o.market_key===row.market_key&&
+      String(o.line??'')===String(row.line??'')&&
+      Number(o.period??0)===Number(row.period??0)&&
+      /^(?:x|draw|tie|barazim|none|neither)$/i.test(String(o.outcome_name??o.outcome_key??'').trim()));
+    teamComparisonContract=parseTeamComparison(row,{drawOffered});
+    if(!teamComparisonContract)
+      throw Object.assign(badRequest('Most corners/cards nuk ka një zgjedhje 1/X/2 të verifikueshme.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  }
+  let htFtExactScoreContract=null;
+  if(isHtFtCorrectScoreMarket(row)){
+    htFtExactScoreContract=parseHtFtCorrectScore(row);
+    if(!htFtExactScoreContract)
+      throw Object.assign(badRequest('HT/FT Correct Score kërkon dy rezultate të sakta të ndeshjes.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  }
+  if(isUnverifiedHtFtFamily(row)&&!htFtExactScoreContract)
+    throw Object.assign(badRequest('Ky treg ka rezultate të ndryshme nga HT/FT i golave dhe pret verifikim të posaçëm.'),{
+      code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  let htFtTotalContract=null;
+  if(isHtFtTotalMarket(row)){
+    htFtTotalContract=parseHtFtTotal(row);
+    if(!htFtTotalContract)
+      throw Object.assign(badRequest('Kombinimi HT/FT dhe golat nuk ka dy kushte të identifikueshme.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  }
   if(isDcBttsMarket(row.market_name)&&
      !parseDcBttsOutcome(row.outcome_name,row.outcome_key))
     throw Object.assign(badRequest('Kombinimi Double Chance + BTTS nuk ka opsion të identifikueshëm.'),{
@@ -436,6 +470,9 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
+    if(htFtTotalContract)contract=htFtTotalContract;
+    if(htFtExactScoreContract)contract=htFtExactScoreContract;
+    if(teamComparisonContract)contract=teamComparisonContract;
     if(playerGoalSpecial)contract=playerGoalSpecial;
     if(periodGoalContract)contract=periodGoalContract;
   } catch(error) {

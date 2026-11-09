@@ -51,4 +51,21 @@ assert.equal(frozenLiveContract(pick('1X2','1'),match,at),null,
 assert.throws(()=>frozenLiveContract(pick('Anytime Goalscorer','Yes'),match,at),
  error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED',
  'Never guess the scorer identity');
+// A provider's OT-only Next Goal is NOT the next regulation-time goal.
+// A 90-minute incident would otherwise be a wrong-money settlement.
+for(const title of [
+ 'Next Goal (OT only!)',
+ 'Next Goal (ET only!)',
+ 'Race to 3 goals (overtime)',
+ 'First Corner (extra time)',
+ 'Goal in minutes 10-20 (penalty shootout)'
+]){
+ const offer=pick(title,'1');
+ assert.equal(liveContract(offer,{counts:{goal:{home:0,away:0}}}),null,
+  'No regulation-time contract can cover '+title);
+ assert.throws(()=>frozenLiveContract(offer,match,at),
+  error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED',
+  'Unsafe OT/ET market must fail before wallet debit: '+title);
+}
+
 console.log('PASS quote acceptance families and stop-time fail-closed cases');

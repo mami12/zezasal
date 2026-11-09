@@ -42,7 +42,8 @@ export function parseTotalBtts(value) {
 }
 export function gradeMixedTotal(marketName, selection, homeScore, awayScore) {
   const home = Number(homeScore), away = Number(awayScore);
-  if (!selection || !Number.isFinite(home) || !Number.isFinite(away)) return 'VOID';
+  if (!selection || !Number.isSafeInteger(home) || home<0 ||
+      !Number.isSafeInteger(away) || away<0) return null;
   const total = home + away;
   if (total === selection.line) return 'VOID';
   const totalWins = selection.side === 'over' ? total > selection.line : total < selection.line;

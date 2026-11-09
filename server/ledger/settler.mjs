@@ -25,6 +25,9 @@ import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
 import {isParityLikeMarket,gradeParityMarket} from './parity-markets.mjs';
 import {isHandicapMarket,parseHandicapContract,gradeHandicapContract} from './handicap-contracts.mjs';
 import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
+import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal,gradeHtFtTotal} from './ht-ft-total.mjs';
+import {isTeamComparisonMarket,parseTeamComparison,gradeTeamComparison} from './team-comparison.mjs';
+import {isHtFtCorrectScoreMarket,parseHtFtCorrectScore,gradeHtFtCorrectScore} from './ht-ft-correct-score.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {isHalfComboFamily,parseHalfCombination,gradeHalfCombination} from './half-combinations.mjs';
 import {isPeriodGoalTotal,parsePeriodGoalTotal,gradePeriodGoalTotal} from './period-goal-totals.mjs';
@@ -33,6 +36,7 @@ import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
 import {gradeStoredEventContract,SUPPORTED_FACT_KINDS} from './match-event-facts.mjs';
+import {isNonRegulationMarketTitle} from './live-contract-rules.mjs';
 import {backfillPendingTeamGoalContracts} from './live-contract-backfill.mjs';
 import {settleVerifiedLiveProposals} from './verified-live-settlement.mjs';
 
@@ -95,7 +99,25 @@ const isSecondHalfLine = (marketName = '') =>
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
+  if(isNonRegulationMarketTitle(line?.market_name))return false;
   if (!result) return false;
+  if(isHtFtCorrectScoreMarket(line)){
+    const contract=line?.live_contract?.kind==='ht-ft-correct-score'?line.live_contract:
+      parseHtFtCorrectScore(line);
+    return gradeHtFtCorrectScore(contract,result)!==null;
+  }
+  if(isUnverifiedHtFtFamily(line))return false;
+  if(isTeamComparisonMarket(line)){
+    if(statisticsNeedReview(line,result))return false;
+    const contract=line?.live_contract?.kind==='team-comparison'?line.live_contract:
+      parseTeamComparison(line);
+    return gradeTeamComparison(contract,result)!==null;
+  }
+  if(isHtFtTotalMarket(line)){
+    const c=line?.live_contract?.kind==='ht-ft-total'?line.live_contract:
+      parseHtFtTotal(line);
+    return gradeHtFtTotal(c,result)!==null;
+  }
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
@@ -169,6 +191,24 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(isNonRegulationMarketTitle(line?.market_name))return null;
+  if(!Array.isArray(line?.builder_legs)&&isHtFtCorrectScoreMarket(line)){
+    const contract=line?.live_contract?.kind==='ht-ft-correct-score'?line.live_contract:
+      parseHtFtCorrectScore(line);
+    return gradeHtFtCorrectScore(contract,result);
+  }
+  if(isUnverifiedHtFtFamily(line))return null;
+  if(!Array.isArray(line?.builder_legs)&&isTeamComparisonMarket(line)){
+    if(statisticsNeedReview(line,result))return null;
+    const contract=line?.live_contract?.kind==='team-comparison'?line.live_contract:
+      parseTeamComparison(line);
+    return gradeTeamComparison(contract,result);
+  }
+  if(!Array.isArray(line?.builder_legs)&&isHtFtTotalMarket(line)){
+    const c=line?.live_contract?.kind==='ht-ft-total'?line.live_contract:
+      parseHtFtTotal(line);
+    return gradeHtFtTotal(c,result);
+  }
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);

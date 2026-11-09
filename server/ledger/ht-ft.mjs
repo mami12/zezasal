@@ -6,7 +6,10 @@
  */
 export const isHtFtMarket=value=>{
  const name=String(value??'').toLowerCase().trim();
- return /(?:\bhalf[\s-]*time\s*(?:(?:\/|&|-|and|to)\s*)?full[\s-]*time\b)|(?:\bht\s*(?:\/|&|-|and)\s*ft\b)/.test(name);
+ // HT/FT GOALS is an exact, standalone market. A name containing
+ // corners, card results, total-goal conjuncts or correct score must
+ // never be settled from the halftime/fulltime goal scoreboard.
+ return /^(?:half[\s-]*time\s*(?:(?:\/|&|-|and|to)\s*)?full[\s-]*time|ht\s*(?:\/|&|-|and)\s*ft)$/.test(name);
 };
 const canonical=value=>{
  const text=String(value??'').normalize('NFD')
