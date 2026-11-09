@@ -8,6 +8,8 @@
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {auditOffer} from './audit-market-settlement-readiness.mjs';
+import {gradeStoredEventContract,SUPPORTED_FACT_KINDS} from '../server/ledger/match-event-facts.mjs';
+import {gradeLine,hasRequiredSettlementEvidence,isProvenTwoWayTotalPush} from '../server/ledger/settler.mjs';
 
 export const QUOTED_SQL=`
 with snapshots as (
@@ -99,6 +101,67 @@ from app_football_information_map
 group by mapping_status order by mapping_status
 `;
 
+
+/** Consistency only: SYSTEM bets are excluded due to column-specific maths. */
+export const FINANCIAL_CONSISTENCY_SQL=`
+select
+ count(*) filter(where t.status='WON' and exists(
+  select 1 from app_ticket_line l where l.ticket_id=t.id
+   and l.status in ('LOST','PENDING')))::bigint won_with_lost_or_pending_leg,
+ count(*) filter(where t.status='LOST' and not exists(
+  select 1 from app_ticket_line l where l.ticket_id=t.id
+   and l.status='LOST'))::bigint lost_without_lost_leg,
+ count(*) filter(where t.status='PENDING' and not exists(
+  select 1 from app_ticket_line l where l.ticket_id=t.id
+   and l.status='PENDING'))::bigint pending_without_pending_leg
+from app_ticket t
+where t.ticket_type in ('SINGLE','COMBO')
+  and t.status in ('PENDING','WON','LOST')
+`;
+
+/** Dry run uses the SAME existing graders but never the settlement writers. */
+export const DRY_RUN_SQL=`
+select l.*,to_jsonb(r) as archived_result
+from app_ticket_line l
+join app_ticket t on t.id=l.ticket_id
+left join app_match_result r on r.match_id=l.match_id
+where t.status='PENDING' and l.status='PENDING'
+order by t.placed_at,l.match_id,l.id
+limit $1
+`;
+
+export async function auditPendingDryRun({execute,limit=100}={}){
+ if(typeof execute!=='function')throw Error('Read-only SQL executor required');
+ if(!Number.isSafeInteger(limit)||limit<1||limit>300)throw Error('Dry run limit must be 1..300');
+ const {rows}=await execute(DRY_RUN_SQL,[limit]);
+ const statuses={WON:0,LOST:0,VOID:0,PENDING:0,UNVERIFIED_VOID:0,ERROR_REVIEW:0};
+ const cases=[];
+ for(const line of rows){
+  let verdict=null,reason='EVIDENCE_INCOMPLETE';
+  try{
+   const result=line.archived_result;
+   if(line.live_contract&&SUPPORTED_FACT_KINDS.has(line.live_contract.kind)){
+    verdict=await gradeStoredEventContract(line,result,{execute});
+   }else if(result&&hasRequiredSettlementEvidence(line,result)){
+    verdict=gradeLine(line,result);
+    if(verdict==='VOID'&&!isProvenTwoWayTotalPush(line,result)){
+     verdict='UNVERIFIED_VOID';
+     reason='LEGACY_VOID_NOT_PROVEN';
+    }
+   }
+  }catch{
+   verdict='ERROR_REVIEW';reason='GRADER_EXCEPTION';
+  }
+  if(!Object.hasOwn(statuses,verdict))verdict='PENDING';
+  statuses[verdict]++;
+  if(cases.length<40&&(verdict==='ERROR_REVIEW'||verdict==='UNVERIFIED_VOID'||verdict==='PENDING'))
+   cases.push({market:line.market_name,selection:line.outcome_name,
+     contractKind:line.live_contract?.kind??null,reason});
+ }
+ return {sampled:true,examined:rows.length,maxSample:limit,statuses,unresolvedExamples:cases,
+  note:'Predicted decisions only. No line, ticket or balance is updated.'};
+}
+
 const n=x=>Number.isFinite(Number(x))?Number(x):0;
 const add=(obj,k,count=1)=>obj[k]=(obj[k]??0)+count;
 const sortCounts=o=>Object.fromEntries(Object.entries(o).sort(([a],[b])=>a.localeCompare(b)));
@@ -158,6 +221,8 @@ export async function auditDeployment({execute,maxVariants=100000,pageSize=400}=
   confirmed:n(r.confirmed),mismatches:n(r.mismatch)
  }));
  const definition=(await execute(DEFINITIONS_SQL)).rows[0]??{};
+ const financial=(await execute(FINANCIAL_CONSISTENCY_SQL)).rows[0]??{};
+ const dryRun=await auditPendingDryRun({execute});
  const secondary={};
  for(const [name,sql] of [['statsUsage',STATS_USAGE_SQL],['aiscoreMappings',AISCORE_SQL]]){
   try{secondary[name]=(await execute(sql)).rows;}
@@ -183,6 +248,12 @@ export async function auditDeployment({execute,maxVariants=100000,pageSize=400}=
    examples:pending.sort((a,b)=>b.pendingLines-a.pendingLines).slice(0,100)},
   definitions:{total:n(definition.definitions),neverQuoted:n(definition.never_quoted)},
   incidentEvidence:evidence,supplemental:secondary,
+  ticketStatusConsistency:{
+   wonWithLostOrPendingLeg:n(financial.won_with_lost_or_pending_leg),
+   lostWithoutLostLeg:n(financial.lost_without_lost_leg),
+   pendingWithoutPendingLeg:n(financial.pending_without_pending_leg),
+   scope:'SINGLE_AND_COMBO_ONLY; audit anomalies are not automatic corrections'
+  },dryRun,
   limitations:[
    'Only quotes retained in the current and change archive are observable; absence is not proof of unsupported markets.',
    'LIVE fixtures normally have no final result yet.',
@@ -201,7 +272,11 @@ async function main(){
   await c.query('begin isolation level repeatable read read only');begun=true;
   const result=await auditDeployment({execute:c.query.bind(c),maxVariants});
   console.log(JSON.stringify(result,null,2));
-  if(!result.complete||result.incidentEvidence.some(x=>x.mismatches>0))process.exitCode=2;
+  if(!result.complete||result.incidentEvidence.some(x=>x.mismatches>0)||
+    result.dryRun.statuses.ERROR_REVIEW>0||
+    result.ticketStatusConsistency.wonWithLostOrPendingLeg>0||
+    result.ticketStatusConsistency.lostWithoutLostLeg>0)
+   process.exitCode=2;
  }finally{
   if(begun)await c.query('rollback').catch(()=>{process.exitCode=1;});
   c?.release();
