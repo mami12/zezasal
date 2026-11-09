@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {isNonRegulationMarketTitle} from './live-contract-rules.mjs';
 import {gradeMultiCornerFacts} from './multi-corners.mjs';
 import {gradeCornerComparisonFacts} from './corner-comparisons.mjs';
 import {gradeHandicapContract,gradeHalfCornerHandicapFacts} from './handicap-contracts.mjs';
@@ -699,6 +700,9 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  * primary timeline. Conflicting historical verdicts are never paid.
  */
 export async function gradeStoredEventContract(line,result,{execute}={}){
+ // Old tickets might contain a frozen *regulation-time* contract under
+ // an OT/ET-only provider title. Hold for manual review, never auto-pay.
+ if(isNonRegulationMarketTitle(line?.market_name))return null;
  if(line?.live_contract?.kind==='half-combo')
   return gradeHalfCombination(line.live_contract,result);
  if(line?.live_contract?.kind==='period-goal-total')
