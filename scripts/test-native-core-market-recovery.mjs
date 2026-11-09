@@ -5,6 +5,7 @@ import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from '../server/ledger/ht-ft.mj
 import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal,gradeHtFtTotal}
  from '../server/ledger/ht-ft-total.mjs';
 import {gradeMixedTotal} from '../server/ledger/mixed-combos.mjs';
+import {parseCornerComparison,isCornerHtFtMarket} from '../server/ledger/corner-comparisons.mjs';
 import {gradeResultBtts} from '../server/ledger/result-btts.mjs';
 import {gradeLine,hasRequiredSettlementEvidence} from '../server/ledger/settler.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
@@ -93,9 +94,12 @@ for(const q of [
 for(const name of ['Corners Halftime/Fulltime','Halftime/Fulltime correct score']){
  const q=quote(name,'1/1');
  assert.equal(isHtFtMarket(name),false,'Other statistic mistaken for goal HT/FT');
- assert.equal(isUnverifiedHtFtFamily(q),true);
  assert.equal(gradeLine(q,score),null,'Do NOT grade corners/score grid by goals HT/FT');
  assert.equal(hasRequiredSettlementEvidence(q,score),false);
+ if(isCornerHtFtMarket(q)){
+  assert.equal(isUnverifiedHtFtFamily(q),false);
+  assert.equal(parseCornerComparison(q)?.mode,'ht-ft');
+ }else assert.equal(isUnverifiedHtFtFamily(q),true);
 }
 assert.equal(isHtFtMarket('Halftime/Fulltime'),true);
 assert.equal(isHtFtMarket('HT/FT'),true);
