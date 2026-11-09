@@ -48,6 +48,7 @@ import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
 import {isHtFtMarket,parseHtFtOutcome} from './ht-ft.mjs';
 import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal} from './ht-ft-total.mjs';
 import {isTeamComparisonMarket,parseTeamComparison} from './team-comparison.mjs';
+import {isHtFtCorrectScoreMarket,parseHtFtCorrectScore} from './ht-ft-correct-score.mjs';
 import {isHalfComboFamily,parseHalfCombination} from './half-combinations.mjs';
 import {isPlayerGoalSpecial,parsePlayerGoalSpecial} from './player-goal-specials.mjs';
 import {playerGoalLiveGuard} from './player-goal-live-guard.mjs';
@@ -157,7 +158,14 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       throw Object.assign(badRequest('Most corners/cards nuk ka një zgjedhje 1/X/2 të verifikueshme.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   }
-  if(isUnverifiedHtFtFamily(row))
+  let htFtExactScoreContract=null;
+  if(isHtFtCorrectScoreMarket(row)){
+    htFtExactScoreContract=parseHtFtCorrectScore(row);
+    if(!htFtExactScoreContract)
+      throw Object.assign(badRequest('HT/FT Correct Score kërkon dy rezultate të sakta të ndeshjes.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  }
+  if(isUnverifiedHtFtFamily(row)&&!htFtExactScoreContract)
     throw Object.assign(badRequest('Ky treg ka rezultate të ndryshme nga HT/FT i golave dhe pret verifikim të posaçëm.'),{
       code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   let htFtTotalContract=null;
@@ -463,6 +471,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
     if(htFtTotalContract)contract=htFtTotalContract;
+    if(htFtExactScoreContract)contract=htFtExactScoreContract;
     if(teamComparisonContract)contract=teamComparisonContract;
     if(playerGoalSpecial)contract=playerGoalSpecial;
     if(periodGoalContract)contract=periodGoalContract;
