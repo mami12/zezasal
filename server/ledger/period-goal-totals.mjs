@@ -63,6 +63,9 @@ export function parsePeriodGoalTotal(line,teams={}){
  if(!/^(?:goals?|goal line|total|over\s*\/\s*under)$/.test(name))return null;
  const title=norm(line.market_name??line.marketName??'');
  const threeWay=/\b(?:3\s*way|three\s*way|1x2)\b/.test(title);
+ // An EXACT goals menu is not an Over/Under menu, even when a stale
+ // client supplies an arbitrary O/U label and numeric line.
+ const exactOnly=Boolean(exactGroup);
  let label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
  let kind=null,target=null;
  const over=label.match(/^(?:over|mbi)\s*(\d+(?:[.,]\d+)?)?$/);
@@ -74,7 +77,7 @@ export function parsePeriodGoalTotal(line,teams={}){
  const quoted=real(line.line??line.specifier);
  const nums=[embedded,stated,quoted].filter(x=>x!==null);
  if(over||under){
-  if(!nums.length||nums.some(n=>n!==nums[0]))return null;
+  if(exactOnly||!nums.length||nums.some(n=>n!==nums[0]))return null;
   kind=over?'over':'under';target=nums[0];
  }else if(exact){kind='exact';target=Number(exact[1]);}
  else if(more){kind='atLeast';target=Number(more[1]);}
