@@ -276,6 +276,8 @@ try{
  console.log('SIMULIMI | source='+source.source+' | definitions='+source.definitions.length+
   ' | selections='+outcomes.length+' | canaries='+regressions.passed+'/'+regressions.checks.length);
  console.log('Results: '+JSON.stringify(statusCounts)+' | report='+file);
+ for(const item of outcomes.filter(r=>r.status!=='EXERCISED_NOT_CERTIFIED').slice(0,30))
+  console.log('UNVERIFIED '+item.status+': '+item.market+' / '+item.outcome+' / '+item.line);
  for(const failure of regressions.failed)console.error('FAIL '+failure.name+': '+failure.reason);
  if(source.partial)console.error('WARNING: Query limit reached. NOT all quote variants were included.');
  if(has('strict')&&(outcomes.some(r=>r.status!=='EXERCISED_NOT_CERTIFIED')||
