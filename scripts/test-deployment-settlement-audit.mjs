@@ -35,6 +35,13 @@ try{
  assert.equal(report.pending.missingContract,1);
  assert.equal(report.pending.missingFinal,1);
  assert.equal(report.pending.noPrimaryConfirmation,0,'Only a frozen event contract is counted');
+ assert.equal(report.ticketStatusConsistency.wonWithLostOrPendingLeg,0);
+ assert.equal(report.ticketStatusConsistency.lostWithoutLostLeg,0);
+ assert.equal(report.ticketStatusConsistency.pendingWithoutPendingLeg,0);
+ assert.equal(report.dryRun.examined,2);
+ assert.equal(report.dryRun.statuses.WON,0,
+  'Mismatched primary incidents and legacy OT lines must never auto-win');
+ assert.equal(report.dryRun.statuses.PENDING,2);
  assert.equal(report.incidentEvidence[0].mismatches,1,
   'A provider count must be compared against actually persisted event facts');
  assert.ok(report.riskExamples.some(r=>r.market==='Next Goal (OT only!)'&&r.category==='DANGER_WRONG_RESULT'));
