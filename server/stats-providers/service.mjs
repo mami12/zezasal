@@ -101,7 +101,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    }
    throw Error('STATS_INCOMPLETE_PAGES');
   }else if(provider==='apifootball'){
-    const isLive = String(row.service??row.status).toUpperCase()==='LIVE';
+    // Finished fixtures may retain service=LIVE in the bookmaker catalog.
+    // Use the dated archive after FT; the provider's live list drops them.
+    const isLive = live(row);
     const path = isLive ? '/fixtures?live=all' : '/fixtures?date='+day;
     const d=await api(provider,path,isLive ? 60000 : 3600000);
     list=(d.response??[]).map(x=>({id:x.fixture.id,home:x.teams.home.name,away:x.teams.away.name,start:x.fixture.date,raw:x}));
