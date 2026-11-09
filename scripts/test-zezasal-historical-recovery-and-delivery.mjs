@@ -40,7 +40,9 @@ const messages=[];
 const slip={data:{feedScope:{selectionIds:['123|corners||over']}},
  emit:(event,data)=>messages.push({room:'slip:client',event,data})};
 const io={to:room=>({emit:(event,data)=>messages.push({room,event,data})}),
- sockets:{adapter:{rooms:new Map([['feed:slip:123',new Set(['client'])]])},
+ sockets:{adapter:{rooms:new Map([['feed:slip:123',new Set(['client'])],
+  ['feed:board:123',new Set(['board-client'])],
+  ['feed:detail:123:all',new Set(['detail-client'])]])},
  sockets:new Map([['client',slip]])}};
 const mk=(key,name)=>({key,line:'',name,
  outcomes:[{key:'over',price:2},{key:'under',price:2}]});
