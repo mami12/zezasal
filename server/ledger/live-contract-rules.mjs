@@ -609,7 +609,7 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
      !Number.isSafeInteger(contract.from)||!Number.isSafeInteger(contract.to)||
      contract.from<1||contract.to>89||contract.from>contract.to||
      contract.from<=45&&contract.to>=45||clock===null||
-     clock<=contract.to||!fullCoverage(evidence,'goal',contract.to+1)||
+     clock<contract.to+1||!fullCoverage(evidence,'goal',contract.to+1)||
      !ordered?.orderKnown)return null;
   // The goal is numbered *within the selected period*. A previous match
   // goal does not determine the first goal of this 5/10/15-minute market.
