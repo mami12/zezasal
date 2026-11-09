@@ -7,6 +7,7 @@ import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal,gradeHtFtTotal}
 import {gradeMixedTotal} from '../server/ledger/mixed-combos.mjs';
 import {parseCornerComparison,isCornerHtFtMarket} from '../server/ledger/corner-comparisons.mjs';
 import {isTeamComparisonMarket,parseTeamComparison,gradeTeamComparison} from '../server/ledger/team-comparison.mjs';
+import {isHtFtCorrectScoreMarket,parseHtFtCorrectScore,gradeHtFtCorrectScore} from '../server/ledger/ht-ft-correct-score.mjs';
 import {gradeResultBtts} from '../server/ledger/result-btts.mjs';
 import {gradeLine,hasRequiredSettlementEvidence} from '../server/ledger/settler.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
@@ -92,6 +93,20 @@ for(const q of [
  assert.equal(parseHtFtTotal(q),null,'Bad/missing independent total must be rejected');
  assert.equal(gradeLine(q,score),null,'Bad HTFT total is not a VOID');
 }
+for(const [selected,want] of [
+ ['1-0 / 3-2','WON'],['1:0 / 3:1','LOST'],['0-0 / 3-2','LOST']
+]){
+ const q=quote('Halftime/Fulltime correct score',selected);
+ assert.equal(isHtFtCorrectScoreMarket(q),true);
+ const contract=parseHtFtCorrectScore(q);
+ assert.ok(contract);
+ assert.equal(gradeHtFtCorrectScore(contract,score),want);
+ assert.equal(gradeLine(q,score),want);
+ assert.equal(hasRequiredSettlementEvidence(q,score),true);
+ assert.equal(await gradeStoredEventContract({live_contract:contract},score),want);
+}
+assert.equal(parseHtFtCorrectScore(quote('Halftime/Fulltime correct score','1/X')),null);
+assert.equal(parseHtFtCorrectScore(quote('Halftime/Fulltime correct score','2-1 / 1-0')),null);
 for(const name of ['Corners Halftime/Fulltime','Halftime/Fulltime correct score']){
  const q=quote(name,'1/1');
  assert.equal(isHtFtMarket(name),false,'Other statistic mistaken for goal HT/FT');
@@ -100,7 +115,10 @@ for(const name of ['Corners Halftime/Fulltime','Halftime/Fulltime correct score'
  if(isCornerHtFtMarket(q)){
   assert.equal(isUnverifiedHtFtFamily(q),false);
   assert.equal(parseCornerComparison(q)?.mode,'ht-ft');
- }else assert.equal(isUnverifiedHtFtFamily(q),true);
+ }else {
+  assert.equal(isUnverifiedHtFtFamily(q),true);
+  assert.ok(isHtFtCorrectScoreMarket(q));
+ }
 }
 assert.equal(isHtFtMarket('Halftime/Fulltime'),true);
 assert.equal(isHtFtMarket('HT/FT'),true);
