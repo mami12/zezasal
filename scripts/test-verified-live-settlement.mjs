@@ -1,3 +1,4 @@
+import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 import {gradeLine,hasRequiredSettlementEvidence} from '../server/ledger/settler.mjs';
