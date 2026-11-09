@@ -29,3 +29,28 @@ export function providerTimeline(matchId,rows){
  }
  return [...events.values()].sort((a,b)=>a.minute-b.minute||a.addedMinute-b.addedMinute||a.id.localeCompare(b.id));
 }
+
+/** Reuse only player labels for the exact same provider incident.
+ * An incoming correction owns the event list: removed goals, corners, cards
+ * and fouls cannot reappear just because an old snapshot contained a name.
+ */
+export function inheritEventPlayers(incoming,previous){
+ if(!Array.isArray(incoming))return incoming;
+ if(!Array.isArray(previous)||!previous.length)return incoming;
+ const key=event=>{
+  if(event?.id==null||String(event.id)===''||!Number.isFinite(Number(event.minute)))return null;
+  return JSON.stringify([String(event.matchId??''),String(event.id),event.type,event.team,Number(event.minute)]);
+ };
+ const known=new Map();
+ for(const event of previous){
+  const id=key(event),name=typeof event?.player==='string'?event.player.trim():'';
+  if(!id||!name)continue;
+  if(known.has(id)&&known.get(id)!==name)known.set(id,null);
+  else if(!known.has(id))known.set(id,name);
+ }
+ return incoming.map(event=>{
+  if(typeof event?.player==='string'&&event.player.trim())return event;
+  const id=key(event),name=id?known.get(id):null;
+  return name?{...event,player:name}:event;
+ });
+}
