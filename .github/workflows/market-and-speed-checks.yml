@@ -109,6 +109,7 @@ jobs:
           node scripts/test-deployment-settlement-audit.mjs
           node scripts/test-interval-first-goal.mjs
           node scripts/test-bulk-market-bet-test.mjs
+          node scripts/test-native-core-market-recovery.mjs
           node scripts/test-market-information-api-probe.mjs
           node scripts/test-market-coverage.mjs
           node scripts/test-exact-minute-provider-settlement.mjs
