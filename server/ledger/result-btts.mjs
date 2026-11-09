@@ -67,7 +67,8 @@ export function parseResultBttsOutcome(value, homeTeam = '', awayTeam = '') {
 export function gradeResultBtts(selection, homeScore, awayScore) {
   const home = Number(homeScore);
   const away = Number(awayScore);
-  if (!selection || !Number.isFinite(home) || !Number.isFinite(away)) return 'VOID';
+  if (!selection || !Number.isSafeInteger(home) || home<0 ||
+      !Number.isSafeInteger(away) || away<0) return null;
   const result = home > away ? '1' : home < away ? '2' : 'X';
   const bothScore = home > 0 && away > 0;
   return selection.result === result && selection.bothScore === bothScore ? 'WON' : 'LOST';
