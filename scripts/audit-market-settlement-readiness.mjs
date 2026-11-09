@@ -43,7 +43,7 @@ export function auditOffer(row){
   return category('STOPPAGE_TIMELINE_UNVERIFIED',
    'Clock interval through 45+/90+ requires verified period/stoppage identities, not only minute totals');
  // Highest-risk aliases: the old generic score grader can misinterpret these.
- if(/\b(?:early payout|extra time|overtime|shootout|to qualify|qualif(?:y|ication)|lift the trophy)\b/.test(n))
+ if(/\b(?:early payout|extra[\s-]*time|overtime|shoot[\s-]*out|to qualify|qualif(?:y|ication)|lift the trophy)\b|\b(?:ot|et)\s*only\b/.test(n))
   return category('DANGER_WRONG_RESULT','Kerkon rregulla per fitimin/promovimin ose kohe tjeter nga 90 minutat');
  if(/\b(?:asian|quarter|european)\b/.test(n)||/\bhandicap\b/.test(n))
   return category('DANGER_WRONG_RESULT','Handicap/Asian: linja, baseline live dhe kthimet e pjesshme duhen vertetuar');
