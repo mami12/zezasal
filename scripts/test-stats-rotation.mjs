@@ -50,7 +50,7 @@ async function harness({env={},rows=[row()],stats=()=>totals,override=()=>null,e
   }
   if(provider==='apifootball'){
    if(match&&url.searchParams.has('id'))return json({response:[{fixture:{id,status:{short:match.feed_status==='FT'?'FT':'LIVE'}}}]});
-   if(url.searchParams.has('date'))return json({response:all.map(fixture)});
+   if(url.searchParams.has('date')||url.searchParams.get('live')==='all')return json({response:all.map(fixture)});
    if(path.endsWith('/statistics')&&match)return json({response:['home','away'].map(side=>({team:{id:(side==='home'?'h':'a')+id},statistics:Object.entries(stats(provider,match)[side]??{}).map(([key,value])=>({type:names[key],value}))}))});
    if(path.endsWith('/events')&&match)return json({response:events(provider,match),paging:{pages:1}});
   }
