@@ -17,6 +17,9 @@ const periodOption=v=>{
   ['2','second','2nd','2nd half','second half','half 2'].includes(n)?2:
   ['x','draw','tie','equal','same','neither','none'].includes(n)?0:null;
 };
+export const isCornerHtFtMarket=line=>
+ norm(typeof line==='string'?line:
+  line?.market_name??line?.marketName??line?.name)==='corners halftime fulltime';
 export function parseCornerComparison(line){
  let title=norm(line?.market_name??line?.marketName??line?.name);
  const explicit=Number(line?.period??0);
