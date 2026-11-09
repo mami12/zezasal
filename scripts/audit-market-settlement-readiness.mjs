@@ -15,6 +15,11 @@ import {eventMarketRequirement} from '../server/ledger/event-market-policy.mjs';
 import {statisticMarketContract,isStatisticMarket} from '../server/ledger/statistic-markets.mjs';
 import {goalTotalContract} from '../server/ledger/goal-total-contract.mjs';
 import {cornerTotalContract} from '../server/ledger/corner-total-contract.mjs';
+import {isPeriodGoalTotal,parsePeriodGoalTotal} from '../server/ledger/period-goal-totals.mjs';
+import {isHtFtMarket,parseHtFtOutcome} from '../server/ledger/ht-ft.mjs';
+import {auditQuotedMarket} from '../server/ledger/market-coverage.mjs';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
 import {isResultTotalMarket,isTotalBttsMarket,parseResultTotal,parseTotalBtts} from '../server/ledger/mixed-combos.mjs';
 import {isResultBttsMarket,parseResultBttsOutcome} from '../server/ledger/result-btts.mjs';
 
@@ -42,14 +47,26 @@ export function auditOffer(row){
   return category('DANGER_WRONG_RESULT','Kerkon rregulla per fitimin/promovimin ose kohe tjeter nga 90 minutat');
  if(/\b(?:asian|quarter|european)\b/.test(n)||/\bhandicap\b/.test(n))
   return category('DANGER_WRONG_RESULT','Handicap/Asian: linja, baseline live dhe kthimet e pjesshme duhen vertetuar');
- if(/\b(?:first|1st|half.?time)\s*half\b/.test(n)&&/\b(?:cards?|bookings?)\b/.test(n))
-  return category('DANGER_WRONG_RESULT','Numri final i kartoneve nuk eshte numri i pjeses se pare');
  if(/\b(?:half.?time\s*[/&-]\s*full.?time|ht\s*[/&-]\s*ft|correct score|draw no bet|odd\s*[/&-]?\s*even|winning margin|clean sheet|to nil|both halves|either half|number of corners? in 1st half)\b/.test(n))
   return category('UNSUPPORTED_OR_SPECIAL','Kerkon llogaritje speciale; nuk ka verifikim te pergjithshem');
- if(period===2||/\b(?:2nd|second)\s+half\b/.test(n))
-  return category('UNSUPPORTED_OR_SPECIAL','Rezultati i pjeses se dyte duhet ndare nga ai final');
- if(period===1&&!/\b(?:first|1st)\s+half\b|\bhalf.?time\b|^ht(?:\b|\W)/.test(n))
-  return category('DANGER_WRONG_RESULT','Period=1 por emri nuk e garanton scope e pjeses se pare');
+ // The actual FT/HT goal grader, not event chronology, decides numeric totals.
+ // This also covers second-half goals using verified FT minus HT.
+ if(isPeriodGoalTotal(row)){
+  const goal=parsePeriodGoalTotal(row);
+  return goal?category('SCORE_GRADEABLE',goal.half?
+   'Goal total with verified HT and FT scoreboards, never FT-only evidence':
+   'Goal total with confirmed final score and quoted exact/OU line'):
+   category('UNSUPPORTED_OR_SPECIAL','Goal total name or selection cannot be decoded safely');
+ }
+ if(isHtFtMarket(row.market_name)){
+  const selection=parseHtFtOutcome(row.outcome_name,row.outcome_key);
+  return selection?category('SCORE_GRADEABLE','HT/FT pair requires both independently confirmed scores'):
+   category('UNSUPPORTED_OR_SPECIAL','HT/FT outcome does not contain two recognized results');
+ }
+ // Full-time corner totals use the verified aggregate, not a fabricated
+ // corner-minute timeline. Half/sequence/window markets are excluded by parser.
+ if(cornerTotalContract(row)&&cleanTotal(line)&&isOverUnder(v))
+  return category('STATS_EVIDENCE_REQUIRED','Full-time corner counts need final source agreement');
  if(isStatisticMarket(row)){
   const c=statisticMarketContract(row);
   return c?.supported?category('STATS_EVIDENCE_REQUIRED','Statistike e verifikueshme vetem me burim te plote')
@@ -77,7 +94,7 @@ export function auditOffer(row){
   return parseResultBttsOutcome(row.outcome_name)||parseResultBttsOutcome(row.outcome_key)?
    category('SCORE_GRADEABLE','Result + BTTS, me outcome te deshifruar'):
    category('UNSUPPORTED_OR_SPECIAL','Result + BTTS pa outcome te deshifruar');
- if(/^(?:full time result|match result|1x2|full time 1x2|half time result|1st half result|first half result|1st half 1x2|first half 1x2)$/.test(n))
+ if(/^(?:full time result|match result|1x2|full time 1x2|half time result|1st half result|first half result|1st half 1x2|first half 1x2|2nd half result|second half result|2nd half 1x2|second half 1x2)$/.test(n))
   return isResult(v)?category('SCORE_GRADEABLE','Result 1/X/2; saktesia varet nga scope/score i sakte'):
    category('UNSUPPORTED_OR_SPECIAL','Kodi i rezultatit 1/X/2 nuk njihet');
  if(/^(?:double chance|full time double chance|1st half double chance|first half double chance)$/.test(n))
@@ -86,12 +103,23 @@ export function auditOffer(row){
   return isYesNo(v)?category('SCORE_GRADEABLE','BTTS Yes/No'):category('UNSUPPORTED_OR_SPECIAL','Outcome BTTS i panjohur');
  if(goalTotalContract(row)&&cleanTotal(line)&&isOverUnder(v))
   return category('SCORE_GRADEABLE','Total gola; kontrollo rregullin e push per linja te plota');
- if(cornerTotalContract(row)&&cleanTotal(line)&&isOverUnder(v))
-  return category('STATS_EVIDENCE_REQUIRED','Total kornerash; duhen kornerat e ekzekutuar, jo te akorduar');
- return category('UNKNOWN_REVIEW','Nuk ekziston rruga e provuar e pageses per kete kombinim emer/zgjedhje');
+ // Only unmatched half-specific quotes are unsafe; parsed ones above must
+ // not be declared unsupported simply because their period is not FT.
+ if(/\b(?:first|1st|half.?time)\s*half\b/.test(n)&&/\b(?:cards?|bookings?)\b/.test(n))
+  return category('DANGER_WRONG_RESULT','Unmapped first-half card outcome must not use FT totals');
+ const mapped=auditQuotedMarket(row);
+ if(mapped.status==='RULE_MAPPED')
+  return category('RULE_MAPPED_NEEDS_EVIDENCE',
+   'Known financial rule '+mapped.rule+'; a parser match alone does not prove source or final evidence');
+ if(period===2||/\b(?:2nd|second)\s+half\b/.test(n))
+  return category('UNSUPPORTED_OR_SPECIAL','No verified second-half scoring or incident rule for this quote');
+ if(period===1&&!/\b(?:first|1st)\s+half\b|\bhalf.?time\b|^ht(?:\b|\W)/.test(n))
+  return category('DANGER_WRONG_RESULT','Period=1 but provider market name has no explicit first-half scope');
+ return category('UNKNOWN_REVIEW','No tested financial rule for this exact provider market and outcome');
 }
 const argv=Number(process.argv[2]??30000);
 const limit=Number.isSafeInteger(argv)&&argv>0?Math.min(argv,150000):30000;
+if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url){
 const groups=new Map(),offers=[];
 try{
  let offset=0;
@@ -121,7 +149,7 @@ try{
    group by l.market_name,l.outcome_name,l.line
    order by count(*) desc limit 2000`)).rows.map(row=>({...row,...auditOffer(row)}));
  }catch(error){console.error('Pending ticket audit unavailable:',error.message);}
- const priorities=['DANGER_WRONG_RESULT','STOPPAGE_TIMELINE_UNVERIFIED','UNSUPPORTED_OR_SPECIAL','UNKNOWN_REVIEW','INCIDENT_EVIDENCE_REQUIRED','STATS_EVIDENCE_REQUIRED','SCORE_GRADEABLE'];
+ const priorities=['DANGER_WRONG_RESULT','STOPPAGE_TIMELINE_UNVERIFIED','UNSUPPORTED_OR_SPECIAL','UNKNOWN_REVIEW','RULE_MAPPED_NEEDS_EVIDENCE','INCIDENT_EVIDENCE_REQUIRED','STATS_EVIDENCE_REQUIRED','SCORE_GRADEABLE'];
  console.log(JSON.stringify({readOnly:true,scannedDistinctOffers:offers.length,
   partial:offers.length>=limit,limit,counts:Object.fromEntries(priorities.map(k=>[k,groups.get(k)??0])),
   riskyOffers:offers.filter(r=>!['SCORE_GRADEABLE'].includes(r.category))
@@ -132,3 +160,4 @@ try{
  console.error('Read-only settlement market audit failed:',error.message);
  process.exitCode=1;
 }finally{await pool.end();}
+}
