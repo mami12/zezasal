@@ -8,6 +8,7 @@ import {gradePlayerGoalSpecial} from './player-goal-specials.mjs';
 import {gradeHalfExactFacts} from './half-exact-markets.mjs';
 import {gradeHalfCombination} from './half-combinations.mjs';
 import {gradeHtFtTotal} from './ht-ft-total.mjs';
+import {gradeTeamComparison} from './team-comparison.mjs';
 import {gradePeriodGoalTotal} from './period-goal-totals.mjs';
 /**
  * Persistent PRIMARY-feed football incidents. Provider IDs and player names are
@@ -736,6 +737,8 @@ export async function gradeStoredEventContract(line,result,{execute}={}){
   return gradeHalfCombination(line.live_contract,result);
  if(line?.live_contract?.kind==='ht-ft-total')
   return gradeHtFtTotal(line.live_contract,result);
+ if(line?.live_contract?.kind==='team-comparison')
+  return gradeTeamComparison(line.live_contract,result);
  if(line?.live_contract?.kind==='period-goal-total')
   return gradePeriodGoalTotal(line.live_contract,result);
  if(line?.live_contract?.kind==='score-handicap'&&
