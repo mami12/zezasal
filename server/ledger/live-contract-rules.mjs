@@ -378,6 +378,7 @@ export function parseLastEvent(line){
 }
 export function parseSequenceBet(line,counts={}) {
  const name=norm(line.market_name??line.marketName??line.name);
+ if(/\b(?:ot|et)\s*only\b|\b(?:extra[\s-]*time|overtime|shoot[\s-]*out)\b/.test(name))return null;
  // An event numbered inside a time band is not the same as the Nth event of the match.
  if(/\b(?:minutes?|mins?|interval|period|extra time)\b|\b(?:1st|first|2nd|second)\s+half\b/.test(name))return null;
  const event=/\bcorner/.test(name)?'corner':/\bgoal/.test(name)?'goal':/\b(?:cards?|bookings?)\b/.test(name)?'card':null;
@@ -480,6 +481,10 @@ export function parseCountMarket(line) {
 }
 export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const name=norm(line.market_name??line.marketName??line.name);
+ // Overtime-only, extra-time and shootout propositions are NOT regulation
+ // time (including normal stoppage) bets. Never freeze a 90-minute next
+ // event/race/window contract against a different match phase.
+ if(/\b(?:ot|et)\s*only\b|\b(?:extra[\s-]*time|overtime|shoot[\s-]*out)\b/.test(name))return null;
  const yellow=/\byellow\s+cards?\b/.test(name),red=/\bred\s+cards?\b/.test(name);
  const ambiguous=/\b(?:second\s+yellow|yellow\s+red)\b/.test(name);
  if((yellow&&red)||ambiguous)return null;
