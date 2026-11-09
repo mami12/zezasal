@@ -1,3 +1,5 @@
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 /**
  * One-shot provider reachability probe, strictly opt-in:
  *   node scripts/probe-market-information-apis.mjs --network
@@ -66,7 +68,7 @@ export async function probePublicProviders({request=fetch,aiscoreId=null,timeout
  return {readOnly:true,totalCalls:results.length,results,
   caveat:'Network JSON availability is NOT event correctness or permission to settle tickets.'};
 }
-if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1].replace(/\\/g,'/')).href){
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  if(!process.argv.includes('--network')){
   console.log('Usage: node scripts/probe-market-information-apis.mjs --network [--aiscore-id=CONFIRMED_ID]');
  }else{
