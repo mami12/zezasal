@@ -107,6 +107,7 @@ jobs:
           node scripts/test-verified-live-settlement.mjs
           node scripts/test-captured-market-titles.mjs
           node scripts/test-deployment-settlement-audit.mjs
+          node scripts/test-interval-first-goal.mjs
           node scripts/test-market-information-api-probe.mjs
           node scripts/test-market-coverage.mjs
           node scripts/test-exact-minute-provider-settlement.mjs
