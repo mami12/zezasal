@@ -41,7 +41,7 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {parsePlayerCardContract} from './live-contract-rules.mjs';
-import {parseCornerComparison} from './corner-comparisons.mjs';
+import {parseCornerComparison,isCornerHtFtMarket} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome} from './dc-btts.mjs';
@@ -141,6 +141,9 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   if(isHtFtMarket(row.market_name)&&
      !parseHtFtOutcome(row.outcome_name,row.outcome_key))
     throw Object.assign(badRequest('Opsioni Pjesa e parë / Fundi i ndeshjes nuk u njoh.'),{
+      code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
+  if(isCornerHtFtMarket(row)&&!parseCornerComparison(row))
+    throw Object.assign(badRequest('Opsioni për Korne HT/FT nuk identifikon dy rezultate 1/X/2.'),{
       code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   if(isUnverifiedHtFtFamily(row))
     throw Object.assign(badRequest('Ky treg ka rezultate të ndryshme nga HT/FT i golave dhe pret verifikim të posaçëm.'),{
