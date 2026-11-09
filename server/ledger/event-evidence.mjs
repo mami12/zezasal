@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {zizoEventPlayerName} from '../zizobet/display-player-name.mjs';
 import {eventContract,eventInWindow} from './event-contract.mjs';
 const query=async(...args)=>(await import('../db.mjs')).query(...args);
 import {eventMarketRequirement} from './event-market-policy.mjs';
@@ -116,7 +117,7 @@ export function normalizeEvents(data,source){
    ownGoal:type==='score_change'?explicitOwnGoal(e):null,
    team:/^(?:1|home|h)$/i.test(String(e.team))?'home':/^(?:2|away|a)$/i.test(String(e.team))?'away':null,
    minute:minute??NaN,seconds:zizobetEventSeconds(e.clk,minute),
-   player:typeof e.pl==='string'?e.pl.trim()||null:null,
+   player:zizoEventPlayerName(e),
    playerId:e.playerId??e.player_id??null,
    // The provider's 45+N notation unambiguously belongs to first-half
    // stoppage. Keep it as phase evidence: 45+2 must not be treated as 2H.
