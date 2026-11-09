@@ -19,14 +19,16 @@ const {gradeLine}=await import('../server/ledger/settler.mjs');
 const {liveContract,gradeLiveContract}=await import('../server/ledger/live-contract-rules.mjs');
 const {auditQuotedMarket,summarizeMarketCoverage}=await import('../server/ledger/market-coverage.mjs');
 const {automaticComboTemplates}=await import('../server/ledger/automatic-combos.mjs');
+const {gradeWithSyntheticStoredFacts}=await import('./fixtures/simulimi-stored-evidence.mjs');
+const {diagnosticForAllScopes}=await import('./fixtures/simulimi-acceptance.mjs');
 
 const bet=(market_name,outcome_name,line='',extra={})=>({
  market_name,outcome_name,outcome_key:outcome_name,line,period:0,...extra
 });
 const create=(name,goals=[],corners=[],cards=[])=>{
- const events=[...goals.map(([minute,team],i)=>({id:name+'-g'+i,type:'goal',minute,team,seconds:minute*60+10,player:team+' scorer'})),
-  ...corners.map(([minute,team],i)=>({id:name+'-c'+i,type:'corner',minute,team,seconds:minute*60+20})),
-  ...cards.map(([minute,team],i)=>({id:name+'-k'+i,type:'card',minute,team,seconds:minute*60+30,cardColor:'yellow'}))]
+ const events=[...goals.map(([minute,team],i)=>({id:name+'-g'+i,type:'goal',minute,team,seconds:minute*60+10,player:team+' scorer',ownGoal:false,phase:minute<45?'H1':'H2'})),
+  ...corners.map(([minute,team],i)=>({id:name+'-c'+i,type:'corner',minute,team,seconds:minute*60+20,player:team+' corner taker',phase:minute<45?'H1':'H2'})),
+  ...cards.map(([minute,team],i)=>({id:name+'-k'+i,type:'card',minute,team,seconds:minute*60+30,cardColor:'yellow',player:team==='home'?'Home player':'Away player',phase:minute<45?'H1':'H2'}))]
   .sort((a,b)=>a.seconds-b.seconds);
  const scoreOf=(items,side)=>items.filter(x=>x[1]===side).length;
  const score={
@@ -151,7 +153,7 @@ async function loadSource(){
  }
  return {definitions:definitionsSample.map(([name],i)=>({native_market_id:String(10000+i),native_market_name:name,scope:'SAMPLE'})),quotes:builtin,source:'built-in-samples'};
 }
-function simulateQuote(row){
+async function simulateQuote(row){
  const line=bet(row.market_name??row.native_market_name,row.outcome_name??row.outcome_key,row.line??'',row);
  const mapping=auditQuotedMarket(line);
  let contract=null,parseError=null;
@@ -160,19 +162,22 @@ function simulateQuote(row){
  const snapshots=[],seen=new Set(),conflicts=[];
  for(const fixture of fixtures){
   const final=fixture.final;
-  let live=null,ft=null,early=null,gap=null;
+  let live=null,ft=null,early=null,gap=null,stored=null;
   try{
    if(contract){
     live=gradeLiveContract(contract,final,{ended:true,scopeEnded:true});
     early=gradeLiveContract(contract,fixture.early,{ended:false});
     gap=gradeLiveContract(contract,fixture.gap,{ended:true,scopeEnded:true});
+    stored=await gradeWithSyntheticStoredFacts(contract,fixture);
    }
    ft=gradeLine(line,fixture.score);
   }catch(e){conflicts.push({scenario:fixture.name,error:String(e.message)});}
   if(live&&ft&&live!==ft)conflicts.push({scenario:fixture.name,live,final:ft});
-  const status=live??ft??'PENDING';
+  if(stored&&live&&stored!==live)conflicts.push({scenario:fixture.name,stored,live});
+  if(stored&&ft&&stored!==ft)conflicts.push({scenario:fixture.name,stored,final:ft});
+  const status=stored??live??ft??'PENDING';
   seen.add(status);
-  snapshots.push({fixture:fixture.name,status,live:live??'PENDING',final:ft??'PENDING',
+  snapshots.push({fixture:fixture.name,status,stored:stored??'PENDING',live:live??'PENDING',final:ft??'PENDING',
    early:early??'PENDING',gap:gap??'PENDING'});
  }
  const status=conflicts.length?'CONFLICT':
@@ -180,6 +185,7 @@ function simulateQuote(row){
   seen.size===1&&seen.has('PENDING')?'NOT_EXERCISED':'EXERCISED_NOT_CERTIFIED';
  return {nativeMarketId:String(row.native_market_id??''),market:line.market_name,
   outcome:line.outcome_name,line:line.line,period:line.period,
+  acceptance:diagnosticForAllScopes(line,{mapped:mapping.status==='RULE_MAPPED'}),
   mapping:mapping.status,rule:mapping.rule??null,contract:contract?.kind??null,
   status,results:[...seen],parseError,conflicts,snapshots};
 }
@@ -258,15 +264,20 @@ let report;
 try{
  const source=await loadSource();
  const regressions=runAssertions();
- const outcomes=source.quotes.map(simulateQuote);
+ const outcomes=await Promise.all(source.quotes.map(simulateQuote));
  const statusCounts={};
  for(const row of outcomes)statusCounts[row.status]=(statusCounts[row.status]??0)+1;
  const coverage=summarizeMarketCoverage(source.definitions,source.quotes);
+ const admissionCounts={};
+ for(const row of outcomes)for(const [scope,diagnostic] of Object.entries(row.acceptance)){
+  const key=scope+':'+diagnostic.status;
+  admissionCounts[key]=(admissionCounts[key]??0)+1;
+ }
  report={name:'simulimi',createdAt:new Date().toISOString(),source:source.source,
   readOnly:true,noApiCalls:true,noTicketsCreated:true,noBalanceChanges:true,
   partial:source.partial??false,limit:source.limit??null,
   totalDefinitions:source.definitions.length,totalQuotedSelections:source.quotes.length,
-  testedSelections:outcomes.length,summary:statusCounts,
+  testedSelections:outcomes.length,summary:statusCounts,admissionCounts,
   regressions,coverage:coverage.summary,marketFamilies:coverage.markets,
   selections:outcomes,
   warning:'EXERCISED_NOT_CERTIFIED means the real grader returned a status in a synthetic scenario, NOT that the real ticket settlement is fully verified. NOT_EXERCISED and NEEDS_RULE require investigation. --db reads the database only; no writes.'};
@@ -276,8 +287,13 @@ try{
  console.log('SIMULIMI | source='+source.source+' | definitions='+source.definitions.length+
   ' | selections='+outcomes.length+' | canaries='+regressions.passed+'/'+regressions.checks.length);
  console.log('Results: '+JSON.stringify(statusCounts)+' | report='+file);
+ console.log('Admission preflight (not wallet approval): '+JSON.stringify(admissionCounts));
  for(const item of outcomes.filter(r=>r.status!=='EXERCISED_NOT_CERTIFIED').slice(0,30))
-  console.log('UNVERIFIED '+item.status+': '+item.market+' / '+item.outcome+' / '+item.line);
+  console.log('UNVERIFIED '+item.status+': '+item.market+' / '+item.outcome+' / '+item.line+
+   ' | Prematch: '+item.acceptance.PREMATCH.status+
+   (item.acceptance.PREMATCH.reason?' ('+item.acceptance.PREMATCH.reason+')':'')+
+   ' | Live 15m: '+item.acceptance.LIVE_15.status+
+   (item.acceptance.LIVE_15.reason?' ('+item.acceptance.LIVE_15.reason+')':''));
  for(const failure of regressions.failed)console.error('FAIL '+failure.name+': '+failure.reason);
  if(source.partial)console.error('WARNING: Query limit reached. NOT all quote variants were included.');
  if(has('strict')&&(outcomes.some(r=>r.status!=='EXERCISED_NOT_CERTIFIED')||
