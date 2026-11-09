@@ -21,10 +21,16 @@ const btts=value=>{
  if(['no','ng','jo','bttsno','bothteamsnotoscore','bothteamstoscoreno'].includes(s))return false;
  return null;
 };
-const total=value=>{
- const m=fold(value).match(/^(over|under|mbi|nen)\s*(\d{1,3}(?:[.,]\d+)?)$/);
+const safeLine=value=>value==null||String(value).trim()===''?null:
+ /^\d{1,3}(?:[.,]\d+)?$/.test(String(value).trim())?
+ Number(String(value).replace(',','.')):null;
+const total=(value,quotedLine=null)=>{
+ const m=fold(value).match(/^(over|under|mbi|nen)(?:\s+(\d{1,3}(?:[.,]\d+)?))?$/);
  if(!m)return null;
- const line=Number(m[2].replace(',','.'));
+ const stated=m[2]==null?null:safeLine(m[2]);
+ if(stated===null&&quotedLine===null)return null;
+ if(stated!==null&&quotedLine!==null&&stated!==quotedLine)return null;
+ const line=stated??quotedLine;
  return line>=0&&line<=50&&Number.isSafeInteger(line*2)?
   {direction:['over','mbi'].includes(m[1])?'over':'under',line}:null;
 };
@@ -43,19 +49,34 @@ const parts=label=>{
  return pieces.length===2?pieces:null;
 };
 const names={
- 'result-total':/^(?:result|1x2|match result|full time result)\s+(?:and|&|\+)\s+(?:total|total goals?|goals? over\s*\/\s*under)$/,
- 'result-btts':/^(?:result|1x2|match result|full time result)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
- 'total-btts':/^(?:total|total goals?)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
- 'dc-btts':/^double chance\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
- 'dc-total':/^double chance\s+(?:and|&|\+)\s+(?:total|total goals?)$/
+ 'result-total':/^(?:result|1x2|match result|full time result|matchbet)\s+(?:and|&|\+)\s+(?:total|totals|total goals?|goals? over\s*\/\s*under)$/,
+ 'result-btts':/^(?:result|1x2|match result|full time result|matchbet)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
+ 'total-btts':/^(?:total|totals|total goals?)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
+ 'dc-btts':/^double chance(?:\s*\(1x\s*-\s*12\s*-\s*x2\))?\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
+ 'dc-total':/^double chance(?:\s*\(1x\s*-\s*12\s*-\s*x2\))?\s+(?:and|&|\+)\s+(?:total|totals|total goals?)$/
+};
+const titleWithLine=value=>{
+ const name=fold(value);
+ const found=name.match(/^(.*\b(?:total|totals|total goals?))\s+(\d{1,3}(?:[.,]\d+)?)$/);
+ return found?{name:found[1],line:safeLine(found[2])}:{name,line:null};
+};
+const quotedLineOf=line=>{
+ const fromTitle=titleWithLine(line?.market_name??line?.marketName??line?.name);
+ const supplied=safeLine(line?.line??line?.specifier);
+ // An explicit parameter must agree with the price menu's embedded number.
+ if(fromTitle.line!==null&&supplied!==null&&fromTitle.line!==supplied)
+  return {name:fromTitle.name,line:null,conflict:true};
+ return {name:fromTitle.name,line:fromTitle.line??supplied,conflict:false};
 };
 export function isHalfComboFamily(line){
- const name=fold(line?.market_name??line?.marketName??line?.name);
+ const {name}=quotedLineOf(line);
  const rest=name.replace(/^(?:(?:1st|first|2nd|second) half|full time|match)\s*[-:.\s]*/,'');
  return Object.values(names).some(regex=>regex.test(rest));
 }
 export function parseHalfCombination(line,teams={}){
- const original=fold(line?.market_name??line?.marketName??line?.name);
+ const quoted=quotedLineOf(line);
+ if(quoted.conflict)return null;
+ const original=quoted.name;
  const match=original.match(/^(1st|first|2nd|second) half\s*[-:.]?\s*(.+)$/);
  let half=0,name=original;
  if(match){half=/^(?:1st|first)$/.test(match[1])?1:2;name=match[2];}
@@ -74,7 +95,7 @@ export function parseHalfCombination(line,teams={}){
    for(const [resultPart,totalPart]of [[a,b],[b,a]]){
     const choice=family==='dc-total'?chance(resultPart):
      termResult(resultPart,teams.home??teams.home_team,teams.away??teams.away_team);
-    const summed=total(totalPart);
+    const summed=total(totalPart,quoted.line);
     if(choice&&summed)return {version:1,kind:'half-combo',half,family,choice,
       totalDirection:summed.direction,totalLine:summed.line};
    }
@@ -87,7 +108,7 @@ export function parseHalfCombination(line,teams={}){
    }
   }else{
    for(const [totalPart,bttsPart]of [[a,b],[b,a]]){
-    const summed=total(totalPart),yes=btts(bttsPart);
+    const summed=total(totalPart,quoted.line),yes=btts(bttsPart);
     if(summed&&yes!==null)return {version:1,kind:'half-combo',half,family,
       totalDirection:summed.direction,totalLine:summed.line,btts:yes};
    }
