@@ -1,5 +1,6 @@
 import {statsProviders} from './stats-providers/index.mjs';
 import {footballInformation,FOOTBALL_INFORMATION_SQL} from './stats-providers/football-information.mjs';
+import {inheritEventPlayers} from './live-event-timeline.mjs';
 import {toClientMatches} from './ledger/view.mjs';
 import {persistProviderMarketDefinitions} from './ledger/provider-offer-archive.mjs';
 import express from 'express';
@@ -611,7 +612,7 @@ function mergeInfo(prev, next) {
     homeScore: Number.isFinite(next.homeScore) ? next.homeScore : prev.homeScore,
     awayScore: Number.isFinite(next.awayScore) ? next.awayScore : prev.awayScore,
     periodsScore: next.periodsScore?.length ? next.periodsScore : prev.periodsScore,
-    events: Array.isArray(next.events)?next.events:prev.events,
+    events: Array.isArray(next.events)?inheritEventPlayers(next.events,prev.events):prev.events,
     stats: next.stats ? mergeTeamStats(prev.stats,next.stats) : prev.stats,
     feedStatus: next.feedStatus ?? prev.feedStatus,
     hasOpenOdds: next.hasOpenOdds ?? prev.hasOpenOdds,
