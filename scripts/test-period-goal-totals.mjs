@@ -49,4 +49,11 @@ assert.equal(gradePeriodGoalTotal(parsePeriodGoalTotal(quote('2nd Half Total Goa
 assert.equal(gradePeriodGoalTotal(parsePeriodGoalTotal(quote('2nd Half Total Goals','Over 1.5')),{
  ...result,half_home_score:9}),null);
 assert.equal(gradeLine(quote('2nd Half Away Team Goals','Over 1.5'),result),'WON');
+assert.equal(parsePeriodGoalTotal(quote('Home team exact goals','Over 2.5'),result),null,
+ 'Exact Goals is a count selection, never a generic Over/Under team total');
+assert.equal(gradeLine(quote('Home team exact goals','Over 2.5'),result),null,
+ 'Wrongly-labeled exact market is not a team Over payout');
+assert.equal(gradeLine(quote('Home team exact goals','Exactly 3'),result),'WON',
+ 'Genuine home exact-goal selection uses only home score, not both teams');
+
 console.log('PASS half/team/match goals O/U, exact, 3+, integer pushes, contradictory half/FT and no incident SQL');
