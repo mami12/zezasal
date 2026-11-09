@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {providerTimeline} from '../server/live-event-timeline.mjs';
+import {providerTimeline,inheritEventPlayers} from '../server/live-event-timeline.mjs';
 const rows=[{id:'g',type:'score_change',team:'home',gt:23},{id:'y',type:'yellow_card',team:'away',gt:'45+2'},
  {id:'c',type:'corner_kick',team:'home',gt:78},{id:'x',type:'score_change',team:'home'},
  {id:'bad',type:'red_card',team:'unknown',gt:44},{id:'cancelled',cancelled:true,type:'score_change',team:'home',gt:50}];
@@ -25,4 +25,14 @@ assert.deepEqual(named.map(e=>[e.type,e.player]),[
 assert.equal(providerTimeline(44,[{id:'unknown',type:'foul',team:1,gt:55}])[0].player,
  undefined,'Do not invent a player name when no actor was supplied');
 
+const stripped=named.map(event=>({...event,player:undefined}));
+const preserved=inheritEventPlayers(stripped,named);
+assert.deepEqual(preserved.map(event=>event.player),named.map(event=>event.player),
+ 'A header missing player labels must retain exact matched actors');
+assert.equal(inheritEventPlayers([{...stripped[0],minute:13}],named)[0].player,undefined,
+ 'A corrected event minute must never inherit a stale player');
+assert.equal(inheritEventPlayers([{...stripped[0],team:'away'}],named)[0].player,undefined,
+ 'A corrected team must never inherit the previous actor');
+assert.equal(inheritEventPlayers(stripped.slice(1),named).length,4,
+ 'A removed event must not be revived from older named snapshots');
 console.log('PASS provider event minutes:23,45+2,78; unknown times/teams not invented; repeated/cancelled events handled');
