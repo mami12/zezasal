@@ -182,6 +182,32 @@ export function parseEventWindow(line,clock=null) {
 /** Explicit Zizobet interval leader: who scores/takes MOST in X-Y.
  * A tie is a distinct draw outcome; this is not a next-event or full-time bet.
  */
+
+/**
+ * Zizobet "Who scores goal 1 in minutes 56-60 (5-minute interval)" asks
+ * which team scores the FIRST goal INSIDE that fixed band, not goal #1 of
+ * the whole fixture. "No goal" means no first goal in the band.
+ * Only support the verified three-way grammar for ordinal 1. Other ordinal
+ * markets require a separate source-rule contract and remain unsupported.
+ */
+export function parseIntervalFirstGoal(line){
+ const name=norm(line.market_name??line.marketName??line.name);
+ if(Number(line.period??0)!==0||isNonRegulationMarketTitle(name))return null;
+ const match=name.match(/^who scores goal 1 in minutes? (\d{1,3})\s*[-–]\s*(\d{1,3}) \((5|10|15)-minute interval\)$/);
+ if(!match)return null;
+ const from=Number(match[1]),end=Number(match[2]),width=Number(match[3]);
+ if(!Number.isSafeInteger(from)||!Number.isSafeInteger(end)||
+    from<1||end>89||end<from||end-from+1!==width)return null;
+ // 45+ and 90+ injury time cannot be assigned to this fixed bucket
+ // from the currently available absolute match-minute clock.
+ if(from<=45&&end>=45)return null;
+ const side=sideOf(line.outcome_name??line.outcomeName)??
+   sideOf(line.outcome_key??line.outcomeKey);
+ if(!['home','away','none'].includes(side))return null;
+ return {version:1,kind:'interval-first-event',event:'goal',
+   from,to:end,side,ordinal:1,noneOffered:true};
+}
+
 export function parseIntervalLeader(line) {
  const name=norm(line.market_name??line.marketName??line.name);
  const m=name.match(/^who\s+(?:scores\s+most\s+goals|takes\s+most\s+corners)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})\b/);
@@ -492,7 +518,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const ambiguous=/\b(?:second\s+yellow|yellow\s+red)\b/.test(name);
  if((yellow&&red)||ambiguous)return null;
  const contract=parsePlayerOrdinalScorer(line)??parsePlayerGoalSpecial(line)??parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
-  parseTimedResultMarket(line)??parseIntervalLeader(line)??
+  parseTimedResultMarket(line)??parseIntervalFirstGoal(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfExactMarket(line)??parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseMultiCornerContract(line)??parseCornerComparison(line)??parseTeamCountMarket(line)??parseCountMarket(line);
@@ -532,7 +558,7 @@ const fullCoverage=(evidence,event,through)=>{
  * 'ended' requires a confirmed terminal feed phase, not wall-clock time.
  */
 export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=false}={}){
- if(!contract||!['interval-result','team-total-goals','window','sequence','race','last-event','over','under','exact','range','atLeast'].includes(contract.kind))return null;
+ if(!contract||!['interval-result','interval-first-event','team-total-goals','window','sequence','race','last-event','over','under','exact','range','atLeast'].includes(contract.kind))return null;
  const {event}=contract;
  const ordered=sortEvents(Array.isArray(evidence.events)?evidence.events:[],event);
  const clock=number(evidence.clock);
@@ -576,6 +602,24 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
   }
   const result=home>away?'home':away>home?'away':'none';
   return contract.side===result?'WON':'LOST';
+ }
+ if(contract.kind==='interval-first-event'){
+  if(event!=='goal'||contract.ordinal!==1||
+     !['home','away','none'].includes(contract.side)||
+     !Number.isSafeInteger(contract.from)||!Number.isSafeInteger(contract.to)||
+     contract.from<1||contract.to>89||contract.from>contract.to||
+     contract.from<=45&&contract.to>=45||clock===null||
+     clock<=contract.to||!fullCoverage(evidence,'goal',contract.to+1)||
+     !ordered?.orderKnown)return null;
+  // The goal is numbered *within the selected period*. A previous match
+  // goal does not determine the first goal of this 5/10/15-minute market.
+  const inBand=ordered.events.filter(e=>
+   Number.isSafeInteger(Number(e.minute))&&Number(e.minute)>=contract.from&&
+   Number(e.minute)<=contract.to);
+  const first=inBand[0];
+  if(first&&!['home','away'].includes(first.team))return null;
+  const winner=first?.team??'none';
+  return contract.side===winner?'WON':'LOST';
  }
  if(contract.kind==='window'){
   if(contract.cardColor||!ordered)return null; // use verified color-specific SQL facts
