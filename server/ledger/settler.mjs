@@ -33,6 +33,7 @@ import {cornerTotalContract} from './corner-total-contract.mjs';
 import {statisticsNeedReview} from './settlement-review.mjs';
 import {createLiveSettlementPreviews} from './live-shadow-settlement.mjs';
 import {gradeStoredEventContract,SUPPORTED_FACT_KINDS} from './match-event-facts.mjs';
+import {isNonRegulationMarketTitle} from './live-contract-rules.mjs';
 import {backfillPendingTeamGoalContracts} from './live-contract-backfill.mjs';
 import {settleVerifiedLiveProposals} from './verified-live-settlement.mjs';
 
@@ -95,6 +96,7 @@ const isSecondHalfLine = (marketName = '') =>
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
+  if(isNonRegulationMarketTitle(line?.market_name))return false;
   if (!result) return false;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
@@ -169,6 +171,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(isNonRegulationMarketTitle(line?.market_name))return null;
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
