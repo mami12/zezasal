@@ -25,6 +25,7 @@ import {isScoringPropMarket,gradeScoringPropMarket} from './scoring-props.mjs';
 import {isParityLikeMarket,gradeParityMarket} from './parity-markets.mjs';
 import {isHandicapMarket,parseHandicapContract,gradeHandicapContract} from './handicap-contracts.mjs';
 import {isHtFtMarket,parseHtFtOutcome,gradeHtFt} from './ht-ft.mjs';
+import {isHtFtTotalMarket,isUnverifiedHtFtFamily,parseHtFtTotal,gradeHtFtTotal} from './ht-ft-total.mjs';
 import {isDcBttsMarket,parseDcBttsOutcome,gradeDcBtts} from './dc-btts.mjs';
 import {isHalfComboFamily,parseHalfCombination,gradeHalfCombination} from './half-combinations.mjs';
 import {isPeriodGoalTotal,parsePeriodGoalTotal,gradePeriodGoalTotal} from './period-goal-totals.mjs';
@@ -98,6 +99,12 @@ const isSecondHalfLine = (marketName = '') =>
 export function hasRequiredSettlementEvidence(line, result) {
   if(isNonRegulationMarketTitle(line?.market_name))return false;
   if (!result) return false;
+  if(isUnverifiedHtFtFamily(line))return false;
+  if(isHtFtTotalMarket(line)){
+    const c=line?.live_contract?.kind==='ht-ft-total'?line.live_contract:
+      parseHtFtTotal(line);
+    return gradeHtFtTotal(c,result)!==null;
+  }
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
@@ -171,7 +178,13 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
-  if(isNonRegulationMarketTitle(line?.market_name))return null;
+  if(isNonRegulationMarketTitle(line?.market_name)||
+     isUnverifiedHtFtFamily(line))return null;
+  if(!Array.isArray(line?.builder_legs)&&isHtFtTotalMarket(line)){
+    const c=line?.live_contract?.kind==='ht-ft-total'?line.live_contract:
+      parseHtFtTotal(line);
+    return gradeHtFtTotal(c,result);
+  }
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
