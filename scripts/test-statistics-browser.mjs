@@ -11,19 +11,22 @@ import tailwindcss from 'tailwindcss';
 import tailwind from '../web/tailwind.config.js';
 const root=resolve('web'),app=express(),errors=[];
 const html=`<html><head><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body><div id="root"></div><script type="module">
-import React from'react';import{createRoot}from'react-dom/client';import{LanguageProvider}from'/src/context/LanguageContext.tsx';import{LiveFeedProvider,useLiveFeed}from'/src/api/liveFeed.tsx';import PitchTracker from'/src/components/Tracker/PitchTracker.tsx';import ShotsOnTargetComparison from'/src/components/Tracker/ShotsOnTargetComparison.tsx';import'/src/index.css';
+import React from'react';import{createRoot}from'react-dom/client';import{LanguageProvider}from'/src/context/LanguageContext.tsx';import{LiveFeedProvider,useLiveFeed}from'/src/api/liveFeed.tsx';import PitchTracker from'/src/components/Tracker/PitchTracker.tsx';import ShotsOnTargetComparison from'/src/components/Tracker/ShotsOnTargetComparison.tsx';import{BrowserRouter}from'react-router-dom';import{AuthProvider}from'/src/context/AuthContext.tsx';import'/src/index.css';
 function View(){const feed=useLiveFeed();window.fixtureFeed=feed;const intervals=[['1–15',1,0],['16–30',0,0],['31–45+',0,1],['46–60',0,0],['61–75',1,0],['76–90+',0,0]].map(([label,home,away])=>({label,from:1,to:15,home,away}));return React.createElement(React.Fragment,null,React.createElement(PitchTracker,{matchId:'A',homeTeam:'Home',awayTeam:'Away'}),React.createElement(ShotsOnTargetComparison,{values:{home:4,away:2},fouls:{home:7,away:11},intervals,homeTeam:'Home',awayTeam:'Away'}));}
-createRoot(document.getElementById('root')).render(React.createElement(LanguageProvider,null,React.createElement(LiveFeedProvider,null,React.createElement(View))));
+createRoot(document.getElementById('root')).render(React.createElement(BrowserRouter,null,React.createElement(AuthProvider,null,React.createElement(LanguageProvider,null,React.createElement(LiveFeedProvider,null,React.createElement(View))))));
 </script></body></html>`;
 let vite,server,browser,io;
 try{
- vite=await createServer({root,configFile:false,cacheDir:resolve('tmp/vite-statistics'),plugins:[react()],css:{postcss:{plugins:[tailwindcss({...tailwind,content:[root+'/src/**/*.{ts,tsx}']})]}},optimizeDeps:{include:['react','react-dom/client','axios','lucide-react','socket.io-client']},server:{middlewareMode:true,hmr:false,fs:{allow:[resolve('.'),resolve('node_modules')]}},appType:'custom'});
+ vite=await createServer({root,configFile:false,cacheDir:resolve('tmp/vite-statistics'),plugins:[react()],css:{postcss:{plugins:[tailwindcss({...tailwind,content:[root+'/src/**/*.{ts,tsx}']})]}},optimizeDeps:{include:['react','react-dom/client','axios','lucide-react','socket.io-client','react-router-dom']},server:{middlewareMode:true,hmr:false,fs:{allow:[resolve('.'),resolve('node_modules')]}},appType:'custom'});
+ app.get('/app/api/auth/me',(_q,r)=>r.json({id:'test-player',username:'player',role:'PLAYER',balance:100}));
+ app.get('/app/api/market-policy',(_q,r)=>r.json({markets:[],categories:[],scopes:[]}));
  app.get('/',async(_q,r)=>r.type('html').send(await vite.transformIndexHtml('/',html)));app.use(vite.middlewares);
  server=http.createServer(app);io=new Server(server,{serveClient:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  browser=await puppeteer.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
- await page.evaluateOnNewDocument(()=>localStorage.setItem('lang','al'));
+ await page.evaluateOnNewDocument(()=>{localStorage.setItem('lang','al');localStorage.setItem('token','local-statistics-fixture');});
  await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:'domcontentloaded',timeout:60000});
- await page.waitForFunction(()=>window.fixtureFeed?.connected===true);
+ await page.waitForFunction(()=>window.fixtureFeed?.connected===true,{timeout:60000})
+  .catch(error=>{throw new Error('React statistics fixture could not establish authenticated socket: '+errors.join(' | ')+'; '+error.message);});
  assert.equal(await page.$('.zshop-tracker'),null,'unknown live counters do not fabricate values');
  assert.equal(await page.$$eval('[data-stat="goal-intervals"] .zs-interval-cell',els=>els.length),6,'match details render the six 15-minute bins');
  assert.ok((await page.$eval('[data-stat="fouls"]',el=>el.textContent)).includes('7')&&(await page.$eval('[data-stat="fouls"]',el=>el.textContent)).includes('11'));
