@@ -62,7 +62,7 @@ export function scoringPropFamily(line){
  // Full team names are supported only when the rest of the title is an
  // exact recognised grammar. A substring match against a team is unsafe.
  if(/ (?:to score(?: a goal)?|to score in (?:1st|first|2nd|second) half|to score in both halves|to win (?:both|either) halves|win to nil|highest scoring half|goals? odd\s*\/?\s*even|exact goals?)$/.test(name)&&
-    !/^(?:both teams|either team|any team)\b/.test(name))return 'team-named';
+    !/\b(?:both teams|either team|any team)\b/.test(name))return 'team-named';
  return null;
 }
 export const isScoringPropMarket=line=>scoringPropFamily(line)!==null;
