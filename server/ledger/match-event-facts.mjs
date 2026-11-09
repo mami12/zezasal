@@ -164,7 +164,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
  }
  return stored;
 }
-export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','nth-time','player-goal','player-ordinal-goal','player-goal-special','player-card','half-combo','period-goal-total','half-first-event','half-last-event','half-race','half-parity','half-exact-count','multi-corners','corner-comparison','score-handicap','half-total']);
+export const SUPPORTED_FACT_KINDS=new Set(['window','sequence','race','last-event','over','under','exact','atLeast','range','team-total-goals','interval-result','interval-leader','window-total','interval-first-event','nth-time','player-goal','player-ordinal-goal','player-goal-special','player-card','half-combo','period-goal-total','half-first-event','half-last-event','half-race','half-parity','half-exact-count','multi-corners','corner-comparison','score-handicap','half-total']);
 /** A complete, independently reconciled match-corner timeline is required
  * before first-half "First Corner / None" can be decided. Unlabelled stoppage
  * and minute-45+ events cannot be assigned to a half from the minute alone.
@@ -545,6 +545,33 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   if(c.startExclusive===true&&data.rolling_boundary_uncertain===true)return null;
   const num=Number(c.cardColor?data.color_window_count:data.window_count);
   return decision(c.choice?(num>0):(num===0));
+ }
+ if(c.kind==='interval-first-event'){
+  // The ordinal applies only INSIDE the quoted fixed band, not to all
+  // previously scored match goals. Every negative/"No goal" outcome needs
+  // a through-minute beyond the entire band plus primary confirmation.
+  const closesAt=Math.floor(Number(c.to))+1;
+  if(c.event!=='goal'||c.ordinal!==1||
+     !['home','away','none'].includes(c.side)||
+     !Number.isSafeInteger(c.from)||!Number.isSafeInteger(c.to)||
+     c.from<1||c.to>89||c.from>c.to||
+     (c.from<=45&&c.to>=45)||through<closesAt)return null;
+  const {rows:goals}=await execute(`select minute,seconds,team from app_match_event_fact
+    where match_id=$1 and provider=$2 and kind='goal' and active=true
+      and minute between $3 and $4
+    order by coalesce(seconds,minute*60),minute,provider_event_id`,
+   [line.match_id,provider,c.from,c.to]);
+  if(goals.some(g=>!Number.isInteger(Number(g.minute))||
+    !['home','away'].includes(g.team)||g.seconds!=null&&
+      (!Number.isFinite(Number(g.seconds))||Number(g.seconds)<0)))return null;
+  // Two goals without distinct sub-minute timestamps cannot establish
+  // which side scored FIRST; do not use provider_event_id as chronology.
+  const first=goals[0],second=goals[1];
+  if(first&&second&&
+      (first.seconds==null||second.seconds==null&&
+        Number(second.minute)===Number(first.minute)||
+       Number(first.seconds)===Number(second.seconds)))return null;
+  return decision(c.side===(first?.team??'none'));
  }
  if(c.kind==='interval-result'){
   if(!Number.isSafeInteger(c.toExclusiveSeconds)||through*60<c.toExclusiveSeconds)return null;
