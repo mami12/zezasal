@@ -47,8 +47,6 @@ export function auditOffer(row){
   return category('DANGER_WRONG_RESULT','Kerkon rregulla per fitimin/promovimin ose kohe tjeter nga 90 minutat');
  if(/\b(?:asian|quarter|european)\b/.test(n)||/\bhandicap\b/.test(n))
   return category('DANGER_WRONG_RESULT','Handicap/Asian: linja, baseline live dhe kthimet e pjesshme duhen vertetuar');
- if(/\b(?:half.?time\s*[/&-]\s*full.?time|ht\s*[/&-]\s*ft|correct score|draw no bet|odd\s*[/&-]?\s*even|winning margin|clean sheet|to nil|both halves|either half|number of corners? in 1st half)\b/.test(n))
-  return category('UNSUPPORTED_OR_SPECIAL','Kerkon llogaritje speciale; nuk ka verifikim te pergjithshem');
  // The actual FT/HT goal grader, not event chronology, decides numeric totals.
  // This also covers second-half goals using verified FT minus HT.
  if(isPeriodGoalTotal(row)){
@@ -111,6 +109,8 @@ export function auditOffer(row){
  if(mapped.status==='RULE_MAPPED')
   return category('RULE_MAPPED_NEEDS_EVIDENCE',
    'Known financial rule '+mapped.rule+'; a parser match alone does not prove source or final evidence');
+ if(/\b(?:half.?time\s*[/&-]\s*full.?time|ht\s*[/&-]\s*ft|correct score|draw no bet|odd\s*[/&-]?\s*even|winning margin|clean sheet|to nil|both halves|either half|number of corners? in 1st half)\b/.test(n))
+  return category('UNSUPPORTED_OR_SPECIAL','Kerkon llogaritje speciale; nuk ka verifikim te pergjithshem');
  if(period===2||/\b(?:2nd|second)\s+half\b/.test(n))
   return category('UNSUPPORTED_OR_SPECIAL','No verified second-half scoring or incident rule for this quote');
  if(period===1&&!/\b(?:first|1st)\s+half\b|\bhalf.?time\b|^ht(?:\b|\W)/.test(n))
