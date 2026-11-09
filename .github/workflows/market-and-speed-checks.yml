@@ -104,6 +104,7 @@ jobs:
         if: always()
         run: |
           node scripts/test-market-readiness-audit.mjs
+          node scripts/test-verified-live-settlement.mjs
           node scripts/test-captured-market-titles.mjs
           node scripts/test-market-coverage.mjs
           node scripts/test-exact-minute-provider-settlement.mjs
