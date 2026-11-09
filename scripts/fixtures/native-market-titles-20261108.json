@@ -1,0 +1,2314 @@
+{
+  "source": "2026-11-08 user-provided Zizobet admin title listing; no outcome keys or prices; NOT proof of settlement support",
+  "count": 577,
+  "markets": [
+    {
+      "position": 1,
+      "title": "00:00 - 09:59 min. - Result"
+    },
+    {
+      "position": 2,
+      "title": "00:00 - 14:59 min. - Total corners"
+    },
+    {
+      "position": 3,
+      "title": "15:00 - 29:59 min. - Total corners"
+    },
+    {
+      "position": 4,
+      "title": "1st / 2nd half both teams to score"
+    },
+    {
+      "position": 5,
+      "title": "1st goalscorer"
+    },
+    {
+      "position": 6,
+      "title": "1st half - Away team clean sheet"
+    },
+    {
+      "position": 7,
+      "title": "1st half - Away team exact cards"
+    },
+    {
+      "position": 8,
+      "title": "1st half - Away team exact corners"
+    },
+    {
+      "position": 9,
+      "title": "1st half - Away team red card"
+    },
+    {
+      "position": 10,
+      "title": "1st half - Away team total"
+    },
+    {
+      "position": 11,
+      "title": "1st half - Away team total cards"
+    },
+    {
+      "position": 12,
+      "title": "1st half - Away team total corners"
+    },
+    {
+      "position": 13,
+      "title": "1st Half - Bookings Away team"
+    },
+    {
+      "position": 14,
+      "title": "1st Half - Bookings Home team"
+    },
+    {
+      "position": 15,
+      "title": "1st half - Both teams to score"
+    },
+    {
+      "position": 16,
+      "title": "1st half - Corner handicap"
+    },
+    {
+      "position": 17,
+      "title": "1st half - Corner range"
+    },
+    {
+      "position": 18,
+      "title": "1st Half - Cornerbet"
+    },
+    {
+      "position": 19,
+      "title": "1st Half - Corners Away team"
+    },
+    {
+      "position": 20,
+      "title": "1st Half - Corners Home team"
+    },
+    {
+      "position": 21,
+      "title": "1st half - Corners odd/even"
+    },
+    {
+      "position": 22,
+      "title": "1st half - Correct score"
+    },
+    {
+      "position": 23,
+      "title": "1st half - Double chance"
+    },
+    {
+      "position": 24,
+      "title": "1st half - Double chance & both teams to score"
+    },
+    {
+      "position": 25,
+      "title": "1st half - Draw no bet"
+    },
+    {
+      "position": 26,
+      "title": "1st half - Exact cards"
+    },
+    {
+      "position": 27,
+      "title": "1st half - exact goals"
+    },
+    {
+      "position": 28,
+      "title": "1st half - Exact goals 2+"
+    },
+    {
+      "position": 29,
+      "title": "1st half - Exact Goals 3+"
+    },
+    {
+      "position": 30,
+      "title": "1st half - First card"
+    },
+    {
+      "position": 31,
+      "title": "1st half - First corner"
+    },
+    {
+      "position": 32,
+      "title": "1st half - First team to score"
+    },
+    {
+      "position": 33,
+      "title": "1st Half - Goals Away team"
+    },
+    {
+      "position": 34,
+      "title": "1st Half - Goals Home team"
+    },
+    {
+      "position": 35,
+      "title": "1st half - Handicap"
+    },
+    {
+      "position": 36,
+      "title": "1st half - Handicap (1X2)"
+    },
+    {
+      "position": 37,
+      "title": "1st half - Home team clean sheet"
+    },
+    {
+      "position": 38,
+      "title": "1st half - Home team exact cards"
+    },
+    {
+      "position": 39,
+      "title": "1st half - Home team exact corners"
+    },
+    {
+      "position": 40,
+      "title": "1st half - Home team red card"
+    },
+    {
+      "position": 41,
+      "title": "1st half - Home team total"
+    },
+    {
+      "position": 42,
+      "title": "1st half - Home team total cards"
+    },
+    {
+      "position": 43,
+      "title": "1st half - Home team total corners"
+    },
+    {
+      "position": 44,
+      "title": "1st half - Last corner"
+    },
+    {
+      "position": 45,
+      "title": "1st Half - Matchbet and both teams to score"
+    },
+    {
+      "position": 46,
+      "title": "1st half - Most cards"
+    },
+    {
+      "position": 47,
+      "title": "1st half - Most corners"
+    },
+    {
+      "position": 48,
+      "title": "1st half - Multigoals"
+    },
+    {
+      "position": 49,
+      "title": "1st half - Odd/Even goals"
+    },
+    {
+      "position": 50,
+      "title": "1st half - Red card"
+    },
+    {
+      "position": 51,
+      "title": "1st half - Result"
+    },
+    {
+      "position": 52,
+      "title": "1st half - Result & both teams to score"
+    },
+    {
+      "position": 53,
+      "title": "1st half - Result & total"
+    },
+    {
+      "position": 54,
+      "title": "1st half - Total"
+    },
+    {
+      "position": 55,
+      "title": "1st Half - Total Booking Points"
+    },
+    {
+      "position": 56,
+      "title": "1st Half - Total Booking Points (aggregated)"
+    },
+    {
+      "position": 57,
+      "title": "1st Half - Total Bookings"
+    },
+    {
+      "position": 58,
+      "title": "1st Half - Total Bookings (exactly)"
+    },
+    {
+      "position": 59,
+      "title": "1st half - Total card points"
+    },
+    {
+      "position": 60,
+      "title": "1st half - Total cards"
+    },
+    {
+      "position": 61,
+      "title": "1st half - Total corners"
+    },
+    {
+      "position": 62,
+      "title": "1st Half - Total Corners (aggregated)"
+    },
+    {
+      "position": 63,
+      "title": "1st Half - Total Corners Away team"
+    },
+    {
+      "position": 64,
+      "title": "1st Half - Total Corners Home team"
+    },
+    {
+      "position": 65,
+      "title": "1st Half - Which team wins race to 3 corners"
+    },
+    {
+      "position": 66,
+      "title": "1st Half - Which team wins race to 5 corners"
+    },
+    {
+      "position": 67,
+      "title": "1st Half - Which team wins race to 7 corners"
+    },
+    {
+      "position": 68,
+      "title": "1st Half - Which team wins race to 9 corners"
+    },
+    {
+      "position": 69,
+      "title": "1st player Player to be carded"
+    },
+    {
+      "position": 70,
+      "title": "1st team ball possession %"
+    },
+    {
+      "position": 71,
+      "title": "1X2"
+    },
+    {
+      "position": 72,
+      "title": "2nd Half - 3way"
+    },
+    {
+      "position": 73,
+      "title": "2nd half - Away team clean sheet"
+    },
+    {
+      "position": 74,
+      "title": "2nd half - Away team total"
+    },
+    {
+      "position": 75,
+      "title": "2nd half - Away team total cards"
+    },
+    {
+      "position": 76,
+      "title": "2nd half - Away team total corners"
+    },
+    {
+      "position": 77,
+      "title": "2nd half - Both teams to score"
+    },
+    {
+      "position": 78,
+      "title": "2nd half - Corners handicap"
+    },
+    {
+      "position": 79,
+      "title": "2nd half - Correct score"
+    },
+    {
+      "position": 80,
+      "title": "2nd half - Double chance"
+    },
+    {
+      "position": 81,
+      "title": "2nd Half - Double chance (1X - 12 - X2)"
+    },
+    {
+      "position": 82,
+      "title": "2nd half - Double chance & both teams to score"
+    },
+    {
+      "position": 83,
+      "title": "2nd half - Draw no bet"
+    },
+    {
+      "position": 84,
+      "title": "2nd half - Exact goals 2+"
+    },
+    {
+      "position": 85,
+      "title": "2nd half - First team to score"
+    },
+    {
+      "position": 86,
+      "title": "2nd half - Handicap"
+    },
+    {
+      "position": 87,
+      "title": "2nd half - Handicap (1X2)"
+    },
+    {
+      "position": 88,
+      "title": "2nd half - Home team clean sheet"
+    },
+    {
+      "position": 89,
+      "title": "2nd half - Home team total"
+    },
+    {
+      "position": 90,
+      "title": "2nd half - Home team total cards"
+    },
+    {
+      "position": 91,
+      "title": "2nd half - Home team total corners"
+    },
+    {
+      "position": 92,
+      "title": "2nd Half - Matchbet and both teams to score"
+    },
+    {
+      "position": 93,
+      "title": "2nd Half - Matchbet and Totals"
+    },
+    {
+      "position": 94,
+      "title": "2nd half - Most cards"
+    },
+    {
+      "position": 95,
+      "title": "2nd half - Most corners"
+    },
+    {
+      "position": 96,
+      "title": "2nd half - Multigoals"
+    },
+    {
+      "position": 97,
+      "title": "2nd half - Odd/Even goals"
+    },
+    {
+      "position": 98,
+      "title": "2nd half - Result"
+    },
+    {
+      "position": 99,
+      "title": "2nd half - Result & both teams to score"
+    },
+    {
+      "position": 100,
+      "title": "2nd half - Result & total"
+    },
+    {
+      "position": 101,
+      "title": "2nd Half - Total"
+    },
+    {
+      "position": 102,
+      "title": "2nd half - Total cards"
+    },
+    {
+      "position": 103,
+      "title": "2nd half - Total corners"
+    },
+    {
+      "position": 104,
+      "title": "3-way (OT only!)"
+    },
+    {
+      "position": 105,
+      "title": "30:00 - 45+ min. - Total corners"
+    },
+    {
+      "position": 106,
+      "title": "45:00 - 59:59 min. - Total corners"
+    },
+    {
+      "position": 107,
+      "title": "60:00 - 74:59 min. - Total corners"
+    },
+    {
+      "position": 108,
+      "title": "75:00 - 90+ min. - Total corners"
+    },
+    {
+      "position": 109,
+      "title": "Any team to win"
+    },
+    {
+      "position": 110,
+      "title": "Anytime goalscorer"
+    },
+    {
+      "position": 111,
+      "title": "Anytime goalscorer & 1x2"
+    },
+    {
+      "position": 112,
+      "title": "Anytime goalscorer & correct score"
+    },
+    {
+      "position": 113,
+      "title": "Asian Corner handicap -0.5 in 10 minutes interval 1-10"
+    },
+    {
+      "position": 114,
+      "title": "Asian Corner handicap -0.5 in 10 minutes interval 11-20"
+    },
+    {
+      "position": 115,
+      "title": "Asian Corner handicap -0.5 in 15 minutes interval 1-15"
+    },
+    {
+      "position": 116,
+      "title": "Asian Corner handicap -0.5 in 15 minutes interval 16-30"
+    },
+    {
+      "position": 117,
+      "title": "Asian Corner handicap 0.5 in 10 minutes interval 1-10"
+    },
+    {
+      "position": 118,
+      "title": "Asian Corner handicap 0.5 in 10 minutes interval 11-20"
+    },
+    {
+      "position": 119,
+      "title": "Asian Corner handicap 0.5 in 15 minutes interval 1-15"
+    },
+    {
+      "position": 120,
+      "title": "Asian Corner handicap 0.5 in 15 minutes interval 16-30"
+    },
+    {
+      "position": 121,
+      "title": "Asian Corner handicap 0.5 in 5 minutes interval 1-5"
+    },
+    {
+      "position": 122,
+      "title": "Asian Corner handicap 0.5 in 5 minutes interval 6-10"
+    },
+    {
+      "position": 123,
+      "title": "Asian Handicap"
+    },
+    {
+      "position": 124,
+      "title": "Asian handicap first half"
+    },
+    {
+      "position": 125,
+      "title": "Away team 1st player to score Player"
+    },
+    {
+      "position": 126,
+      "title": "Away Team Clean Sheet"
+    },
+    {
+      "position": 127,
+      "title": "Away team corner range"
+    },
+    {
+      "position": 128,
+      "title": "Away team exact goals 3+"
+    },
+    {
+      "position": 129,
+      "title": "Away team highest scoring half"
+    },
+    {
+      "position": 130,
+      "title": "Away team odd/even"
+    },
+    {
+      "position": 131,
+      "title": "Away team red card"
+    },
+    {
+      "position": 132,
+      "title": "Away team shots on target"
+    },
+    {
+      "position": 133,
+      "title": "Away team throw-in"
+    },
+    {
+      "position": 134,
+      "title": "Away team to score in both halves"
+    },
+    {
+      "position": 135,
+      "title": "Away team to win"
+    },
+    {
+      "position": 136,
+      "title": "Away team total cards"
+    },
+    {
+      "position": 137,
+      "title": "Away team total corners"
+    },
+    {
+      "position": 138,
+      "title": "Away team total fouls"
+    },
+    {
+      "position": 139,
+      "title": "Away team total goal kicks"
+    },
+    {
+      "position": 140,
+      "title": "Away team total goals"
+    },
+    {
+      "position": 141,
+      "title": "Away team total offsides"
+    },
+    {
+      "position": 142,
+      "title": "Away team total shots"
+    },
+    {
+      "position": 143,
+      "title": "Away team win or any clean sheet"
+    },
+    {
+      "position": 144,
+      "title": "Away team wins any of the halves"
+    },
+    {
+      "position": 145,
+      "title": "Away team wins both halves"
+    },
+    {
+      "position": 146,
+      "title": "Away team wins or both teams to score"
+    },
+    {
+      "position": 147,
+      "title": "Away team wins or total over"
+    },
+    {
+      "position": 148,
+      "title": "Away team wins or total under"
+    },
+    {
+      "position": 149,
+      "title": "Away team wins to nil"
+    },
+    {
+      "position": 150,
+      "title": "Bet Builder: 1 + Over 1.5"
+    },
+    {
+      "position": 151,
+      "title": "Bet Builder: 1 + Over 2.5"
+    },
+    {
+      "position": 152,
+      "title": "Bet Builder: 1 + Over 3.5"
+    },
+    {
+      "position": 153,
+      "title": "Bet Builder: 1 + Over 4.5"
+    },
+    {
+      "position": 154,
+      "title": "Bet Builder: 1 + Over 5.5"
+    },
+    {
+      "position": 155,
+      "title": "Bet Builder: 1 + Under 1.5"
+    },
+    {
+      "position": 156,
+      "title": "Bet Builder: 1 + Under 2.5"
+    },
+    {
+      "position": 157,
+      "title": "Bet Builder: 1 + Under 3.5"
+    },
+    {
+      "position": 158,
+      "title": "Bet Builder: 1 + Under 4.5"
+    },
+    {
+      "position": 159,
+      "title": "Bet Builder: 1 + Under 5.5"
+    },
+    {
+      "position": 160,
+      "title": "Bet Builder: 12 + Over 1.5"
+    },
+    {
+      "position": 161,
+      "title": "Bet Builder: 12 + Over 2.5"
+    },
+    {
+      "position": 162,
+      "title": "Bet Builder: 12 + Over 3.5"
+    },
+    {
+      "position": 163,
+      "title": "Bet Builder: 12 + Over 4.5"
+    },
+    {
+      "position": 164,
+      "title": "Bet Builder: 12 + Over 5.5"
+    },
+    {
+      "position": 165,
+      "title": "Bet Builder: 12 + Under 1.5"
+    },
+    {
+      "position": 166,
+      "title": "Bet Builder: 12 + Under 2.5"
+    },
+    {
+      "position": 167,
+      "title": "Bet Builder: 12 + Under 3.5"
+    },
+    {
+      "position": 168,
+      "title": "Bet Builder: 12 + Under 4.5"
+    },
+    {
+      "position": 169,
+      "title": "Bet Builder: 12 + Under 5.5"
+    },
+    {
+      "position": 170,
+      "title": "Bet Builder: 1X + Over 0.5"
+    },
+    {
+      "position": 171,
+      "title": "Bet Builder: 1X + Over 1.5"
+    },
+    {
+      "position": 172,
+      "title": "Bet Builder: 1X + Over 2.5"
+    },
+    {
+      "position": 173,
+      "title": "Bet Builder: 1X + Over 3.5"
+    },
+    {
+      "position": 174,
+      "title": "Bet Builder: 1X + Over 4.5"
+    },
+    {
+      "position": 175,
+      "title": "Bet Builder: 1X + Over 5.5"
+    },
+    {
+      "position": 176,
+      "title": "Bet Builder: 1X + Under 1.5"
+    },
+    {
+      "position": 177,
+      "title": "Bet Builder: 1X + Under 2.5"
+    },
+    {
+      "position": 178,
+      "title": "Bet Builder: 1X + Under 3.5"
+    },
+    {
+      "position": 179,
+      "title": "Bet Builder: 1X + Under 4.5"
+    },
+    {
+      "position": 180,
+      "title": "Bet Builder: 1X + Under 5.5"
+    },
+    {
+      "position": 181,
+      "title": "Bet Builder: 2 + Over 1.5"
+    },
+    {
+      "position": 182,
+      "title": "Bet Builder: 2 + Over 2.5"
+    },
+    {
+      "position": 183,
+      "title": "Bet Builder: 2 + Over 3.5"
+    },
+    {
+      "position": 184,
+      "title": "Bet Builder: 2 + Over 4.5"
+    },
+    {
+      "position": 185,
+      "title": "Bet Builder: 2 + Over 5.5"
+    },
+    {
+      "position": 186,
+      "title": "Bet Builder: 2 + Under 1.5"
+    },
+    {
+      "position": 187,
+      "title": "Bet Builder: 2 + Under 2.5"
+    },
+    {
+      "position": 188,
+      "title": "Bet Builder: 2 + Under 3.5"
+    },
+    {
+      "position": 189,
+      "title": "Bet Builder: 2 + Under 4.5"
+    },
+    {
+      "position": 190,
+      "title": "Bet Builder: 2 + Under 5.5"
+    },
+    {
+      "position": 191,
+      "title": "Bet Builder: BTTS No + Over 0.5"
+    },
+    {
+      "position": 192,
+      "title": "Bet Builder: BTTS No + Over 1.5"
+    },
+    {
+      "position": 193,
+      "title": "Bet Builder: BTTS No + Over 2.5"
+    },
+    {
+      "position": 194,
+      "title": "Bet Builder: BTTS No + Over 3.5"
+    },
+    {
+      "position": 195,
+      "title": "Bet Builder: BTTS No + Over 4.5"
+    },
+    {
+      "position": 196,
+      "title": "Bet Builder: BTTS No + Over 5.5"
+    },
+    {
+      "position": 197,
+      "title": "Bet Builder: BTTS No + Under 2.5"
+    },
+    {
+      "position": 198,
+      "title": "Bet Builder: BTTS No + Under 3.5"
+    },
+    {
+      "position": 199,
+      "title": "Bet Builder: BTTS No + Under 4.5"
+    },
+    {
+      "position": 200,
+      "title": "Bet Builder: BTTS No + Under 5.5"
+    },
+    {
+      "position": 201,
+      "title": "Bet Builder: BTTS Yes + Over 2.5"
+    },
+    {
+      "position": 202,
+      "title": "Bet Builder: BTTS Yes + Over 3.5"
+    },
+    {
+      "position": 203,
+      "title": "Bet Builder: BTTS Yes + Over 4.5"
+    },
+    {
+      "position": 204,
+      "title": "Bet Builder: BTTS Yes + Over 5.5"
+    },
+    {
+      "position": 205,
+      "title": "Bet Builder: BTTS Yes + Under 2.5"
+    },
+    {
+      "position": 206,
+      "title": "Bet Builder: BTTS Yes + Under 3.5"
+    },
+    {
+      "position": 207,
+      "title": "Bet Builder: BTTS Yes + Under 4.5"
+    },
+    {
+      "position": 208,
+      "title": "Bet Builder: BTTS Yes + Under 5.5"
+    },
+    {
+      "position": 209,
+      "title": "Bet Builder: X + Over 0.5"
+    },
+    {
+      "position": 210,
+      "title": "Bet Builder: X + Over 1.5"
+    },
+    {
+      "position": 211,
+      "title": "Bet Builder: X + Over 2.5"
+    },
+    {
+      "position": 212,
+      "title": "Bet Builder: X + Over 3.5"
+    },
+    {
+      "position": 213,
+      "title": "Bet Builder: X + Over 4.5"
+    },
+    {
+      "position": 214,
+      "title": "Bet Builder: X + Over 5.5"
+    },
+    {
+      "position": 215,
+      "title": "Bet Builder: X + Under 1.5"
+    },
+    {
+      "position": 216,
+      "title": "Bet Builder: X + Under 2.5"
+    },
+    {
+      "position": 217,
+      "title": "Bet Builder: X + Under 3.5"
+    },
+    {
+      "position": 218,
+      "title": "Bet Builder: X + Under 4.5"
+    },
+    {
+      "position": 219,
+      "title": "Bet Builder: X + Under 5.5"
+    },
+    {
+      "position": 220,
+      "title": "Bet Builder: X2 + Over 0.5"
+    },
+    {
+      "position": 221,
+      "title": "Bet Builder: X2 + Over 1.5"
+    },
+    {
+      "position": 222,
+      "title": "Bet Builder: X2 + Over 2.5"
+    },
+    {
+      "position": 223,
+      "title": "Bet Builder: X2 + Over 3.5"
+    },
+    {
+      "position": 224,
+      "title": "Bet Builder: X2 + Over 4.5"
+    },
+    {
+      "position": 225,
+      "title": "Bet Builder: X2 + Over 5.5"
+    },
+    {
+      "position": 226,
+      "title": "Bet Builder: X2 + Under 1.5"
+    },
+    {
+      "position": 227,
+      "title": "Bet Builder: X2 + Under 2.5"
+    },
+    {
+      "position": 228,
+      "title": "Bet Builder: X2 + Under 3.5"
+    },
+    {
+      "position": 229,
+      "title": "Bet Builder: X2 + Under 4.5"
+    },
+    {
+      "position": 230,
+      "title": "Bet Builder: X2 + Under 5.5"
+    },
+    {
+      "position": 231,
+      "title": "Bookingbet"
+    },
+    {
+      "position": 232,
+      "title": "Bookings Away team"
+    },
+    {
+      "position": 233,
+      "title": "Bookings Home team"
+    },
+    {
+      "position": 234,
+      "title": "Both half goals over"
+    },
+    {
+      "position": 235,
+      "title": "Both half goals under"
+    },
+    {
+      "position": 236,
+      "title": "Both teams to receive cards"
+    },
+    {
+      "position": 237,
+      "title": "Both teams to score"
+    },
+    {
+      "position": 238,
+      "title": "Card in first 10 min. (00:00 - 09:59)"
+    },
+    {
+      "position": 239,
+      "title": "Card shown in both halves"
+    },
+    {
+      "position": 240,
+      "title": "Cards handicap"
+    },
+    {
+      "position": 241,
+      "title": "Clean sheet Away team"
+    },
+    {
+      "position": 242,
+      "title": "Clean sheet Home team"
+    },
+    {
+      "position": 243,
+      "title": "Corner handicap"
+    },
+    {
+      "position": 244,
+      "title": "Corner in first 10 min. (00:00 - 09:59)"
+    },
+    {
+      "position": 245,
+      "title": "Corner in first 5 min. (00:00 - 04:59)"
+    },
+    {
+      "position": 246,
+      "title": "Corner range"
+    },
+    {
+      "position": 247,
+      "title": "Cornerbet"
+    },
+    {
+      "position": 248,
+      "title": "Corners Away team"
+    },
+    {
+      "position": 249,
+      "title": "Corners Halftime/Fulltime"
+    },
+    {
+      "position": 250,
+      "title": "Corners Home team"
+    },
+    {
+      "position": 251,
+      "title": "Corners odd/even"
+    },
+    {
+      "position": 252,
+      "title": "Correct score"
+    },
+    {
+      "position": 253,
+      "title": "Correct score rest of match (from rezultati fillestar)"
+    },
+    {
+      "position": 254,
+      "title": "Double chance"
+    },
+    {
+      "position": 255,
+      "title": "Double chance (1X - 12 - X2)"
+    },
+    {
+      "position": 256,
+      "title": "Double chance (1X - 12 - X2) and both teams to score"
+    },
+    {
+      "position": 257,
+      "title": "Double chance (1X - 12 - X2) and Totals"
+    },
+    {
+      "position": 258,
+      "title": "Double chance & 1st half both teams score"
+    },
+    {
+      "position": 259,
+      "title": "Double chance & 2nd half both teams score"
+    },
+    {
+      "position": 260,
+      "title": "Double chance & both teams to score"
+    },
+    {
+      "position": 261,
+      "title": "Double chance & total goals"
+    },
+    {
+      "position": 262,
+      "title": "Draw no bet"
+    },
+    {
+      "position": 263,
+      "title": "Draw No Bet first half"
+    },
+    {
+      "position": 264,
+      "title": "Draw or any clean sheet"
+    },
+    {
+      "position": 265,
+      "title": "Draw or both teams to score"
+    },
+    {
+      "position": 266,
+      "title": "Draw or total goals over"
+    },
+    {
+      "position": 267,
+      "title": "Draw or total goals under"
+    },
+    {
+      "position": 268,
+      "title": "Exact cards"
+    },
+    {
+      "position": 269,
+      "title": "Exact goals"
+    },
+    {
+      "position": 270,
+      "title": "Exact goals 5+"
+    },
+    {
+      "position": 271,
+      "title": "Exact goals 6+"
+    },
+    {
+      "position": 272,
+      "title": "Exact goals 9+"
+    },
+    {
+      "position": 273,
+      "title": "First card"
+    },
+    {
+      "position": 274,
+      "title": "First corner"
+    },
+    {
+      "position": 275,
+      "title": "First goal & match result"
+    },
+    {
+      "position": 276,
+      "title": "First goal interval"
+    },
+    {
+      "position": 277,
+      "title": "First Half - Matchbet and Totals 1.5"
+    },
+    {
+      "position": 278,
+      "title": "First offside"
+    },
+    {
+      "position": 279,
+      "title": "First team to score"
+    },
+    {
+      "position": 280,
+      "title": "Fouls handicap"
+    },
+    {
+      "position": 281,
+      "title": "Fouls odd/even"
+    },
+    {
+      "position": 282,
+      "title": "Full Time 1UP"
+    },
+    {
+      "position": 283,
+      "title": "Full Time 2UP"
+    },
+    {
+      "position": 284,
+      "title": "Full Time 3UP"
+    },
+    {
+      "position": 285,
+      "title": "Goal in first 10 min. (00:00 - 09:59)"
+    },
+    {
+      "position": 286,
+      "title": "Goal in first 5 min. (00:00 - 04:59)"
+    },
+    {
+      "position": 287,
+      "title": "Goal/No goal"
+    },
+    {
+      "position": 288,
+      "title": "Goals away team"
+    },
+    {
+      "position": 289,
+      "title": "Goals home team"
+    },
+    {
+      "position": 290,
+      "title": "Halftime - 3way"
+    },
+    {
+      "position": 291,
+      "title": "Halftime - Double chance (1X - 12 - X2)"
+    },
+    {
+      "position": 292,
+      "title": "Halftime - Next goal"
+    },
+    {
+      "position": 293,
+      "title": "Halftime - Total"
+    },
+    {
+      "position": 294,
+      "title": "Halftime - Who wins the rest?"
+    },
+    {
+      "position": 295,
+      "title": "Halftime/Fulltime"
+    },
+    {
+      "position": 296,
+      "title": "Halftime/Fulltime & 1st half total goals"
+    },
+    {
+      "position": 297,
+      "title": "Halftime/fulltime & exact goals"
+    },
+    {
+      "position": 298,
+      "title": "Halftime/fulltime & total goals"
+    },
+    {
+      "position": 299,
+      "title": "Halftime/Fulltime correct score"
+    },
+    {
+      "position": 300,
+      "title": "Handicap"
+    },
+    {
+      "position": 301,
+      "title": "Handicap (1X2)"
+    },
+    {
+      "position": 302,
+      "title": "Handicap for first half"
+    },
+    {
+      "position": 303,
+      "title": "Highest scoring half"
+    },
+    {
+      "position": 304,
+      "title": "Highest scoring half in corners"
+    },
+    {
+      "position": 305,
+      "title": "Highest scoring halve in cards"
+    },
+    {
+      "position": 306,
+      "title": "Home team 1st player to score Player"
+    },
+    {
+      "position": 307,
+      "title": "Home Team Clean Sheet"
+    },
+    {
+      "position": 308,
+      "title": "Home team corner range"
+    },
+    {
+      "position": 309,
+      "title": "Home team exact goals 3+"
+    },
+    {
+      "position": 310,
+      "title": "Home team highest scoring half"
+    },
+    {
+      "position": 311,
+      "title": "Home team odd/even"
+    },
+    {
+      "position": 312,
+      "title": "Home team red card"
+    },
+    {
+      "position": 313,
+      "title": "Home team shots on target"
+    },
+    {
+      "position": 314,
+      "title": "Home team throw-in"
+    },
+    {
+      "position": 315,
+      "title": "Home team to score in both halves"
+    },
+    {
+      "position": 316,
+      "title": "Home team to win"
+    },
+    {
+      "position": 317,
+      "title": "Home team total cards"
+    },
+    {
+      "position": 318,
+      "title": "Home team total corners"
+    },
+    {
+      "position": 319,
+      "title": "Home team total fouls"
+    },
+    {
+      "position": 320,
+      "title": "Home team total goal kicks"
+    },
+    {
+      "position": 321,
+      "title": "Home team total goals"
+    },
+    {
+      "position": 322,
+      "title": "Home team total offsides"
+    },
+    {
+      "position": 323,
+      "title": "Home team total shots"
+    },
+    {
+      "position": 324,
+      "title": "Home team win or both teams to score"
+    },
+    {
+      "position": 325,
+      "title": "Home team win or total over"
+    },
+    {
+      "position": 326,
+      "title": "Home team wins any of the halves"
+    },
+    {
+      "position": 327,
+      "title": "Home team wins both halves"
+    },
+    {
+      "position": 328,
+      "title": "Home team wins or any clean sheet"
+    },
+    {
+      "position": 329,
+      "title": "Home team wins or total under"
+    },
+    {
+      "position": 330,
+      "title": "Home team wins to nil"
+    },
+    {
+      "position": 331,
+      "title": "Last card"
+    },
+    {
+      "position": 332,
+      "title": "Last corner"
+    },
+    {
+      "position": 333,
+      "title": "Last goalscorer"
+    },
+    {
+      "position": 334,
+      "title": "Last team to score"
+    },
+    {
+      "position": 335,
+      "title": "Match result & both teams to score"
+    },
+    {
+      "position": 336,
+      "title": "Match result + Total goals"
+    },
+    {
+      "position": 337,
+      "title": "Matchbet and both teams to score"
+    },
+    {
+      "position": 338,
+      "title": "Matchbet and Totals"
+    },
+    {
+      "position": 339,
+      "title": "Most cards"
+    },
+    {
+      "position": 340,
+      "title": "Most corners"
+    },
+    {
+      "position": 341,
+      "title": "Most fouls"
+    },
+    {
+      "position": 342,
+      "title": "Most offsides"
+    },
+    {
+      "position": 343,
+      "title": "Most shots on target"
+    },
+    {
+      "position": 344,
+      "title": "Multicorners"
+    },
+    {
+      "position": 345,
+      "title": "Multigoals"
+    },
+    {
+      "position": 346,
+      "title": "Multigoals Away team"
+    },
+    {
+      "position": 347,
+      "title": "Multigoals Home team"
+    },
+    {
+      "position": 348,
+      "title": "Multiscores"
+    },
+    {
+      "position": 349,
+      "title": "Next goal"
+    },
+    {
+      "position": 350,
+      "title": "Next goal (OT only!)"
+    },
+    {
+      "position": 351,
+      "title": "Number of Goals 6+"
+    },
+    {
+      "position": 352,
+      "title": "Number of Goals 7+"
+    },
+    {
+      "position": 353,
+      "title": "Odd/Even"
+    },
+    {
+      "position": 354,
+      "title": "Odd/Even Corners in 10 minutes interval 1-10"
+    },
+    {
+      "position": 355,
+      "title": "Odd/Even Corners in 10 minutes interval 11-20"
+    },
+    {
+      "position": 356,
+      "title": "Odd/Even Corners in 15 minutes interval 1-15"
+    },
+    {
+      "position": 357,
+      "title": "Odd/Even Corners in 15 minutes interval 16-30"
+    },
+    {
+      "position": 358,
+      "title": "Odd/Even Corners in 5 minutes interval 1-5"
+    },
+    {
+      "position": 359,
+      "title": "Odd/Even Corners in 5 minutes interval 6-10"
+    },
+    {
+      "position": 360,
+      "title": "Odd/Even goals"
+    },
+    {
+      "position": 361,
+      "title": "Offsides handicap"
+    },
+    {
+      "position": 362,
+      "title": "Offsides odd/even"
+    },
+    {
+      "position": 363,
+      "title": "Player - Assists (incl. extra time)"
+    },
+    {
+      "position": 364,
+      "title": "Player - Goals (incl. extra time)"
+    },
+    {
+      "position": 365,
+      "title": "Player - Passes (incl. extra time)"
+    },
+    {
+      "position": 366,
+      "title": "Player - Shots (incl. extra time)"
+    },
+    {
+      "position": 367,
+      "title": "Player - Shots on goal (incl. extra time)"
+    },
+    {
+      "position": 368,
+      "title": "Player - Tackles (incl. extra time)"
+    },
+    {
+      "position": 369,
+      "title": "Player 1+ assists (sure sub)"
+    },
+    {
+      "position": 370,
+      "title": "Player 1+ fouls conceded (sure sub)"
+    },
+    {
+      "position": 371,
+      "title": "Player 1+ headed shots on target"
+    },
+    {
+      "position": 372,
+      "title": "Player 1+ shots on target (sure sub)"
+    },
+    {
+      "position": 373,
+      "title": "Player 2+ fouls conceded (sure sub)"
+    },
+    {
+      "position": 374,
+      "title": "Player 2+ headed shots on target"
+    },
+    {
+      "position": 375,
+      "title": "Player 2+ shots (sure sub)"
+    },
+    {
+      "position": 376,
+      "title": "Player 2+ shots on target (sure sub)"
+    },
+    {
+      "position": 377,
+      "title": "Player 3+ fouls conceded (sure sub)"
+    },
+    {
+      "position": 378,
+      "title": "Player 3+ headed shots on target"
+    },
+    {
+      "position": 379,
+      "title": "Player 3+ shots (sure sub)"
+    },
+    {
+      "position": 380,
+      "title": "Player 3+ shots on target (sure sub)"
+    },
+    {
+      "position": 381,
+      "title": "Player 4+ fouls conceded (sure sub)"
+    },
+    {
+      "position": 382,
+      "title": "Player 4+ shots (sure sub)"
+    },
+    {
+      "position": 383,
+      "title": "Player 4+ shots on target (sure sub)"
+    },
+    {
+      "position": 384,
+      "title": "Player 5+ shots (sure sub)"
+    },
+    {
+      "position": 385,
+      "title": "Player Anytime goalscorer & result"
+    },
+    {
+      "position": 386,
+      "title": "Player assists"
+    },
+    {
+      "position": 387,
+      "title": "Player fouls conceded"
+    },
+    {
+      "position": 388,
+      "title": "Player fouls won"
+    },
+    {
+      "position": 389,
+      "title": "Player left foot shots on target"
+    },
+    {
+      "position": 390,
+      "title": "Player offsides"
+    },
+    {
+      "position": 391,
+      "title": "Player right foot shots on target"
+    },
+    {
+      "position": 392,
+      "title": "Player saves"
+    },
+    {
+      "position": 393,
+      "title": "Player scores № 1 goal & result (incl. extra time)"
+    },
+    {
+      "position": 394,
+      "title": "Player shot from 414459 to 5"
+    },
+    {
+      "position": 395,
+      "title": "Player shot from 453499 to 5"
+    },
+    {
+      "position": 396,
+      "title": "Player shot from 470932 to 5"
+    },
+    {
+      "position": 397,
+      "title": "Player shot from 500836 to 5"
+    },
+    {
+      "position": 398,
+      "title": "Player shot from 521375 to 5"
+    },
+    {
+      "position": 399,
+      "title": "Player shot from 524432 to 5"
+    },
+    {
+      "position": 400,
+      "title": "Player shot from 582153 to 5"
+    },
+    {
+      "position": 401,
+      "title": "Player shot from 606728 to 5"
+    },
+    {
+      "position": 402,
+      "title": "Player shot from 607669 to 5"
+    },
+    {
+      "position": 403,
+      "title": "Player shot from 619169 to 5"
+    },
+    {
+      "position": 404,
+      "title": "Player shot from 680231 to 5"
+    },
+    {
+      "position": 405,
+      "title": "Player shot from 680516 to 5"
+    },
+    {
+      "position": 406,
+      "title": "Player shot from 680712 to 5"
+    },
+    {
+      "position": 407,
+      "title": "Player shot from 681685 to 5"
+    },
+    {
+      "position": 408,
+      "title": "Player shot from 684984 to 5"
+    },
+    {
+      "position": 409,
+      "title": "Player shot from 689084 to 5"
+    },
+    {
+      "position": 410,
+      "title": "Player shot from 692935 to 5"
+    },
+    {
+      "position": 411,
+      "title": "Player shot from 694638 to 5"
+    },
+    {
+      "position": 412,
+      "title": "Player shot from 701966 to 5"
+    },
+    {
+      "position": 413,
+      "title": "Player shot from 704867 to 5"
+    },
+    {
+      "position": 414,
+      "title": "Player shot from 705736 to 5"
+    },
+    {
+      "position": 415,
+      "title": "Player shot from 716848 to 5"
+    },
+    {
+      "position": 416,
+      "title": "Player shot on target from 414459 to 5"
+    },
+    {
+      "position": 417,
+      "title": "Player shot on target from 453499 to 5"
+    },
+    {
+      "position": 418,
+      "title": "Player shot on target from 470932 to 5"
+    },
+    {
+      "position": 419,
+      "title": "Player shot on target from 500836 to 5"
+    },
+    {
+      "position": 420,
+      "title": "Player shot on target from 521375 to 5"
+    },
+    {
+      "position": 421,
+      "title": "Player shot on target from 524432 to 5"
+    },
+    {
+      "position": 422,
+      "title": "Player shot on target from 582153 to 5"
+    },
+    {
+      "position": 423,
+      "title": "Player shot on target from 606728 to 5"
+    },
+    {
+      "position": 424,
+      "title": "Player shot on target from 607669 to 5"
+    },
+    {
+      "position": 425,
+      "title": "Player shot on target from 619169 to 5"
+    },
+    {
+      "position": 426,
+      "title": "Player shot on target from 680231 to 5"
+    },
+    {
+      "position": 427,
+      "title": "Player shot on target from 680516 to 5"
+    },
+    {
+      "position": 428,
+      "title": "Player shot on target from 680712 to 5"
+    },
+    {
+      "position": 429,
+      "title": "Player shot on target from 681685 to 5"
+    },
+    {
+      "position": 430,
+      "title": "Player shot on target from 684984 to 5"
+    },
+    {
+      "position": 431,
+      "title": "Player shot on target from 689084 to 5"
+    },
+    {
+      "position": 432,
+      "title": "Player shot on target from 692935 to 5"
+    },
+    {
+      "position": 433,
+      "title": "Player shot on target from 694638 to 5"
+    },
+    {
+      "position": 434,
+      "title": "Player shot on target from 701966 to 5"
+    },
+    {
+      "position": 435,
+      "title": "Player shot on target from 704867 to 5"
+    },
+    {
+      "position": 436,
+      "title": "Player shot on target from 705736 to 5"
+    },
+    {
+      "position": 437,
+      "title": "Player shot on target from 716848 to 5"
+    },
+    {
+      "position": 438,
+      "title": "Player Shots"
+    },
+    {
+      "position": 439,
+      "title": "Player shots on target"
+    },
+    {
+      "position": 440,
+      "title": "Player shots on target from outside of the box"
+    },
+    {
+      "position": 441,
+      "title": "Player to be carded"
+    },
+    {
+      "position": 442,
+      "title": "Player to be carded (incl. extra time)"
+    },
+    {
+      "position": 443,
+      "title": "Player To Be Carded (sure Sub)"
+    },
+    {
+      "position": 444,
+      "title": "Player to be sent off"
+    },
+    {
+      "position": 445,
+      "title": "Player to be sent off (sure sub)"
+    },
+    {
+      "position": 446,
+      "title": "Player to be yellow carded"
+    },
+    {
+      "position": 447,
+      "title": "Player to be yellow carded from 414459 to 5"
+    },
+    {
+      "position": 448,
+      "title": "Player to be yellow carded from 453499 to 5"
+    },
+    {
+      "position": 449,
+      "title": "Player to be yellow carded from 470932 to 5"
+    },
+    {
+      "position": 450,
+      "title": "Player to be yellow carded from 500836 to 5"
+    },
+    {
+      "position": 451,
+      "title": "Player to be yellow carded from 521375 to 5"
+    },
+    {
+      "position": 452,
+      "title": "Player to be yellow carded from 524432 to 5"
+    },
+    {
+      "position": 453,
+      "title": "Player to be yellow carded from 606728 to 5"
+    },
+    {
+      "position": 454,
+      "title": "Player to be yellow carded from 607669 to 5"
+    },
+    {
+      "position": 455,
+      "title": "Player to be yellow carded from 680231 to 5"
+    },
+    {
+      "position": 456,
+      "title": "Player to be yellow carded from 680516 to 5"
+    },
+    {
+      "position": 457,
+      "title": "Player to be yellow carded from 680712 to 5"
+    },
+    {
+      "position": 458,
+      "title": "Player to be yellow carded from 681685 to 5"
+    },
+    {
+      "position": 459,
+      "title": "Player to be yellow carded from 684984 to 5"
+    },
+    {
+      "position": 460,
+      "title": "Player to be yellow carded from 689084 to 5"
+    },
+    {
+      "position": 461,
+      "title": "Player to be yellow carded from 690265 to 5"
+    },
+    {
+      "position": 462,
+      "title": "Player to be yellow carded from 692935 to 5"
+    },
+    {
+      "position": 463,
+      "title": "Player to be yellow carded from 694638 to 5"
+    },
+    {
+      "position": 464,
+      "title": "Player to be yellow carded from 701966 to 5"
+    },
+    {
+      "position": 465,
+      "title": "Player to be yellow carded from 704867 to 5"
+    },
+    {
+      "position": 466,
+      "title": "Player to be yellow carded from 705736 to 5"
+    },
+    {
+      "position": 467,
+      "title": "Player to be yellow carded from 716848 to 5"
+    },
+    {
+      "position": 468,
+      "title": "Player to score (incl. extra time)"
+    },
+    {
+      "position": 469,
+      "title": "Player to score (sure sub)"
+    },
+    {
+      "position": 470,
+      "title": "Player to score 2+"
+    },
+    {
+      "position": 471,
+      "title": "Player to score 3+"
+    },
+    {
+      "position": 472,
+      "title": "Player to score a free kick"
+    },
+    {
+      "position": 473,
+      "title": "Player to score a header"
+    },
+    {
+      "position": 474,
+      "title": "Player to score and assist"
+    },
+    {
+      "position": 475,
+      "title": "Player to score from 210175 to 5"
+    },
+    {
+      "position": 476,
+      "title": "Player to score from 414459 to 5"
+    },
+    {
+      "position": 477,
+      "title": "Player to score from 500836 to 5"
+    },
+    {
+      "position": 478,
+      "title": "Player to score from 521375 to 5"
+    },
+    {
+      "position": 479,
+      "title": "Player to score from 524432 to 5"
+    },
+    {
+      "position": 480,
+      "title": "Player to score from 582153 to 5"
+    },
+    {
+      "position": 481,
+      "title": "Player to score from 680231 to 5"
+    },
+    {
+      "position": 482,
+      "title": "Player to score from 680505 to 5"
+    },
+    {
+      "position": 483,
+      "title": "Player to score from 689084 to 5"
+    },
+    {
+      "position": 484,
+      "title": "Player to score from 704867 to 5"
+    },
+    {
+      "position": 485,
+      "title": "Player to score from 705736 to 5"
+    },
+    {
+      "position": 486,
+      "title": "Player to score from 716848 to 5"
+    },
+    {
+      "position": 487,
+      "title": "Player to score from outside of the box"
+    },
+    {
+      "position": 488,
+      "title": "Player to score in 1st half"
+    },
+    {
+      "position": 489,
+      "title": "Player to score or assist"
+    },
+    {
+      "position": 490,
+      "title": "Player to score or assist (sure sub)"
+    },
+    {
+      "position": 491,
+      "title": "Player to score with left foot"
+    },
+    {
+      "position": 492,
+      "title": "Player to score with right foot"
+    },
+    {
+      "position": 493,
+      "title": "Race to 3 corners"
+    },
+    {
+      "position": 494,
+      "title": "Race to 5 corners"
+    },
+    {
+      "position": 495,
+      "title": "Race to 7 corners"
+    },
+    {
+      "position": 496,
+      "title": "Race to 9 corners"
+    },
+    {
+      "position": 497,
+      "title": "Red card"
+    },
+    {
+      "position": 498,
+      "title": "scores № 1 goal & correct score"
+    },
+    {
+      "position": 499,
+      "title": "Sending off?"
+    },
+    {
+      "position": 500,
+      "title": "Shots odd/even"
+    },
+    {
+      "position": 501,
+      "title": "Shots on target handicap"
+    },
+    {
+      "position": 502,
+      "title": "Shots on target odd/even"
+    },
+    {
+      "position": 503,
+      "title": "Shots on target total"
+    },
+    {
+      "position": 504,
+      "title": "Throw-in odd/even"
+    },
+    {
+      "position": 505,
+      "title": "Total"
+    },
+    {
+      "position": 506,
+      "title": "Total (OT only!)"
+    },
+    {
+      "position": 507,
+      "title": "Total & both teams to score"
+    },
+    {
+      "position": 508,
+      "title": "Total 0.5 away team corners in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 509,
+      "title": "Total 0.5 away team corners in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 510,
+      "title": "Total 0.5 away team corners in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 511,
+      "title": "Total 0.5 bookings in 10 minutes interval 1-10"
+    },
+    {
+      "position": 512,
+      "title": "Total 0.5 bookings in 10 minutes interval 11-20"
+    },
+    {
+      "position": 513,
+      "title": "Total 0.5 bookings in 15 minutes interval 1-15"
+    },
+    {
+      "position": 514,
+      "title": "Total 0.5 bookings in 15 minutes interval 16-30"
+    },
+    {
+      "position": 515,
+      "title": "Total 0.5 bookings in 5 minutes interval 1-5"
+    },
+    {
+      "position": 516,
+      "title": "Total 0.5 bookings in 5 minutes interval 6-10"
+    },
+    {
+      "position": 517,
+      "title": "Total 0.5 home team corners in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 518,
+      "title": "Total 0.5 home team corners in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 519,
+      "title": "Total 0.5 home team corners in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 520,
+      "title": "Total 1.5 bookings in 10 minutes interval 11-20"
+    },
+    {
+      "position": 521,
+      "title": "Total 1.5 bookings in 15 minutes interval 1-15"
+    },
+    {
+      "position": 522,
+      "title": "Total 1.5 bookings in 15 minutes interval 16-30"
+    },
+    {
+      "position": 523,
+      "title": "Total Away team"
+    },
+    {
+      "position": 524,
+      "title": "Total Booking Points"
+    },
+    {
+      "position": 525,
+      "title": "Total Booking Points (aggregated)"
+    },
+    {
+      "position": 526,
+      "title": "Total Bookings"
+    },
+    {
+      "position": 527,
+      "title": "Total Bookings (excactly)"
+    },
+    {
+      "position": 528,
+      "title": "Total card points"
+    },
+    {
+      "position": 529,
+      "title": "Total cards"
+    },
+    {
+      "position": 530,
+      "title": "Total corners"
+    },
+    {
+      "position": 531,
+      "title": "Total Corners (aggregated)"
+    },
+    {
+      "position": 532,
+      "title": "Total Corners Away team"
+    },
+    {
+      "position": 533,
+      "title": "Total Corners Home team"
+    },
+    {
+      "position": 534,
+      "title": "Total corners in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 535,
+      "title": "Total corners in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 536,
+      "title": "Total corners in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 537,
+      "title": "Total fouls"
+    },
+    {
+      "position": 538,
+      "title": "Total goal kicks"
+    },
+    {
+      "position": 539,
+      "title": "Total Goals (Bands)"
+    },
+    {
+      "position": 540,
+      "title": "Total goals in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 541,
+      "title": "Total goals in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 542,
+      "title": "Total goals in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 543,
+      "title": "Total Home team"
+    },
+    {
+      "position": 544,
+      "title": "Total offsides"
+    },
+    {
+      "position": 545,
+      "title": "Total saves"
+    },
+    {
+      "position": 546,
+      "title": "Total shots"
+    },
+    {
+      "position": 547,
+      "title": "Total throw-in"
+    },
+    {
+      "position": 548,
+      "title": "When will goal 1 be scored (10-minute intervals)"
+    },
+    {
+      "position": 549,
+      "title": "When will goal 1 be scored (15-minute intervals)"
+    },
+    {
+      "position": 550,
+      "title": "Which team to score"
+    },
+    {
+      "position": 551,
+      "title": "Which team wins race to 3 corners"
+    },
+    {
+      "position": 552,
+      "title": "Which team wins race to 5 corners"
+    },
+    {
+      "position": 553,
+      "title": "Which team wins race to 7 corners"
+    },
+    {
+      "position": 554,
+      "title": "Which team wins race to 9 corners"
+    },
+    {
+      "position": 555,
+      "title": "Who receives most bookings in 10 minutes interval 1-10"
+    },
+    {
+      "position": 556,
+      "title": "Who receives most bookings in 10 minutes interval 11-20"
+    },
+    {
+      "position": 557,
+      "title": "Who receives most bookings in 15 minutes interval 1-15"
+    },
+    {
+      "position": 558,
+      "title": "Who receives most bookings in 15 minutes interval 16-30"
+    },
+    {
+      "position": 559,
+      "title": "Who receives most bookings in 5 minutes interval 1-5"
+    },
+    {
+      "position": 560,
+      "title": "Who receives most bookings in 5 minutes interval 6-10"
+    },
+    {
+      "position": 561,
+      "title": "Who scores goal 1 in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 562,
+      "title": "Who scores goal 1 in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 563,
+      "title": "Who scores goal 1 in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 564,
+      "title": "Who scores most goals in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 565,
+      "title": "Who scores most goals in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 566,
+      "title": "Who scores most goals in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 567,
+      "title": "Who takes 1st Corner in 10 minutes interval 1-10"
+    },
+    {
+      "position": 568,
+      "title": "Who takes 1st Corner in 10 minutes interval 11-20"
+    },
+    {
+      "position": 569,
+      "title": "Who takes 1st Corner in 15 minutes interval 1-15"
+    },
+    {
+      "position": 570,
+      "title": "Who takes 1st Corner in 15 minutes interval 16-30"
+    },
+    {
+      "position": 571,
+      "title": "Who takes 1st Corner in 5 minutes interval 1-5"
+    },
+    {
+      "position": 572,
+      "title": "Who takes 1st Corner in 5 minutes interval 6-10"
+    },
+    {
+      "position": 573,
+      "title": "Who takes most corners in intervale minutash (10-minute interval)"
+    },
+    {
+      "position": 574,
+      "title": "Who takes most corners in intervale minutash (15-minute interval)"
+    },
+    {
+      "position": 575,
+      "title": "Who takes most corners in intervale minutash (5-minute interval)"
+    },
+    {
+      "position": 576,
+      "title": "Who wins the rest of the match?"
+    },
+    {
+      "position": 577,
+      "title": "Winning margin"
+    }
+  ]
+}
