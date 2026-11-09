@@ -20,7 +20,7 @@ for(let i=0;i<fixture.markets.length;i++){
   categoryCounts.set(finding.category,(categoryCounts.get(finding.category)??0)+1);
   // Never promote an unqualified hazardous/actor-specific proposition into
   // a simple FT-score market just because a fake generic outcome was passed.
-  if(/\\b(?:handicap|asian|shootout|overtime|extra time|player.+(?:shots?|assists?|tackles?|passes?|offsides?|cards?))\\b|\\bot only\\b/i.test(entry.title))
+  if(/\b(?:handicap|asian|shootout|overtime|extra time|player.+(?:shots?|assists?|tackles?|passes?|offsides?|cards?))\b|\bot only\b/i.test(entry.title))
    assert.notEqual(finding.category,'SCORE_GRADEABLE',
     'Unsafe synthetic quote was incorrectly treated as FT-score ready: '+entry.title);
  }
