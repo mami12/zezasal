@@ -137,7 +137,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  // Fixed interval totals/leader/result cannot be bought after their
  // opening minute: the customer may already know some or all incidents.
  // Unlike PREMATCH, LIVE requires a recent, confirmed match clock.
- if(live&&['window-total','interval-leader','interval-result'].includes(contract.kind)){
+ if(live&&['window-total','interval-leader','interval-result','interval-first-event'].includes(contract.kind)){
   const clockAt=time(match.clock_at);
   if(clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000)
    throw fail('Mungon ora live e freskët për intervalin.');
