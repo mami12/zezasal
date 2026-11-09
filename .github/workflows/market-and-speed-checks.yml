@@ -96,6 +96,15 @@ jobs:
         run: |
           node scripts/test-settlement-results.mjs
           npm run test:historical-settlement
+      - name: Cache headless Chrome for statistics UI tests
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: pptr-chrome-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install pinned Puppeteer Chrome
+        if: always()
+        run: npx puppeteer browsers install chrome
       - name: Database provider/statistics contract checks
         if: always()
         run: |
