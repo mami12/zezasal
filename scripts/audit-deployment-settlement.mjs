@@ -2,7 +2,8 @@
  * Read-only deployment audit of real quote variants + pending settlement
  * prerequisites. No HTTP calls, wallet writes, or settlement decisions.
  *
- * node scripts/audit-deployment-settlement.mjs [maxVariants=100000]
+ * node scripts/audit-deployment-settlement.mjs [maxVariants=100000] [--all]
+ * --all includes EVERY observed unique source quote in the JSON export.
  * Use a snapshot/offline copy for PGlite. Do not open its live data directory.
  */
 import {resolve} from 'node:path';
@@ -169,7 +170,7 @@ const key=r=>JSON.stringify([r.provider_id,r.native_market_id,r.native_outcome_i
  r.market_key,r.market_name,r.outcome_name,r.outcome_key,r.line,r.period]);
 
 /** A stable read-only transaction must be supplied by the caller. */
-export async function auditDeployment({execute,maxVariants=100000,pageSize=400}={}){
+export async function auditDeployment({execute,maxVariants=100000,pageSize=400,includeAll=false}={}){
  if(typeof execute!=='function')throw Error('A SQL read-only executor is required');
  if(!Number.isSafeInteger(maxVariants)||maxVariants<1||maxVariants>300000)throw Error('Invalid maxVariants');
  if(!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>2000)throw Error('Invalid pageSize');
@@ -244,6 +245,7 @@ export async function auditDeployment({execute,maxVariants=100000,pageSize=400}=
   distinctQuoteVariants:variants.size,classification:sortCounts(counts),
   offerTruncated:quoted.truncated,pendingTruncated:outstanding.truncated,
   riskExamples:risky.slice(0,100),
+  ...(includeAll?{allObservedQuoteVariants:[...variants.values()]}:{}),
   pending:{groupedRows:outstanding.rows,...totals,reasons:sortCounts(pendingReasons),
    examples:pending.sort((a,b)=>b.pendingLines-a.pendingLines).slice(0,100)},
   definitions:{total:n(definition.definitions),neverQuoted:n(definition.never_quoted)},
@@ -270,7 +272,8 @@ async function main(){
  try{
   c=await pool.connect();
   await c.query('begin isolation level repeatable read read only');begun=true;
-  const result=await auditDeployment({execute:c.query.bind(c),maxVariants});
+  const result=await auditDeployment({execute:c.query.bind(c),maxVariants,
+   includeAll:process.argv.includes('--all')});
   console.log(JSON.stringify(result,null,2));
   if(!result.complete||result.incidentEvidence.some(x=>x.mismatches>0)||
     result.dryRun.statuses.ERROR_REVIEW>0||
