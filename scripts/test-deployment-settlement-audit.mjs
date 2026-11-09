@@ -23,11 +23,12 @@ try{
  await query("insert into app_match_result(match_id,home_team,away_team,home_score,away_score) values(1,'Home','Away',2,0)");
  await query("insert into app_match_event_fact(match_id,provider,provider_event_id,kind,team,minute,seconds,active) values(1,'zizobet','g1','goal','home',12,725,true)");
  await query("insert into app_match_event_coverage(match_id,provider,kind,through_minute,count_home,count_away,complete,observed_at,confirmed_at) values(1,'zizobet','goal',90,2,0,true,now(),now())");
- const report=await auditDeployment({execute:query,maxVariants:30,pageSize:1});
+ const report=await auditDeployment({execute:query,maxVariants:30,pageSize:1,includeAll:true});
  assert.equal(report.readOnly,true);
  assert.equal(report.complete,true);
  assert.equal(report.sampledGroupedRows,3);
  assert.equal(report.distinctQuoteVariants,2,'Historical and current duplicate must not be double-counted');
+ assert.equal(report.allObservedQuoteVariants.length,2,'--all exports the complete unique actual quote variants');
  assert.equal(report.sourceRows.current,1);
  assert.equal(report.sourceRows.history,2);
  assert.equal(report.definitions.neverQuoted,1);
