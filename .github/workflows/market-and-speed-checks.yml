@@ -33,6 +33,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Match timeline actor names
         run: node scripts/test-protected-event-minutes.mjs
+      - name: Simulimi - persisted events and rejection reasons
+        run: node scripts/test-simulimi-acceptance.mjs
       - name: Simulimi - offline all-market smoke and combo matrix
         run: npm run simulimi
       - name: Save simulimi report
