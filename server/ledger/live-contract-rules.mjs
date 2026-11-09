@@ -17,7 +17,7 @@ const yesNo=line=>{
  if(['no','jo'].includes(label))return false;
  return null;
 };
-const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','neither','asnjera','asnje skuader','x','draw','no goal','no corner','no more goals','no more corners','no card','no more cards','no booking','no bookings','no more bookings','no team'].includes(norm(v))?'none':null;
+const sideOf=v=>['1','home','home team','team 1'].includes(norm(v))?'home':['2','away','away team','team 2'].includes(norm(v))?'away':['none','neither','asnjera','asnje skuader','x','draw','no goal','pa gol','no corner','no more goals','no more corners','no card','no more cards','no booking','no bookings','no more bookings','no team'].includes(norm(v))?'none':null;
 const typeOf=name=>/\b(?:corners?|corner kicks?|kornera?)\b/.test(name)?'corner':
  /\b(?:goals?|scores?|golat?|gola?)\b/.test(name)?'goal':
  /\b(?:cards?|bookings?|kartona?)\b/.test(name)?'card':
