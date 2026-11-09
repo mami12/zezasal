@@ -7,7 +7,7 @@ import type { MatchEvent } from '../types';
 const identity = (event: MatchEvent): string | null => {
   const id = String(event.id ?? '').trim();
   if (!id || !Number.isFinite(event.minute)) return null;
-  return JSON.stringify([event.matchId, id, event.type, event.team, event.minute, event.minuteLabel ?? null]);
+  return JSON.stringify([event.matchId, id, event.type, event.team, event.minute]);
 };
 
 export function retainEventPlayerNames(incoming: MatchEvent[], previous: MatchEvent[]): MatchEvent[] {
