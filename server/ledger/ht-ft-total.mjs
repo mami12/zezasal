@@ -17,6 +17,14 @@ const kindOf=name=>{
  return {scope:/\b(?:1st|first)\s+half\b/.test(n)?'ht':'ft',
   exact:match[1]==='exact goals'};
 };
+export function isUnverifiedHtFtFamily(line){
+ const n=normalize(typeof line==='string'?line:
+  line?.market_name??line?.marketName??line?.name);
+ // These share HT/FT wording but have DIFFERENT statistics/contract:
+ // do not settle a corners result or two exact scores using goal 1-X-2.
+ return /^corners?\s+half[\s-]*time\s*\/\s*full[\s-]*time$/.test(n)||
+  /^half[\s-]*time\s*\/\s*full[\s-]*time\s+correct score$/.test(n);
+}
 export function isHtFtTotalMarket(line){
  return kindOf(typeof line==='string'?line:line?.market_name??line?.marketName??line?.name)!==null;
 }
