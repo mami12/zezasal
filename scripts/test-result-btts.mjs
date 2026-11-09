@@ -40,7 +40,7 @@ assert.equal(parseResultBttsOutcome('Nil'), null, 'Nil alone does not identify a
 assert.equal(parseResultBttsOutcome('yes'), null);
 assert.equal(parseResultBttsOutcome('1'), null);
 assert.equal(parseResultBttsOutcome('1-0'), null);
-assert.equal(gradeResultBtts(null, 1, 0), 'VOID');
+assert.equal(gradeResultBtts(null, 1, 0), null, 'Unknown outcomes must stay pending, never refund');
 
 
 const namedOutcomes = [
