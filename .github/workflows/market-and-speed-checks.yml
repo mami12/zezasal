@@ -31,6 +31,8 @@ jobs:
           cache: npm
       - name: Install pinned backend dependencies
         run: npm ci --ignore-scripts
+      - name: Simulimi - offline all-market smoke and combo matrix
+        run: npm run simulimi
       - name: Market 01 - english half exact catalog
         if: always()
         run: node scripts/test-english-half-exact-catalog.mjs
