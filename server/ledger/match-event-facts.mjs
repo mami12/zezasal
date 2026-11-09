@@ -567,10 +567,11 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   // Two goals without distinct sub-minute timestamps cannot establish
   // which side scored FIRST; do not use provider_event_id as chronology.
   const first=goals[0],second=goals[1];
-  if(first&&second&&
-      (first.seconds==null||second.seconds==null&&
-        Number(second.minute)===Number(first.minute)||
-       Number(first.seconds)===Number(second.seconds)))return null;
+  if(first&&second&&(
+      (Number(first.minute)===Number(second.minute)&&
+       (first.seconds==null||second.seconds==null))||
+      (first.seconds!=null&&second.seconds!=null&&
+       Number(first.seconds)===Number(second.seconds))))return null;
   return decision(c.side===(first?.team??'none'));
  }
  if(c.kind==='interval-result'){
