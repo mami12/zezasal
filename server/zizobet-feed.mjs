@@ -2,7 +2,7 @@ import {isBoardOddsRow} from './ledger/board-projection.mjs';
 import {CACHE,META,get,decode,startMqtt} from './zizobet/transport.mjs';
 import {rowOf,infoOf,oddsOf,isZizoId,OFFSET} from './zizobet/normalize.mjs';
 import {collectEventEvidence} from './zizobet/event-collector.mjs';
-import {providerTimeline} from './live-event-timeline.mjs';
+import {providerTimeline,inheritEventPlayers} from './live-event-timeline.mjs';
 export {isZizoId};
 export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
@@ -12,9 +12,12 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
  const mainQuotes=(quotes,live)=>(quotes??[]).filter(q=>{const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);const name=(live&&id===602)||(!live&&id===448)?'Full Time Result':(live&&id===603)||(!live&&id===537)?'Total Goals':def?.Name??def?.name??'';return isBoardOddsRow({market_name:name,period:/\b(?:half|period)\b/i.test(name)?1:0});});
  async function publish(row,game,rows,{complete=false,startedAt=++revision}={}){
   if(startedAt<(versions.get(row.match_id)??0))return;versions.set(row.match_id,startedAt);
-  const timeline=providerTimeline(row.match_id,game.TimeLines);
-  if(timeline)row={...row,raw:{...row.raw,eventTimeline:timeline}};
   const entry=games.get(Number(row.raw?.nativeId));
+  const received=providerTimeline(row.match_id,game.TimeLines);
+  // Lightweight provider updates can omit an actor, even for the same ID.
+  // Keep the previously confirmed label without reintroducing deleted events.
+  const timeline=received?inheritEventPlayers(received,entry?.row?.raw?.eventTimeline):received;
+  if(timeline)row={...row,raw:{...row.raw,eventTimeline:timeline}};
   // Keep the last complete provider timeline across the lightweight headers.
   // A header carries no incidents and must not erase an observed event minute.
   if(!timeline&&Array.isArray(entry?.row?.raw?.eventTimeline))row={...row,raw:{...row.raw,eventTimeline:entry.row.raw.eventTimeline}};
