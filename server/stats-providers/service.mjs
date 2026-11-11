@@ -607,7 +607,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  function warm(row){
   if(row)viewed.set(String(row.match_id??row.id),now()+12*60000);
   // Detail viewers share the same durable ten-minute cache and quota schedule.
-  void warmStatistics(row).catch(()=>{});
+  return warmStatistics(row).catch(error=>{
+   health.lastError=/^STATS_[A-Z_0-9]+$/.test(String(error?.message))?
+    error.message:'STATS_UNAVAILABLE';
+  });
  }
  async function tick(){
   if(!enabled()||busy)return;busy=true;health.lastRunAt=new Date(now()).toISOString();
