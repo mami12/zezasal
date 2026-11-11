@@ -459,6 +459,16 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     outcomeName: row.outcome_name ?? parsed.outcomeKey,
     marketName: row.market_name ?? parsed.marketKey,
     providerPeriod: Number.isInteger(Number(row.period??0))?Number(row.period??0):null,
+    nativeMarketId:row.native_market_id??null,nativeOutcomeId:row.native_outcome_id??null,
+    sourceProviderId:row.provider_id??match.provider_id??null,
+    homeTeamName:match.home,awayTeamName:match.away,
+    kickoffAt:match.start_at??null,offerObservedAt:row.updated_at??null,
+    acceptedLiveSnapshot:{
+      scoreHome:match.home_score??null,scoreAway:match.away_score??null,
+      scoreObservedAt:match.score_at??null,clockMilliseconds:match.match_time_ms??null,
+      clockObservedAt:match.clock_at??null,feedPhase:match.feed_status??null,
+      feedPhaseObservedAt:match.feed_status_at??null
+    },
     matchName: `${match.home} vs ${match.away}`,
     price,
     liveContract:contract,
@@ -575,6 +585,11 @@ async function persistLiveContracts(runQuery,ticketId,lines){
    providerPeriod:line.providerPeriod??null,
    providerMarketName:line.marketName,providerOutcomeName:line.outcomeName,
    line:String(line.line??''),acceptedOdds:line.price,
+   nativeMarketId:line.nativeMarketId??null,nativeOutcomeId:line.nativeOutcomeId??null,
+   sourceProviderId:line.sourceProviderId??null,
+   homeTeamName:line.homeTeamName??null,awayTeamName:line.awayTeamName??null,
+   kickoffAt:line.kickoffAt??null,offerObservedAt:line.offerObservedAt??null,
+   acceptedLiveSnapshot:line.acceptedLiveSnapshot??null,
    liveTerms:line.liveContract??null,builderLegs:line.builderLegs??null
   };
   const updated=await runQuery(`update app_ticket_line
