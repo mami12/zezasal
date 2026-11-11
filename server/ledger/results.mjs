@@ -32,6 +32,11 @@ export const isFinished = (row) => {
     const scoreAt=new Date(row.score_at).getTime(),phaseAt=new Date(row.feed_status_at).getTime();
     if(!Number.isFinite(scoreAt)||!Number.isFinite(phaseAt)||Math.abs(scoreAt-phaseAt)>120000)return false;
   }
+  // A penalty-shootout scoreboard is not necessarily the 90-minute result.
+  // Without an independently identified regulation result, do not settle 1X2,
+  // totals or correct-score wagers from it.
+  if(/(?:penalt(?:y|ies)|shootout|extra time|after match)/i.test(String(row.feed_status??'')))
+   return false;
   // Collector expiry and kickoff extrapolation also set status='ended'!
   // Only a provider-delivered FT signal proves the final score.
   const feed = String(row.feed_status ?? '').trim().toLowerCase();
