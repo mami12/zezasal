@@ -208,7 +208,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         [matchId])).rows[0]??null;
       const facts=(await executor(`select minute,phase,team,player_id,player_name,
         aiscore_player_id,aiscore_player_name,aiscore_verified,
-        fotmob_player_name,fotmob_verified,own_goal
+        fotmob_player_name,fotmob_verified,supplemental_player_name,
+        supplemental_verified,own_goal
         from app_match_event_fact where match_id=$1 and provider='zizobet'
           and kind='goal' and active=true order by minute,provider_event_id limit 250`,
         [matchId])).rows;
@@ -374,7 +375,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         [matchId]);
       if(coverage.length){
         const {rows:actors}=await executor(
-          "select player_id,player_name,card_color from app_match_event_fact "+
+          "select player_id,player_name,card_color,supplemental_player_name,supplemental_verified from app_match_event_fact "+
           "where match_id=$1 and provider='zizobet' and kind='card' and active=true",
           [matchId]);
         const person=v=>{
