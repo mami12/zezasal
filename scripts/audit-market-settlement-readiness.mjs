@@ -2,7 +2,8 @@
  * Read-only audit of EVERY DISTINCT provider market/outcome retained by the
  * deployment's offer archive (up to the supplied row limit).
  *
- * Usage: node scripts/audit-market-settlement-readiness.mjs 30000
+ * Usage: node scripts/audit-market-settlement-readiness.mjs 30000 --all > market-audit.json
+ * --all emits EVERY examined unsafe/unsupported offer, not just the first 200.
  *
  * The archive's original Zizobet market/outcome keys are passed to the
  * parser; otherwise parameterized player and interval contracts can be
@@ -98,6 +99,7 @@ export function auditOffer(row){
 }
 const argv=Number(process.argv[2]??30000);
 const limit=Number.isSafeInteger(argv)&&argv>0?Math.min(argv,150000):30000;
+const includeAll=process.argv.includes('--all');
 const groups=new Map(),offers=[];
 try{
  let offset=0;
@@ -133,8 +135,8 @@ try{
  console.log(JSON.stringify({readOnly:true,scannedDistinctOffers:offers.length,
   partial:offers.length>=limit,limit,counts:Object.fromEntries(priorities.map(k=>[k,groups.get(k)??0])),
   riskyOffers:offers.filter(r=>!['SCORE_GRADEABLE'].includes(r.category))
-   .sort((a,b)=>priorities.indexOf(a.category)-priorities.indexOf(b.category)||b.fixtures-a.fixtures).slice(0,200),
-  pendingByMarket:pending.filter(r=>r.category!=='SCORE_GRADEABLE').slice(0,150),
+   .sort((a,b)=>priorities.indexOf(a.category)-priorities.indexOf(b.category)||b.fixtures-a.fixtures).slice(0,includeAll?offers.length:200),
+  pendingByMarket:pending.filter(r=>r.category!=='SCORE_GRADEABLE').slice(0,includeAll?pending.length:150),
   important:'RISK LABELS ARE A STATIC AUDIT, not settlement decisions; verify the PRIMARY provider rule and official match facts before money moves.'},null,2));
 }catch(error){
  console.error('Read-only settlement market audit failed:',error.message);
