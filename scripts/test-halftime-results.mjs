@@ -52,6 +52,13 @@ check(pick('1st half - Double chance','X2'),'LOST');
 check(pick('Draw No Bet first half','1'),'WON');
 check(pick('1st half - Total Goals','Over',{line:'3.0'}),'VOID');
 const noEvidence={...half,confirmed_at:null};
+const acceptedAfterHT={...pick('1st half - Result','1'),
+ placed_at:'2026-11-11T20:46:00Z'};
+const priorHT={...half,first_seen_at:'2026-11-11T20:45:40Z'};
+assert.equal(gradeAtVerifiedHalfTime(acceptedAfterHT,priorHT),null,
+ 'A bet accepted after known HT cannot auto-grade from that known past result');
+assert.equal(gradeAtVerifiedHalfTime({...acceptedAfterHT,
+ placed_at:'2026-11-11T20:40:00Z'},priorHT),'WON');
 assert.equal(gradeAtVerifiedHalfTime(pick('1st half - Result','1'),noEvidence),null);
 const frozen=pick('1X2','1',{period:undefined,
  accepted_contract:{providerPeriod:1}});
