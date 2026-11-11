@@ -325,21 +325,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
         if(current.home!=null&&current.away!=null)entry.sources[field]=provider;
        }
       }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
-      if(provider==='apifootball'){
-       try{
-        const evData=await api(provider,`/fixtures/events?fixture=${m.id}`,displayTtl);
-        if(Array.isArray(evData?.response)){
-         entry.scorers=evData.response
-          .filter(e=>e.type==='Goal'&&e.comments!=='Disallowed'&&e.detail!=='Missed Penalty')
-          .map(e=>({
-            minute:Number(e.time?.elapsed),
-            team:teamsMatch(e.team?.name,row.home)?'home':'away',
-            player:e.player?.name??null
-          }))
-          .filter(e=>e.minute!=null&&e.player);
-        }
-       }catch{}
-      }
      }
      if(final&&!entry.goalIntervals){
       try{
@@ -374,16 +359,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        if(provider==='goalapi'&&(!payload.success||!Array.isArray(payload.data)||(payload.count!=null&&payload.count!==payload.data.length)||payload.pagination?.hasMore))throw Error('STATS_INCOMPLETE_PAGES');
        if(provider==='sportapi'&&!Array.isArray(payload.data))throw Error('STATS_INVALID_RESPONSE');
        if(provider==='apifootball'&&!Array.isArray(payload.response))throw Error('STATS_INVALID_RESPONSE');
-       if(provider==='apifootball'&&Array.isArray(payload.response)){
-         entry.scorers = payload.response
-          .filter(e => e.type === 'Goal' && e.comments !== 'Disallowed')
-          .map(e => ({
-            minute: Number(e.time?.elapsed),
-            team: String(e.team?.id) === String(m.raw?.teams?.home?.id) ? 'home' : 'away',
-            player: e.player?.name ?? null
-          }))
-          .filter(e => e.minute != null && e.player);
-        }
         const intervals=displayGoalIntervals(provider,payload,m);
        const matchesScore=intervals&&['home','away'].every(side=>{
         const score=row[side+'_score'];
