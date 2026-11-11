@@ -22,6 +22,7 @@ assert.equal(incidents[1].minute,45);
 assert.equal(incidents[1].addedMinute,2);
 assert.equal(incidents[1].playerName,'Player Booked');
 assert.equal(incidents[3].onTarget,true);
+assert.equal(incidents[0].ownGoal,false);
 assert.equal(incidents[4].minute,75);
 assert.equal(incidents[5].minute,null,'Missing event time stays unknown');
 const backup=backupIncidents({events:[{id:'a',type:'goal',team:'home',minute:23,player:'Other Scorer'}],
@@ -64,6 +65,8 @@ for(const facts of [
  assert.equal(calls.length,0);
 }
 calls.length=0;
+assert.equal((await enrichPrimaryActors(123,'goalapi',[primary()],
+ [{kind:'goal',team:'home',minute:23,playerName:'Own Goal Player',ownGoal:true}],{execute})).updated,0);
 assert.equal((await enrichPrimaryActors(123,'goalapi',[primary({kind:'card',own_goal:null,card_color:'red'})],
  [{kind:'card',team:'home',minute:23,playerName:'Booked',cardColor:'yellow'}],{execute})).updated,0);
 assert.equal((await enrichPrimaryActors(123,'goalapi',[primary({kind:'card',own_goal:null,card_color:'red'})],
