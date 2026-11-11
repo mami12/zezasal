@@ -642,6 +642,11 @@ export function firstHalfScoreOnly(line){
 }
 export function gradeAtVerifiedHalfTime(line,half){
  if(!firstHalfScoreOnly(line)||half?.confirmed_at==null)return null;
+ // A live half-time quote taken AFTER the HT result was already archived
+ // must never receive an automatic payout from that known past result.
+ if(line?.placed_at!=null&&half?.first_seen_at!=null&&
+    new Date(line.placed_at).getTime()>=new Date(half.first_seen_at).getTime())
+  return null;
  const home=scoreValue(half.half_home_score),away=scoreValue(half.half_away_score);
  if(home===null||away===null)return null;
  line=withFrozenPeriod(line);
@@ -673,11 +678,11 @@ export async function settleVerifiedHalftimes({
  runQuery=query,update=updatePendingLine,recalc=recalcTicket
 }={}){
  const rows=(await runQuery([
-  'select l.*,h.home_team,h.away_team,h.half_home_score,h.half_away_score,h.confirmed_at',
+  'select l.*,t.placed_at,h.home_team,h.away_team,h.half_home_score,h.half_away_score,h.confirmed_at,h.first_seen_at',
   'from app_ticket_line l',
   'join app_ticket t on t.id=l.ticket_id',
   'join app_match_half_result h on h.match_id=l.match_id',
-  "where l.status='PENDING' and t.status='PENDING' and h.confirmed_at is not null",
+  "where l.status='PENDING' and t.status='PENDING' and h.confirmed_at is not null and t.placed_at < h.first_seen_at",
   'and not exists(select 1 from app_settlement_override o where o.line_id=l.id)',
   'order by l.match_id,l.id limit 5000'
  ].join(' '))).rows;
