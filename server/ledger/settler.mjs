@@ -14,6 +14,7 @@ import { pool, query } from '../db.mjs';
 import {gradeEventLine,needsEvents,gradeClosedCornerWindow,loadEventEvidence} from './event-evidence.mjs';
 import { getMatchById } from '../matches.mjs';
 import { getResult, captureFinishedMatches, unsettledMatchIds } from './results.mjs';
+import {captureHalfTimeResults} from './halftime-results.mjs';
 import { chargeManagerCommission, refundManagerCommission } from './manager-finance.mjs';
 import { isResultBttsMarket, parseResultBttsOutcome, gradeResultBtts } from './result-btts.mjs';
 import { isResultTotalMarket, isTotalBttsMarket, isFirstHalfResultBtts, parseResultTotal, parseTotalBtts, gradeMixedTotal } from './mixed-combos.mjs';
@@ -67,6 +68,7 @@ export function classify(marketName = '') {
   const s = String(marketName).toLowerCase();
   if (isHtFtMarket(marketName)) return 'HT_FT';
   if (/correct score|exact score/i.test(s)) return 'CORRECT_SCORE';
+  if (/^\s*(?:half\s*time|halftime)\s*[-:.]?\s*(?:3[\s-]*way|1x2)\s*$/i.test(s))return '1X2';
   if (/odd[\s/]*even|tek[\s/]*cift/i.test(s)) return 'ODD_EVEN';
   if (/draw no bet|\bdnb\b/i.test(s)) return 'DNB';
   if (/clean sheet/i.test(s)) return 'CLEAN_SHEET';
@@ -95,12 +97,19 @@ const isSecondHalfLine = (marketName = '') =>
  */
 export function scorePeriodOf(line={}) {
  const market=String(line.market_name??line.marketName??'');
- const raw=line.period??0,period=Number(raw);
+ const raw=line.period??line.accepted_contract?.providerPeriod??0,period=Number(raw);
  if(!Number.isInteger(period)||![0,1,2].includes(period))return null;
  const first=isFirstHalfLine(market),second=isSecondHalfLine(market);
  if(first&&second||first&&period===2||second&&period===1)return null;
  return first?1:second?2:period;
 }
+const withFrozenPeriod=line=>{
+ if(!line||line.period!=null)return line;
+ const raw=line.accepted_contract?.providerPeriod;
+ const n=raw==null?null:Number(raw);
+ return n!=null&&Number.isInteger(n)&&[0,1,2].includes(n)?
+  {...line,period:n}:line;
+};
 const plainDnb=name=>/^(?:(?:full[ .-]*time|match|(?:first|1st|second|2nd)\s+half)\s*[.:-]?\s*)?(?:draw\s+no\s+bet|dnb)(?:\s+(?:first|1st|second|2nd)\s+half)?$/i
  .test(String(name??'').trim());
 const scoreValue=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&
@@ -122,6 +131,7 @@ const periodScores=(line,result)=>{
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
+  line=withFrozenPeriod(line);
   if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
@@ -205,6 +215,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  line=withFrozenPeriod(line);
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
@@ -567,6 +578,7 @@ export async function recalcTicket(ticketId, { database = pool } = {}) {
  * two-way full-integer total push, never an unknown market or outcome.
  */
 export function isProvenTwoWayTotalPush(line,result){
+ line=withFrozenPeriod(line);
  if(!line||!result||Array.isArray(line.builder_legs)||needsEvents(line))return false;
  const market=String(line.market_name??'');
  if(/\b(?:3[\s-]*way|three[\s-]*way|3[\s-]*outcomes?|three[\s-]*outcomes?)\b/i.test(market))return false;
@@ -585,6 +597,7 @@ export function isProvenTwoWayTotalPush(line,result){
  * It is NOT the same as refunding an unknown or unparsable proposition.
  */
 export function isProvenDrawNoBetPush(line,result){
+ line=withFrozenPeriod(line);
  if(!line||!result||Array.isArray(line.builder_legs)||
     !plainDnb(line.market_name)||!hasRequiredSettlementEvidence(line,result))return false;
  const period=periodScores(line,result);
