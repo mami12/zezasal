@@ -89,13 +89,38 @@ const isFirstHalfLine = (marketName = '') =>
   !/half\s*time\s*[\/\-]?\s*full\s*time|\bht\s*[\/\-]?\s*ft\b/i.test(marketName);
 const isSecondHalfLine = (marketName = '') =>
   /\b(?:second|2nd)\s*half\b|\b2h\b/i.test(marketName);
+/** The provider's period field is part of the quoted contract. A generic
+ * "1X2", "BTTS" or "Exact Corners" name must not silently use full-time
+ * totals when its period is 1H/2H.
+ */
+export function scorePeriodOf(line={}) {
+ const market=String(line.market_name??line.marketName??'');
+ const raw=line.period??0,period=Number(raw);
+ if(!Number.isInteger(period)||![0,1,2].includes(period))return null;
+ const first=isFirstHalfLine(market),second=isSecondHalfLine(market);
+ if(first&&second||first&&period===2||second&&period===1)return null;
+ return first?1:second?2:period;
+}
+const scoreValue=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&
+  Number(v)>=0&&Number(v)<=200?Number(v):null;
+const periodScores=(line,result)=>{
+ const period=scorePeriodOf(line);
+ if(period===null)return null;
+ const home=scoreValue(result?.home_score),away=scoreValue(result?.away_score);
+ if(home===null||away===null)return null;
+ if(period===0)return {home,away};
+ const hh=scoreValue(result?.half_home_score),ha=scoreValue(result?.half_away_score);
+ if(hh===null||ha===null||hh>home||ha>away)return null;
+ return period===1?{home:hh,away:ha}:{home:home-hh,away:away-ha};
+};
+
 
 /** A known final score is not enough to grade first-half/corner/card props.
  * Keep those lines pending for more authoritative feed evidence instead of
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
-  if (!result) return false;
+  if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
@@ -113,8 +138,15 @@ export function hasRequiredSettlementEvidence(line, result) {
   if (needsEvents(line)) return ['WON','LOST','VOID'].includes(gradeEventLine(line,result));
   if (isStatisticMarket(line)) return hasStatisticEvidence(line,result);
   const marketName = String(line.market_name ?? '');
-  if ((isFirstHalfLine(marketName) || isSecondHalfLine(marketName)) &&
-      (result.half_home_score == null || result.half_away_score == null)) return false;
+  const period=scorePeriodOf(line);
+  if(period===null||!periodScores(line,result))return false;
+  // HT/FT is a combined proposition. A separate 1H/2H period field would
+  // change its meaning and must not be guessed.
+  if(period!==0&&isHtFtMarket(marketName))return false;
+  // Period-specific corners/cards/fouls/shots require period-specific facts;
+  // neither a final match total nor a final half-time GOAL score proves them.
+  if(period!==0&&/\b(?:corners?|cards?|bookings?|fouls?|shots?|players?|kornera?|karton|faulle?)\b/i.test(marketName))
+   return false;
   if (isSecondHalfLine(marketName)) {
     // The 2H goals are FT minus the verified HT score. Never use this
     // subtraction for 2H corners/cards/players, which need period evidence.
@@ -192,12 +224,9 @@ export function gradeLine(line, result) {
   // original ticket contract is snapshotted in market_name.
   if (!hasRequiredSettlementEvidence(line, result)) return null;
   if (isStatisticMarket(line)) return gradeStatisticLine(line,result);
-  const half = isFirstHalfLine(line.market_name);
-  const secondHalf = isSecondHalfLine(line.market_name);
-  const home = secondHalf ? Number(result.home_score)-Number(result.half_home_score)
-    : Number(half ? result.half_home_score : result.home_score);
-  const away = secondHalf ? Number(result.away_score)-Number(result.half_away_score)
-    : Number(half ? result.half_away_score : result.away_score);
+  const periodScore=periodScores(line,result);
+  if(!periodScore)return null;
+  const home=periodScore.home,away=periodScore.away;
   const totalGoals = home + away;
   const homeWin = home > away;
   const awayWin = away > home;
@@ -346,10 +375,12 @@ export function gradeLine(line, result) {
     }
 
     case 'DNB': {
-      if (homeWin) return decide(key === '1' || /^home/.test(name) || isHomeName(norm(name)));
-      if (awayWin) return decide(key === '2' || /^away/.test(name) || isAwayName(norm(name)));
-      if (draw) return 'VOID';
-      return null;
+      const pickedHome=key==='1'||key==='home'||name==='home'||isHomeName(norm(name));
+      const pickedAway=key==='2'||key==='away'||name==='away'||isAwayName(norm(name));
+      // An unknown selection is never a loss or a draw refund.
+      if(pickedHome===pickedAway)return null;
+      if(draw)return 'VOID';
+      return decide(homeWin?pickedHome:pickedAway);
     }
 
     case 'HT_FT': {
@@ -378,11 +409,13 @@ export function gradeLine(line, result) {
         if (ch === null || ca === null) return null;
         val = ch + ca;
       }
-      const cleanName = norm(line.outcome_name ?? line.outcome_key);
-      const plus = cleanName.match(/^(\d+)\+?$/);
-      if (cleanName.includes('+') && plus) {
-        return decide(val >= Number(plus[1]));
-      }
+      const rawName=String(line.outcome_name??line.outcome_key??'')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+      const cleanName=norm(rawName);
+      // norm() discards '+'; check the unstripped provider selection FIRST.
+      // "4+" is at least four, not exactly four.
+      const plus=rawName.match(/^(\d+)\s*(?:\+|or\s+more)$/);
+      if(plus)return decide(val>=Number(plus[1]));
       const band = String(line.outcome_name ?? line.outcome_key).match(/^(\d+)\s*(?:-|to|or)\s*(\d+)$/i);
       if (band) {
         const min = Number(band[1]), max = Number(band[2]);
