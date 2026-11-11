@@ -458,6 +458,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     outcomeKey: parsed.outcomeKey,
     outcomeName: row.outcome_name ?? parsed.outcomeKey,
     marketName: row.market_name ?? parsed.marketKey,
+    providerPeriod: Number.isInteger(Number(row.period??0))?Number(row.period??0):null,
     matchName: `${match.home} vs ${match.away}`,
     price,
     liveContract:contract,
@@ -571,6 +572,7 @@ async function persistLiveContracts(runQuery,ticketId,lines){
  for(const line of lines){
   const accepted={
    version:1,providerMarketKey:line.marketKey,providerOutcomeKey:line.outcomeKey,
+   providerPeriod:line.providerPeriod??null,
    providerMarketName:line.marketName,providerOutcomeName:line.outcomeName,
    line:String(line.line??''),acceptedOdds:line.price,
    liveTerms:line.liveContract??null,builderLegs:line.builderLegs??null
