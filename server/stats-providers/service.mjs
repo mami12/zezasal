@@ -390,7 +390,12 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       if(details){
        try{
         const incidents=fotMobIncidents(details);
-        await storeSupplementalIncidents(Number(id),'fotmob',fm.match.id,incidents,{execute:runQuery,payload:details});
+        const eventList=details?.content?.matchFacts?.events?.events;
+        const shotList=details?.content?.shotmap?.shots;
+        const completeKinds=[...(Array.isArray(eventList)?['goal','card']:[]),
+          ...(Array.isArray(shotList)?['shot']:[])];
+        await storeSupplementalIncidents(Number(id),'fotmob',fm.match.id,incidents,
+          {execute:runQuery,payload:details,completeKinds});
         await enrichPrimaryActors(Number(id),'fotmob',primaryActors,incidents,{execute:runQuery});
         await refreshActors();
        }catch(error){console.warn('[supplemental incident archive]',String(error?.message??error));}
