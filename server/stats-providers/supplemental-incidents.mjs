@@ -141,13 +141,13 @@ export function backupIncidents(evidence={}){
   ...(evidence.cardEvents??[]),...(evidence.foulEvents??[]),
   ...(evidence.shotEvents??[]),...(evidence.otherIncidents??[])];
  return rows.flatMap((e,i)=>{
-  const type=String(e?.type??'').toLowerCase();
+  const type=String(e?.type??e?.kind??'').toLowerCase();
   const kind=type==='goal'?'goal':type==='corner'?'corner':
    type==='card'?'card':type==='foul'?'foul':
    type==='shot'||type==='shot_on_target'?'shot':null;
   if(!kind||e?.disabled===true||e?.cancelled===true||
      e?.shootout===true||e?.team!=='home'&&e?.team!=='away')return [];
-  const minute=count(e.minute),injury=count(e.injury??0);
+  const minute=count(e.minute),injury=count(e.addedMinute??e.injury??0);
   return [{
    kind,team:e.team,minute:minute!==null&&minute<=130?minute:null,
    addedMinute:injury!==null&&injury<=30?injury:null,
