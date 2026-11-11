@@ -10,6 +10,15 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/market-and-speed-checks.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "scripts/**"
+      - "web/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/market-and-speed-checks.yml"
   workflow_dispatch:
 
 permissions:
@@ -98,6 +107,12 @@ jobs:
       - name: Market 19 - team interval contracts
         if: always()
         run: node scripts/test-team-interval-contracts.mjs
+      - name: Supplemental event and actor rotation archive
+        if: always()
+        run: node scripts/test-supplemental-incidents.mjs
+      - name: FotMob scorer and 1X2 team statistics regression
+        if: always()
+        run: node scripts/test-fotmob-scorer-enrichment.mjs
       - name: Market 20 - race none and aiscore
         if: always()
         run: node scripts/test-race-none-and-aiscore.mjs

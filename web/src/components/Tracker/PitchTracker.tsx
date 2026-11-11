@@ -26,6 +26,20 @@ export default function PitchTracker({matchId,homeTeam,awayTeam,eventsOnly=false
    const key=e.id??[e.minuteLabel??e.minute,e.type,e.team,e.text].join('|');
    if(seen.has(key))return false;seen.add(key);return true;
  });
- if((eventsOnly||!counters.length)&&!events.length)return null;
- return <section className="zshop-tracker" aria-label={t('Statistikat gjatë lojës')}><button type="button" onClick={()=>setOpen(v=>!v)} aria-expanded={open}><span className="flex items-center gap-2"><img width="23" height="13" src={import.meta.env.BASE_URL+'zshop/match-field.svg'} alt=""/>{lang==='en'?'Match tracker':'Ecuria e ndeshjes'}</span>{open?<ChevronUp size={15}/>:<ChevronDown size={15}/>}</button>{open&&<>{!eventsOnly&&counters.length>0&&<div className="zshop-tracker-stats">{counters.map(([name,values])=><div className="zshop-tracker-stat" key={name} title={`${homeTeam} / ${awayTeam}`}><span>{label(name)}</span><strong>{values.home} - {values.away}</strong></div>)}</div>}{events.length>0&&<div className="zshop-tracker-events" role="region" tabIndex={0} aria-label={lang==='en'?'Match event history':'Historiku i ngjarjeve'}>{events.map((event,i)=><div key={i}><time>{event.minuteLabel??event.minute}′</time><span>{translateMatchEventText(event.text,homeTeam,awayTeam,lang)}{event.player&&!String(event.text).toLowerCase().includes(event.player.toLowerCase()) ? ' · '+event.player : ''}</span></div>)}</div>}</>}</section>;
+ const extraEvents=(snapshot?.supplementalEvents??[])
+   .filter(e=>e.matchId===String(matchId)&&Number.isFinite(e.minute))
+   .sort((a,b)=>a.minute-b.minute||String(a.id).localeCompare(String(b.id)))
+   .reverse();
+ if((eventsOnly||!counters.length)&&!events.length&&!extraEvents.length)return null;
+ return <section className="zshop-tracker" aria-label={t('Statistikat gjatë lojës')}><button type="button" onClick={()=>setOpen(v=>!v)} aria-expanded={open}><span className="flex items-center gap-2"><img width="23" height="13" src={import.meta.env.BASE_URL+'zshop/match-field.svg'} alt=""/>{lang==='en'?'Match tracker':'Ecuria e ndeshjes'}</span>{open?<ChevronUp size={15}/>:<ChevronDown size={15}/>}</button>{open&&<>{!eventsOnly&&counters.length>0&&<div className="zshop-tracker-stats">{counters.map(([name,values])=><div className="zshop-tracker-stat" key={name} title={`${homeTeam} / ${awayTeam}`}><span>{label(name)}</span><strong>{values.home} - {values.away}</strong></div>)}</div>}{events.length>0&&<div className="zshop-tracker-events" role="region" tabIndex={0} aria-label={lang==='en'?'Match event history':'Historiku i ngjarjeve'}>{events.map((event,i)=><div key={i}><time>{event.minuteLabel??event.minute}′</time><span>{translateMatchEventText(event.text,homeTeam,awayTeam,lang)}{event.player&&!String(event.text).toLowerCase().includes(event.player.toLowerCase()) ? ' · '+event.player : ''}</span></div>)}</div>}
+ {extraEvents.length>0&&<div className="zshop-tracker-events" role="region" tabIndex={0} aria-label={lang==='en'?'Supplemental provider events':'Ngjarjet nga API-të shtesë'}>
+  <div className="text-xs font-bold">{lang==='en'?'Additional verified-fixture events':'Ngjarje shtesë të ndeshjes'}</div>
+  {extraEvents.map((event,i)=><div key={event.id??i}>
+   <time>{event.minuteLabel??event.minute}′</time>
+   <span>{translateMatchEventText(event.text,homeTeam,awayTeam,lang)}
+    {event.player?' · '+event.player:''}
+    <small className="ml-1 text-text-secondary">({event.source??'API'})</small>
+   </span>
+  </div>)}
+ </div>}</>}</section>;
 }

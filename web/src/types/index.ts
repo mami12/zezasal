@@ -43,6 +43,7 @@ export interface Tournament {
 export interface Match {
   isHidden?: boolean;
   events?:MatchEvent[];
+  supplementalEvents?:MatchEvent[];
   id: string;
   displayOrder?: number;
   listingPriority?:number;
@@ -205,6 +206,8 @@ export interface MatchEvent {
   id?:string;
   /** Verified scorer from the provider or a matched supplementary feed. */
   player?: string;
+  source?: string;
+  onTarget?: boolean;
   minuteLabel?:string;
   matchId: string;
   type: string;

@@ -37,7 +37,13 @@ export function primaryGoalDisplay(coverage,facts,row){
   const player=typeof fact.player_name==='string'&&fact.player_name.trim()?
    fact.player_name.trim():
    fact.aiscore_verified===true&&typeof fact.aiscore_player_name==='string'&&
-    fact.aiscore_player_name.trim()?fact.aiscore_player_name.trim():null;
+    fact.aiscore_player_name.trim()?fact.aiscore_player_name.trim():
+   fact.own_goal===false&&fact.fotmob_verified===true&&
+    typeof fact.fotmob_player_name==='string'&&fact.fotmob_player_name.trim()?
+    fact.fotmob_player_name.trim():
+   fact.own_goal===false&&fact.supplemental_verified===true&&
+    typeof fact.supplemental_player_name==='string'&&fact.supplemental_player_name.trim()?
+    fact.supplemental_player_name.trim():null;
   if(player)scorers.push({minute,team:fact.team,player});
  }
  if(events.filter(x=>x.team==='home').length!==home||

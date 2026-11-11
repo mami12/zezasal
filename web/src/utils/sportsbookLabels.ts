@@ -1011,6 +1011,8 @@ export function translateMatchEventText(text: string | undefined, homeTeam = '',
     [/\bgoals?\b/gi, 'Gol'],
     [/\battacks?\b/gi, 'Sulm'],
     [/\bsaves?\b/gi, 'Pritje'],
+    [/\bshots?\s+on\s+(?:target|goal)\b/gi, 'Goditje në portë'],
+    [/\bshots?\b/gi, 'Goditje'],
     [/\bfouls?\b/gi, 'Faull'],
   ];
   value = phrases.reduce((label, [pattern, replacement]) => label.replace(pattern, replacement), value);

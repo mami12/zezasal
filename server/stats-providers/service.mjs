@@ -1,5 +1,8 @@
 import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
 import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
+import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
+import {enrichPrimaryActors} from './primary-actor-enrichment.mjs';
+import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,rawProviderIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
 import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
@@ -26,6 +29,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  const init=()=>initFlight??=(async()=>{
   await runQuery('create table if not exists app_stats_cache(cache_key text primary key,payload jsonb not null,updated_at timestamptz not null default now())');
   await runQuery('create table if not exists app_stats_usage(provider text not null,period text not null,calls int not null,primary key(provider,period))');
+  // The embedded local PostgreSQL adapter prepares every query; it rejects
+  // multi-command prepared statements. Create the tables one at a time.
+  for(const statement of SUPPLEMENTAL_INCIDENT_SQL.split(';').map(s=>s.trim()).filter(Boolean))
+   await runQuery(statement);
  })().catch(e=>{initFlight=null;throw e;});
  const read=async key=>(await runQuery('select payload from app_stats_cache where cache_key=$1',[key])).rows[0]?.payload;
  const write=async(key,payload)=>runQuery('insert into app_stats_cache(cache_key,payload) values($1,$2::jsonb) on conflict(cache_key) do update set payload=excluded.payload,updated_at=now()',[key,JSON.stringify(payload)]);
@@ -120,27 +127,32 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   if(provider==='bsd'){
    const f=await get(`/events/${m.id}/`),availability=await get(`/events/${m.id}/availability/`);
    const inc=await get(`/events/${m.id}/incidents/`),stats=await get(`/events/${m.id}/stats/`),lineups=await get(`/events/${m.id}/lineups/`);
-   return {...normalizeBsd(f,inc,stats,lineups,availability),...bsdTimedIncidents(inc.incidents)};
+   return {...normalizeBsd(f,inc,stats,lineups,availability),...bsdTimedIncidents(inc.incidents),
+     otherIncidents:rawProviderIncidents(provider,inc.incidents),sourcePayload:{incidents:inc,statistics:stats}};
   }
   if(provider==='goalapi'){
    const detail=await get('/fixtures/'+m.id),e=await get('/fixtures/'+m.id+'/events'),l=await get('/fixtures/'+m.id+'/lineups');
    if(!detail.success||String(detail.data?.id)!==String(m.id)||!e.success||!Array.isArray(e.data)||!l.success)throw Error('STATS_INVALID_RESPONSE');
    if((e.count!=null&&e.count!==e.data.length)||e.pagination?.hasMore)throw Error('STATS_INCOMPLETE_PAGES');
-   return {...normalizeGoalApi(detail.data,e.data,l.data??{}),...goalApiTimedIncidents(e.data)};
+   return {...normalizeGoalApi(detail.data,e.data,l.data??{}),...goalApiTimedIncidents(e.data),
+     otherIncidents:rawProviderIncidents(provider,e.data),sourcePayload:{incidents:e.data}};
   }
   if(provider==='apifootball'){
    const f=(await get('/fixtures?id='+m.id)).response?.[0];if(!f)throw Error('STATS_NO_FIXTURE');
    const e=await get('/fixtures/events?fixture='+m.id),l=await get('/fixtures/lineups?fixture='+m.id);
-   return {...normalizeApiFootball(f,e.response??[],l.response??[]),...apiFootballTimedIncidents(e.response??[],f)};
+   return {...normalizeApiFootball(f,e.response??[],l.response??[]),...apiFootballTimedIncidents(e.response??[],f),
+     otherIncidents:rawProviderIncidents(provider,e.response),sourcePayload:{incidents:e.response}};
   }
   if(provider==='sportapi'){
    const f=(await get('/fixtures/'+m.id)).fixture,e=await get(`/fixtures/${m.id}/events`),l=await get(`/fixtures/${m.id}/lineups`);
-   if(!f)throw Error('STATS_NO_FIXTURE');return {...normalizeSportApi(f,e.data??[],l),...sportApiTimedIncidents(e.data??[])};
+   if(!f)throw Error('STATS_NO_FIXTURE');return {...normalizeSportApi(f,e.data??[],l),...sportApiTimedIncidents(e.data??[]),
+     otherIncidents:rawProviderIncidents(provider,e.data),sourcePayload:{incidents:e.data}};
   }
   const d=await get(`/get/soccer/${m.league}/scoreboard?dates=${String(m.start).slice(0,10).replaceAll('-','')}`),f=d.events?.find(x=>String(x.id)===String(m.id));if(!f)throw Error('STATS_NO_FIXTURE');
   const plays=[];for(let pageIndex=1;pageIndex<=25;pageIndex++){
    const p=await get(`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`);plays.push(...(p.items??[]));
-   if(pageIndex>=p.pageCount)return normalizeWorld(f,plays);
+   if(pageIndex>=p.pageCount)return {...normalizeWorld(f,plays),
+     otherIncidents:rawProviderIncidents(provider,plays),sourcePayload:{plays}};
   }throw Error('STATS_INCOMPLETE_PAGES');
  }
  // Backup incidents are kept in their own provenance namespace. Only
@@ -254,21 +266,30 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    const result=(await runQuery('select * from app_match_result where match_id=$1',[Number(id)])).rows[0];
    if(result)final=true;
    await init();const old=cached??await read('display:'+id);
-   if(old?.version===2&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
+   if(old?.version===3&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
-   const entry={version:2,identity,values:{},goalIntervals:null,sources:{},at:now()};
+   const entry={version:3,identity,values:{},goalIntervals:null,sources:{},at:now()};
    // Zizobet's independently reconfirmed event history is the authority for
    // goals, clock windows and minute buckets. Other services supply only
    // missing scorer labels/statistics and never replace these incidents.
-   let primaryFacts=[],primaryGoal=null;
+   let primaryFacts=[],primaryGoal=null,primaryActors=[],goalCoverage=null;
+   const actorSQL="select provider_event_id,kind,minute,team,card_color,player_name,aiscore_player_name,aiscore_verified,own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified from app_match_event_fact where match_id=$1 and provider='zizobet' and kind in ('goal','card','foul','corner') and active=true";
+   const refreshActors=async()=>{primaryActors=(await runQuery(actorSQL,[Number(id)])).rows;return primaryActors;};
+   const needsActors=()=>primaryActors.some(f=>['goal','card','foul'].includes(f.kind)&&
+     !f.player_name&&!(f.aiscore_verified&&f.aiscore_player_name)&&
+     !(f.fotmob_verified&&f.fotmob_player_name)&&
+     !(f.supplemental_verified&&f.supplemental_player_name));
    try{
     const coverage=(await runQuery(
       "select through_minute,count_home,count_away,confirmed_at "+
       "from app_match_event_coverage where match_id=$1 and provider='zizobet' and kind='goal'",
       [Number(id)])).rows[0];
+    await refreshActors();
     if(coverage){
+     goalCoverage=coverage;
      primaryFacts=(await runQuery(
-       "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified "+
+       "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified, "+
+       "own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified "+  
        "from app_match_event_fact where match_id=$1 and provider='zizobet' and kind='goal' and active=true",
        [Number(id)])).rows;
      primaryGoal=primaryGoalDisplay(coverage,primaryFacts,row);
@@ -282,6 +303,20 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     // On new installations the fact table may not exist yet. Never invent
     // Zizobet coverage or block ordinary scoreboard/statistics rendering.
    }
+   // Even when Zizobet reports goals but its incident timeline is missing,
+   // an opened match still needs a source-labelled scorer history.
+   const scoreHome=Number(row.home_score),scoreAway=Number(row.away_score);
+   const knownScore=Number.isSafeInteger(scoreHome)&&scoreHome>=0&&
+     Number.isSafeInteger(scoreAway)&&scoreAway>=0;
+   const missingPrimaryTimeline=knownScore&&scoreHome+scoreAway>0&&
+     !primaryGoal?.hasGoals;
+   let supplementalScorersComplete=false;
+   const needsAnyActors=()=>needsActors()||missingPrimaryTimeline&&!supplementalScorersComplete;
+   const observesAllScorers=events=>knownScore&&Array.isArray(events)&&
+     events.filter(e=>e.team==='home').length===scoreHome&&
+     events.filter(e=>e.team==='away').length===scoreAway&&
+     events.every(e=>!!String(e.player??e.playerName??'').trim()&&
+       ['home','away'].includes(e.team));
    const observations=[],attempted=[],unavailable={};
    if(final&&result)observations.push({provider:'primary',final:true,observedAt:new Date(now()).toISOString(),values:{...(result.statistics??{}),corners:{home:result.corners_home,away:result.corners_away},cards:{home:result.cards_home,away:result.cards_away}}});
    const state=await read('match:'+id),mapping={...(state?.identity===identity?state.mapping??{}:{}),...(old?.identity===identity?old.mapping??{}:{})};
@@ -312,21 +347,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
         if(current.home!=null&&current.away!=null)entry.sources[field]=provider;
        }
       }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
-      if(provider==='apifootball'){
-       try{
-        const evData=await api(provider,`/fixtures/events?fixture=${m.id}`,displayTtl);
-        if(Array.isArray(evData?.response)){
-         entry.scorers=evData.response
-          .filter(e=>e.type==='Goal'&&e.comments!=='Disallowed'&&e.detail!=='Missed Penalty')
-          .map(e=>({
-            minute:Number(e.time?.elapsed),
-            team:teamsMatch(e.team?.name,row.home)?'home':'away',
-            player:e.player?.name??null
-          }))
-          .filter(e=>e.minute!=null&&e.player);
-        }
-       }catch{}
-      }
      }
      if(final&&!entry.goalIntervals){
       try{
@@ -361,16 +381,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        if(provider==='goalapi'&&(!payload.success||!Array.isArray(payload.data)||(payload.count!=null&&payload.count!==payload.data.length)||payload.pagination?.hasMore))throw Error('STATS_INCOMPLETE_PAGES');
        if(provider==='sportapi'&&!Array.isArray(payload.data))throw Error('STATS_INVALID_RESPONSE');
        if(provider==='apifootball'&&!Array.isArray(payload.response))throw Error('STATS_INVALID_RESPONSE');
-       if(provider==='apifootball'&&Array.isArray(payload.response)){
-         entry.scorers = payload.response
-          .filter(e => e.type === 'Goal' && e.comments !== 'Disallowed')
-          .map(e => ({
-            minute: Number(e.time?.elapsed),
-            team: String(e.team?.id) === String(m.raw?.teams?.home?.id) ? 'home' : 'away',
-            player: e.player?.name ?? null
-          }))
-          .filter(e => e.minute != null && e.player);
-        }
         const intervals=displayGoalIntervals(provider,payload,m);
        const matchesScore=intervals&&['home','away'].every(side=>{
         const score=row[side+'_score'];
@@ -382,7 +392,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(!final&&statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
-   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || !statsReady(entry)) {
+   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsAnyActors() || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
      const dates = candidateDateStrings(targetDate);
@@ -391,14 +401,30 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if (fm && fm.match) {
       const details = await fetchFotMobDetails(fm.match.id);
       const parsed = parseFotMobPayload(fm.match, details);
+      if(missingPrimaryTimeline&&observesAllScorers(parsed.goalEvents))
+       supplementalScorersComplete=true;
+      if(details){
+       try{
+        const incidents=fotMobIncidents(details);
+        const eventList=details?.content?.matchFacts?.events?.events;
+        const shotList=details?.content?.shotmap?.shots;
+        const completeKinds=[...(Array.isArray(eventList)?['goal','card']:[]),
+          ...(Array.isArray(shotList)?['shot']:[])];
+        await storeSupplementalIncidents(Number(id),'fotmob',fm.match.id,incidents,
+          {execute:runQuery,payload:details,completeKinds});
+        await enrichPrimaryActors(Number(id),'fotmob',primaryActors,incidents,{execute:runQuery});
+        await refreshActors();
+       }catch(error){console.warn('[supplemental incident archive]',String(error?.message??error));}
+      }
       if (primaryGoal?.hasGoals && parsed.goalEvents.length) {
        // FotMob names can fill only one-to-one Zizobet scorer slots.
        // Missing or conflicting goals are never imported as primary events.
-       const matched=matchedSupplementalScorers(primaryFacts,
-        parsed.goalEvents.map(e=>({minute:Number(e.minute)+Number(e.injury??0),team:e.team,player:e.player,own:e.own})));
-       const used=new Set((entry.scorers??[]).map(e=>e.team+'|'+e.minute));
-       entry.scorers=[...(entry.scorers??[]),
-        ...matched.filter(e=>!used.has(e.team+'|'+e.minute))];
+       // Match identity into persistent primary slots, never an unverified UI-only guess.
+       // Persist an actor label only when it matches ONE confirmed primary
+       // goal and primary facts explicitly rule out an own goal.
+       try{await enrichFotMobScorerNames(Number(id),primaryFacts,parsed.goalEvents,{execute:runQuery});}
+       catch(error){console.warn('[fotmob scorer enrichment]',Number(id),String(error?.message??error));}
+       await refreshActors();
       }
       const fmValues = {
        possession: parsed.statistics.possession,
@@ -430,6 +456,55 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       }
      }
     } catch {}
+   }
+   // Identity rotation: FotMob first (above), then a confirmed AiScore mapping,
+   // then the configured daily-quota providers. Stop once known primary actors
+   // are identified. All offers, goals, clocks and prices remain Zizobet.
+   if(needsAnyActors()){
+    try{
+     const {footballInformation}=await import('./football-information.mjs');
+     await footballInformation.warm(Number(id));
+     await refreshActors();
+    }catch(error){health.lastError='AISCORE_ACTOR_LOOKUP_UNAVAILABLE';}
+   }
+   if(needsAnyActors()){
+    const fallback=await providerOrder('missing-player-events');
+    for(const provider of fallback){
+     try{
+      const fixture=mapping[provider]??await discover(provider,row);
+      if(!fixture)continue;
+      mapping[provider]=fixture;
+      const evidence=await collect(provider,fixture,final?0:displayTtl);
+      const incidents=backupIncidents(evidence);
+      if(missingPrimaryTimeline&&observesAllScorers(
+        (evidence.events??[]).filter(e=>e.type==='goal'&&!e.shootout)))
+       supplementalScorersComplete=true;
+      if(incidents.length){
+       await storeSupplementalIncidents(Number(id),provider,fixture.id,incidents,
+         {execute:runQuery,payload:evidence});
+       await enrichPrimaryActors(Number(id),provider,primaryActors,incidents,
+         {execute:runQuery});
+       await refreshActors();
+      }
+      if(!needsAnyActors())break;
+     }catch(error){
+      health.providers[provider]={...(health.providers[provider]??{}),
+       lastActorError:/^STATS_[A-Z_0-9]+$/.test(String(error?.message))?
+       error.message:'STATS_UNAVAILABLE'};
+     }
+    }
+   }
+   if(goalCoverage&&primaryGoal?.hasGoals){
+    try{
+     const {rows:fresh}=await runQuery(
+      "select provider_event_id,minute,team,phase,player_name,own_goal,"+
+      "aiscore_player_name,aiscore_verified,fotmob_player_name,fotmob_verified,"+
+      "supplemental_player_name,supplemental_verified "+
+      "from app_match_event_fact where match_id=$1 and provider='zizobet' "+
+      "and kind='goal' and active=true",[Number(id)]);
+     const verified=primaryGoalDisplay(goalCoverage,fresh,row);
+     if(verified){entry.scorers=verified.scorers;entry.goalIntervals=verified.goalIntervals;}
+    }catch(error){health.lastError='GOAL_ACTOR_DISPLAY_UNAVAILABLE';}
    }
    if(final){const review=compareFinalStatistics(observations,{attempted,unavailable});
     await runQuery('insert into app_stat_review(match_id,payload)values($1,$2::jsonb)on conflict(match_id)do update set payload=excluded.payload,updated_at=now()',[Number(id),JSON.stringify(review)]);
@@ -532,7 +607,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  function warm(row){
   if(row)viewed.set(String(row.match_id??row.id),now()+12*60000);
   // Detail viewers share the same durable ten-minute cache and quota schedule.
-  void warmStatistics(row).catch(()=>{});
+  return warmStatistics(row).catch(error=>{
+   health.lastError=/^STATS_[A-Z_0-9]+$/.test(String(error?.message))?
+    error.message:'STATS_UNAVAILABLE';
+  });
  }
  async function tick(){
   if(!enabled()||busy)return;busy=true;health.lastRunAt=new Date(now()).toISOString();

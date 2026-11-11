@@ -524,45 +524,87 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
     byMatch.get(o.match_id).push(o);
   }
   const matches=rows.map((r) => ({...serializeMatch({...r,stats:statsProviders.displayStatistics(r)}, byMatch.get(r.match_id) ?? [], now),marketCount:counts.get(r.match_id)?.size??0}));
-  // The board never reads player identities from Postgres. Only a deliberately
-  // opened detail requests names already verified against primary goal events.
+  // Never access the detailed incident tables for multi-match board calls.
+  // Detail reads take actor labels only from Zizobet facts or a fixture-matched,
+  // source-labelled supplemental event archive.
   if(displayStats&&!board&&ids.length){
     try{
-      const names=(await dbQuery(`select match_id,provider_event_id,team,minute,aiscore_verified,
-        coalesce(case when aiscore_verified=true then aiscore_player_name end,player_name) as player
+      const names=(await dbQuery(`select match_id,provider_event_id,kind,team,minute,card_color,
+        coalesce(player_name,
+         case when aiscore_verified=true then aiscore_player_name end,
+         case when own_goal=false and fotmob_verified=true then fotmob_player_name end,
+         case when (kind<>'goal' or own_goal=false) and supplemental_verified=true
+           then supplemental_player_name end) as player
         from app_match_event_fact
         where match_id=any($1::bigint[]) and provider='zizobet'
-          and kind='goal' and active=true
-          and (player_name is not null or (aiscore_verified=true and aiscore_player_name is not null))
-        order by minute limit 300`,[ids])).rows;
+          and kind in ('goal','card','corner','foul') and active=true
+        order by minute limit 500`,[ids])).rows;
       for(const match of matches){
-        const listed=names.filter(n=>String(n.match_id)===String(match.id)&&n.player);
-        if(!listed.length)continue;
+        const known=names.filter(n=>String(n.match_id)===String(match.id));
         const events=Array.isArray(match.events)?match.events:[];
-        const enriched=events.map(event=>{
-          if(event.type!=='goal')return event;
-          const candidates=listed.filter(n=>n.team===event.team &&
-            (n.provider_event_id===String(event.id??'')||Number(n.minute)===Number(event.minute)));
-          if(candidates.length!==1||event.player&&candidates[0].aiscore_verified!==true)return event;
-          return {...event,player:candidates[0].player,text:'Goal: '+candidates[0].player};
+        const eventKind=event=>event?.type==='goal'?'goal':
+          /^(yellow_card|red_card|card)$/.test(event?.type)?'card':
+          event?.type==='foul'?'foul':event?.type==='corner'?'corner':null;
+        const updated=events.map(event=>{
+          if(event.player)return event;
+          const kind=eventKind(event);if(!kind)return event;
+          const matches=known.filter(f=>f.kind===kind&&f.player&&
+            f.team===event.team&&Number(f.minute)===Number(event.minute));
+          if(matches.length!==1)return event; // no guessing between same-minute actors
+          const exact=matches[0];
+          const identical=event.id!=null&&String(event.id)===String(exact.provider_event_id);
+          const sameSlot=known.filter(f=>f.kind===kind&&f.team===event.team&&
+            Number(f.minute)===Number(event.minute)).length===1;
+          if(!identical&&!sameSlot)return event;
+          return {...event,player:exact.player};
         });
-        const seen=new Set(enriched.filter(e=>e.type==='goal').map(e=>[e.team,e.minute].join('|')));
-        // The primary incident archive can outlive the lightweight live cache.
-        // Reconstruct only specifically observed goals, never a missing scoreline.
-        for(const fact of listed){
-          const key=[fact.team,fact.minute].join('|');
+        const seen=new Set(updated.map(e=>[eventKind(e),e.team,Number(e.minute)].join('|')));
+        // Only actual PRIMARY-provider incident records may be rebuilt. An
+        // auxiliary API never manufactures a goal, card, corner or foul.
+        for(const fact of known){
+          if(!fact.player)continue;
+          if(known.filter(f=>f.kind===fact.kind&&f.team===fact.team&&
+             Number(f.minute)===Number(fact.minute)).length!==1)continue;
+          const key=[fact.kind,fact.team,Number(fact.minute)].join('|');
           if(seen.has(key))continue;
-          enriched.push({id:'primary-'+fact.provider_event_id,matchId:String(match.id),
-            type:'goal',minute:Number(fact.minute),minuteLabel:String(fact.minute),
-            team:fact.team,player:fact.player,text:'Goal: '+fact.player});
+          const type=fact.kind==='card'?
+            (fact.card_color==='red'?'red_card':fact.card_color==='yellow'?'yellow_card':'card'):
+            fact.kind;
+          updated.push({id:'primary-'+fact.provider_event_id,matchId:String(match.id),
+            type,minute:Number(fact.minute),minuteLabel:String(fact.minute),
+            team:fact.team,player:fact.player,text:
+             fact.kind==='goal'?'Goal':fact.kind==='card'?'Card':
+             fact.kind==='foul'?'Foul':'Corner'});
           seen.add(key);
         }
-        match.events=enriched.sort((a,b)=>Number(a.minute)-Number(b.minute));
+        match.events=updated.sort((a,b)=>Number(a.minute)-Number(b.minute));
       }
     }catch(error){
-      // Player names are display metadata; missing optional tables must never
-      // prevent odds or a match's primary score from loading.
-      console.warn('[match-detail] supplementary scorer lookup:',error.message);
+      console.warn('[match-detail] primary actor lookup:',error.message);
+    }
+    try{
+      const {rows:incidents}=await dbQuery(`select match_id,provider,provider_event_id,
+        kind,team,minute,added_minute,player_name,on_target,card_color,source_order
+        from app_supplemental_match_incident
+        where match_id=any($1::bigint[]) and active=true and minute is not null
+          and team in ('home','away') and kind in ('goal','corner','card','foul','shot')
+        order by minute,added_minute,source_order limit 500`,[ids]);
+      for(const match of matches){
+        match.supplementalEvents=incidents.filter(item=>String(item.match_id)===String(match.id))
+         .map(item=>({
+          id:'supplemental-'+item.provider+'-'+item.provider_event_id+'-'+item.kind,
+          matchId:String(match.id),source:item.provider,type:item.kind,
+          team:item.team,minute:Number(item.minute),player:item.player_name??undefined,
+          minuteLabel:String(item.minute)+(Number(item.added_minute)>0?'+'+Number(item.added_minute):''),
+          text:item.kind==='goal'?'Goal':item.kind==='corner'?'Corner':
+           item.kind==='card'?(item.card_color==='red'?'Red card':'Yellow card'):
+           item.kind==='foul'?'Foul':item.on_target===true?'Shot on target':'Shot',
+          onTarget:item.on_target===true
+         }));
+      }
+    }catch(error){
+      // Older installations may not yet have the auxiliary ledger.
+      console.warn('[match-detail] supplemental incident lookup:',error.message);
     }
   }
   return matches;

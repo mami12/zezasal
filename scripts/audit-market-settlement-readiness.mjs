@@ -2,7 +2,12 @@
  * Read-only audit of EVERY DISTINCT provider market/outcome retained by the
  * deployment's offer archive (up to the supplied row limit).
  *
- * Usage: node scripts/audit-market-settlement-readiness.mjs 30000
+ * Usage: node scripts/audit-market-settlement-readiness.mjs 30000 --all > market-audit.json
+ * --all emits EVERY examined unsafe/unsupported offer, not just the first 200.
+ *
+ * The archive's original Zizobet market/outcome keys are passed to the
+ * parser; otherwise parameterized player and interval contracts can be
+ * incorrectly labelled UNSUPPORTED during this audit.
  *
  * WARNING: "score-gradeable" is a code-path classification, NOT evidence
  * that the provider will supply correct results. No bets, settings or wallet
@@ -42,6 +47,14 @@ export function auditOffer(row){
   return category('DANGER_WRONG_RESULT','Kerkon rregulla per fitimin/promovimin ose kohe tjeter nga 90 minutat');
  if(/\b(?:asian|quarter|european)\b/.test(n)||/\bhandicap\b/.test(n))
   return category('DANGER_WRONG_RESULT','Handicap/Asian: linja, baseline live dhe kthimet e pjesshme duhen vertetuar');
+ const c=liveContract(row,{clock:0,counts:{goal:{home:0,away:0},corner:{home:0,away:0},card:{home:0,away:0}},teams:{}});
+ if(c&&SUPPORTED_FACT_KINDS.has(c.kind)){
+  if(['player-goal','nth-time','sequence','race','window','window-total','interval-result','interval-leader'].includes(c.kind))
+   return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': kerkon Timeline te rakorduar dhe identitet te verifikuar');
+  if(c.event==='card'||c.event==='foul')
+   return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': ngjyra/lloji i kartonit ose faullit kerkon prova');
+  return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': kontrata ruhet, por pagesa aktualisht mund te varet nga PostgreSQL incidents');
+ }
  if(/\b(?:first|1st|half.?time)\s*half\b/.test(n)&&/\b(?:cards?|bookings?)\b/.test(n))
   return category('DANGER_WRONG_RESULT','Numri final i kartoneve nuk eshte numri i pjeses se pare');
  if(/\b(?:half.?time\s*[/&-]\s*full.?time|ht\s*[/&-]\s*ft|correct score|draw no bet|odd\s*[/&-]?\s*even|winning margin|clean sheet|to nil|both halves|either half|number of corners? in 1st half)\b/.test(n))
@@ -55,14 +68,8 @@ export function auditOffer(row){
   return c?.supported?category('STATS_EVIDENCE_REQUIRED','Statistike e verifikueshme vetem me burim te plote')
    :category('UNSUPPORTED_OR_SPECIAL','Statistike ose seleksion jashte kontrates se mbeshtetur');
  }
- const c=liveContract(row,{clock:0,counts:{goal:{home:0,away:0},corner:{home:0,away:0},card:{home:0,away:0}},teams:{}});
- if(c&&SUPPORTED_FACT_KINDS.has(c.kind)){
-  if(['player-goal','nth-time','sequence','race','window','window-total','interval-result','interval-leader'].includes(c.kind))
-   return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': kerkon Timeline te rakorduar dhe identitet te verifikuar');
-  if(c.event==='card'||c.event==='foul')
-   return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': ngjyra/lloji i kartonit ose faullit kerkon prova');
-  return category('INCIDENT_EVIDENCE_REQUIRED',c.kind+': kontrata ruhet, por pagesa aktualisht mund te varet nga PostgreSQL incidents');
- }
+
+
  if(eventMarketRequirement(row))
   return category('UNSUPPORTED_OR_SPECIAL','API nuk provon ngjarjen/sekonden/lojtarin e kerkuar');
  if(isResultTotalMarket(n))
@@ -92,6 +99,7 @@ export function auditOffer(row){
 }
 const argv=Number(process.argv[2]??30000);
 const limit=Number.isSafeInteger(argv)&&argv>0?Math.min(argv,150000):30000;
+const includeAll=process.argv.includes('--all');
 const groups=new Map(),offers=[];
 try{
  let offset=0;
@@ -99,11 +107,12 @@ try{
   const cap=Math.min(2500,limit-offset);
   const {rows}=await query(`select
    coalesce(provider_id,'?') as provider_id,coalesce(native_market_id,'?') as native_market_id,
+   market_key,outcome_key,min(native_outcome_id) as native_outcome_id,
    market_name,outcome_name,period,line,count(*)::int as offers,
    count(distinct match_id)::int as fixtures
    from app_provider_offer_current
-   group by provider_id,native_market_id,market_name,outcome_name,period,line
-   order by provider_id,native_market_id,market_name,outcome_name,period,line
+   group by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
+   order by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
    limit $1 offset $2`,[cap,offset]);
   for(const row of rows){
    const audit=auditOffer(row),item={...row,...audit};
@@ -125,8 +134,8 @@ try{
  console.log(JSON.stringify({readOnly:true,scannedDistinctOffers:offers.length,
   partial:offers.length>=limit,limit,counts:Object.fromEntries(priorities.map(k=>[k,groups.get(k)??0])),
   riskyOffers:offers.filter(r=>!['SCORE_GRADEABLE'].includes(r.category))
-   .sort((a,b)=>priorities.indexOf(a.category)-priorities.indexOf(b.category)||b.fixtures-a.fixtures).slice(0,200),
-  pendingByMarket:pending.filter(r=>r.category!=='SCORE_GRADEABLE').slice(0,150),
+   .sort((a,b)=>priorities.indexOf(a.category)-priorities.indexOf(b.category)||b.fixtures-a.fixtures).slice(0,includeAll?offers.length:200),
+  pendingByMarket:pending.filter(r=>r.category!=='SCORE_GRADEABLE').slice(0,includeAll?pending.length:150),
   important:'RISK LABELS ARE A STATIC AUDIT, not settlement decisions; verify the PRIMARY provider rule and official match facts before money moves.'},null,2));
 }catch(error){
  console.error('Read-only settlement market audit failed:',error.message);

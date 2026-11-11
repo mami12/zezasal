@@ -198,6 +198,7 @@ export function toClientMatch(m) {
 
   return {
     id: matchId,
+    supplementalEvents:Array.isArray(m.supplementalEvents)?m.supplementalEvents:[],
     events:(function(){
       const scorers = statsProviders.displayScorers?.(m) ?? [];
       const baseEvents = Array.isArray(m.events) && m.events.length ? m.events : scorers.map(s => ({
@@ -213,7 +214,8 @@ export function toClientMatch(m) {
       if(!baseEvents.length || !scorers.length) return baseEvents;
       return baseEvents.map(ev => {
         if(ev.type !== 'goal'||ev.player) return ev;
-        const match = scorers.find(s => s.team === ev.team && Math.abs(s.minute - ev.minute) <= 2);
+        const candidates = scorers.filter(s => s.team === ev.team && Number(s.minute) === Number(ev.minute));
+        const match = candidates.length===1?candidates[0]:null;
         if(!match || !match.player) return ev;
         return { ...ev, player: match.player, text: 'Goal: ' + match.player };
       });
