@@ -83,6 +83,7 @@ export function fotMobIncidents(details){
    const actor=identity(e);
    result.push({kind,team:teamOf(e),...clock,...actor,
     providerEventId:eventId('fotmob',kind,i,e),
+    ownGoal:kind==='goal'?(e.ownGoal===true||e.shotmapEvent?.isOwnGoal===true):null,
     cardColor:kind==='card'?/red/i.test(String(e.card??e.cardType??''))?'red':
      /yellow/i.test(String(e.card??e.cardType??''))?'yellow':null:null,
     onTarget:null,sourceOrder:i,raw:e});
@@ -120,6 +121,7 @@ export function backupIncidents(evidence={}){
   return [{
    kind,team:e.team,minute:minute!==null&&minute<=130?minute:null,
    addedMinute:injury!==null&&injury<=30?injury:null,
+   ownGoal:kind==='goal'?(e.own===true||e.ownGoal===true):null,
    playerId:e.playerId??e.player_id??null,
    playerName:nameOf(e.player??e.playerName),
    providerEventId:eventId('backup',kind,i,e),cardColor:e.cardColor??null,
