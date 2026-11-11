@@ -389,7 +389,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
           (!playerCard.cardColor||actor.card_color===playerCard.cardColor)&&
           (playerCard.playerId!=null&&actor.player_id!=null?
             String(playerCard.playerId)===String(actor.player_id):
-            !!expected&&person(actor.player_name)===expected));
+            !!expected&&(person(actor.player_name)===expected||
+       actor.supplemental_verified===true&&person(actor.supplemental_player_name)===expected)));
         playerCardSnapshot={...coverage[0],booked};
       }
     }catch{playerCardSnapshot=null;}
