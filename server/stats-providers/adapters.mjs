@@ -7,6 +7,7 @@ export const canonical=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f
  * same football club.
  */
 const foldTeam=s=>String(s??'')
+ .replace(/\b([FfSsAaCc])\.\s*([CcKkFf])\./g,'$1$2')
  .replace(/[ßẞ]/g,'ss').replace(/[æÆ]/g,'ae').replace(/[œŒ]/g,'oe')
  .replace(/[øØ]/g,'o').replace(/[łŁ]/g,'l').replace(/[đĐ]/g,'d')
  .replace(/[ıİ]/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
