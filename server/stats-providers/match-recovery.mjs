@@ -14,6 +14,8 @@ import {persistHistoricalTimedEvents} from '../ledger/historical-timed-events.mj
 import {fotMobTimedIncidents} from './historical-incidents.mjs';
 
 const fotmobDailyCache = new Map();
+const fotmobDetailsCache = new Map(),fotmobDetailFlights = new Map();
+const FOTMOB_DETAILS_TTL_MS = 60 * 1000;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const recoveryCooldowns=new Map();
 let recoveryCursor=0;
@@ -50,21 +52,33 @@ export async function fetchFotMobDate(dateStr) {
  * Fetch detailed match facts (corners, cards, fouls, shots, goalscorers) from FotMob.
  */
 export async function fetchFotMobDetails(matchId) {
+ const id=String(matchId??'').trim();
+ if(!/^\\d+$/.test(id))return null;
+ const cached=fotmobDetailsCache.get(id);
+ if(cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
+ if(fotmobDetailFlights.has(id))return fotmobDetailFlights.get(id);
+ const flight=(async()=>{
   try {
-    const url = `https://www.fotmob.com/api/data/matchDetails?matchId=${matchId}`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      },
-      signal: AbortSignal.timeout(12000)
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    console.warn('[fotmob-recovery] fetchFotMobDetails error for', matchId, e.message);
-    return null;
+   const url = `https://www.fotmob.com/api/data/matchDetails?matchId=${encodeURIComponent(id)}`;
+   const res = await fetch(url, {
+    headers: {
+     'Accept': 'application/json',
+     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    },
+    signal: AbortSignal.timeout(12000)
+   });
+   if(!res.ok)return null;
+   const data=await res.json();
+   fotmobDetailsCache.set(id,{at:Date.now(),data});
+   if(fotmobDetailsCache.size>400)fotmobDetailsCache.delete(fotmobDetailsCache.keys().next().value);
+   return data;
+  } catch(e) {
+   console.warn('[fotmob-recovery] fetchFotMobDetails error for',id,e.message);
+   return null;
   }
+ })().finally(()=>fotmobDetailFlights.delete(id));
+ fotmobDetailFlights.set(id,flight);
+ return flight;
 }
 
 /**
