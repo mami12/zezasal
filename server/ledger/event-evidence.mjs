@@ -11,7 +11,7 @@ export function createEventEvidenceStore({runQuery=query,now=Date.now,cacheMs=10
  const init=()=>ready??=runQuery(`create table if not exists app_match_event_evidence(match_id bigint primary key,payload jsonb not null,observed_at timestamptz not null default now())`).catch(e=>{ready=null;throw e;});
  const eventWatchIds=async()=>{
   if(now()-pendingAt<cacheMs)return pending;
-  if(!watchFlight)watchFlight=(async()=>{const r=await runQuery("select l.match_id,l.market_name,l.line,l.outcome_name,l.outcome_key,l.live_contract from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING'");pending=new Set(r.rows.filter(r=>r.live_contract!=null||needsEvents(r)||parseTeamGoalMarket(r)!=null).map(r=>String(r.match_id)));pendingAt=now();return pending;})().finally(()=>{watchFlight=null;});
+  if(!watchFlight)watchFlight=(async()=>{const r=await runQuery("select distinct l.match_id from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING'");pending=new Set(r.rows.map(r=>String(r.match_id)));pendingAt=now();return pending;})().finally(()=>{watchFlight=null;});
   return watchFlight;
  };
  return {eventWatchIds,async pruneUnbetMatchEvidence(){
