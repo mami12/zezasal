@@ -8,9 +8,9 @@ import {matchSnapshots} from './match-snapshots.mjs';
 import {query} from '../db.mjs';
 
 export const HALFTIME_RESULT_SQL=[
- 'create table if not exists app_match_half_result (match_id bigint primary key, home_team text not null, away_team text not null, half_home_score integer not null check(half_home_score between 0 and 200), half_away_score integer not null check(half_away_score between 0 and 200), signature text not null, first_seen_at timestamptz not null default now(), observed_at timestamptz not null default now(), confirmed_at timestamptz, correction_count integer not null default 0, source text not null default ''ZIZOBET'');',
+ 'create table if not exists app_match_half_result (match_id bigint primary key, home_team text not null, away_team text not null, half_home_score integer not null check(half_home_score between 0 and 200), half_away_score integer not null check(half_away_score between 0 and 200), signature text not null, first_seen_at timestamptz not null default now(), observed_at timestamptz not null default now(), confirmed_at timestamptz, correction_count integer not null default 0, source text not null default ' + "'ZIZOBET');",
  'create index if not exists app_match_half_confirmed_idx on app_match_half_result(match_id) where confirmed_at is not null;'
-].join('\n').replace("default ''ZIZOBET''","default 'ZIZOBET'");
+].join('\n');
 
 const score=v=>v!=null&&v!==''&&/^\d+$/.test(String(v))&&
  Number.isSafeInteger(Number(v))&&Number(v)<=200?Number(v):null;
