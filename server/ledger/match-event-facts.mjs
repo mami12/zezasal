@@ -687,14 +687,15 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   };
   const expected=person(c.playerName);
   const {rows:actors}=await execute(
-    "select player_id,player_name,card_color from app_match_event_fact "+
+    "select player_id,player_name,card_color,supplemental_player_name,supplemental_verified from app_match_event_fact "+
     "where match_id=$1 and provider=$2 and kind='card' and active=true",
     [line.match_id,provider]);
   const booked=actors.some(actor=>
     (!c.cardColor||actor.card_color===c.cardColor)&&
     (c.playerId!=null&&actor.player_id!=null?
       String(c.playerId)===String(actor.player_id):
-      !!expected&&person(actor.player_name)===expected));
+      !!expected&&(person(actor.player_name)===expected||
+       actor.supplemental_verified===true&&person(actor.supplemental_player_name)===expected)));
   if(booked)return c.choice?'WON':'LOST';
   // Absent bookings do not prove that the named player entered the pitch.
   // The non-participation/void rule still needs verified lineup facts.
