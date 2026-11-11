@@ -1,5 +1,6 @@
 import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
 import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
+import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
 import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
@@ -268,7 +269,8 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       [Number(id)])).rows[0];
     if(coverage){
      primaryFacts=(await runQuery(
-       "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified "+
+       "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified, "+
+       "own_goal,fotmob_player_name,fotmob_verified "+ 
        "from app_match_event_fact where match_id=$1 and provider='zizobet' and kind='goal' and active=true",
        [Number(id)])).rows;
      primaryGoal=primaryGoalDisplay(coverage,primaryFacts,row);
@@ -396,6 +398,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        // Missing or conflicting goals are never imported as primary events.
        const matched=matchedSupplementalScorers(primaryFacts,
         parsed.goalEvents.map(e=>({minute:Number(e.minute)+Number(e.injury??0),team:e.team,player:e.player,own:e.own})));
+       // Persist an actor label only when it matches ONE confirmed primary
+       // goal and primary facts explicitly rule out an own goal.
+       try{await enrichFotMobScorerNames(Number(id),primaryFacts,parsed.goalEvents,{execute:runQuery});}
+       catch(error){console.warn('[fotmob scorer enrichment]',Number(id),String(error?.message??error));}
        const used=new Set((entry.scorers??[]).map(e=>e.team+'|'+e.minute));
        entry.scorers=[...(entry.scorers??[]),
         ...matched.filter(e=>!used.has(e.team+'|'+e.minute))];
