@@ -82,7 +82,28 @@ export function infoOf(row,game,meta){
   : typeof game.s==='boolean'?game.s:undefined;
  const info={matchId:row.match_id,feedStatus:status===40&&score?'Finished':status===40?'Result Pending':phase==='1st half'?'First Half':phase==='2nd half'?'Second Half':phase??(row.service==='LIVE'?'Live':'Not Started'),...(hasOpenOdds===undefined?{}:{hasOpenOdds})};
  if(score){info.homeScore=score[0];info.awayScore=score[1];}
- try{const periods=typeof game.SetScores==='string'?JSON.parse(game.SetScores):game.SetScores;if(Array.isArray(periods)&&periods.length>=2){const values=periods.map(pair);if(values[0]&&values[1]){info.periodsScore=values.slice(0,2).map(p=>({t1:p[0],t2:p[1]}));if(periods.length>2){info.homeScore=values[0][0]+values[1][0];info.awayScore=values[0][1]+values[1][1];}}else if(status===40&&periods.length>2){delete info.homeScore;delete info.awayScore;info.feedStatus='Result Pending';}}}catch{if(status===40&&/extra|penalt/i.test(phase??''))info.feedStatus='Result Pending';}
+ try{
+  const periods=typeof game.SetScores==='string'?JSON.parse(game.SetScores):game.SetScores;
+  if(Array.isArray(periods)&&periods.length){
+   const values=periods.map(pair);
+   if(values[0]&&values[1]){
+    info.periodsScore=values.slice(0,2).map(p=>({t1:p[0],t2:p[1]}));
+    if(periods.length>2){
+     info.homeScore=values[0][0]+values[1][0];
+     info.awayScore=values[0][1]+values[1][1];
+    }
+   }else if(values[0]&&/^(?:ht|half.?time|break time|interval|break|2h|h2|second half|2nd half)$/i.test(
+      String(info.feedStatus??'').trim())){
+    // A single completed first-period score is real HT evidence. It is
+    // NOT a final result and must never populate FT settlement directly.
+    info.periodsScore=[{t1:values[0][0],t2:values[0][1]}];
+   }else if(status===40&&periods.length>2){
+    delete info.homeScore;delete info.awayScore;info.feedStatus='Result Pending';
+   }
+  }
+ }catch{
+  if(status===40&&/extra|penalt/i.test(phase??''))info.feedStatus='Result Pending';
+ }
  const clock=text(game.MatchTimeExtended).match(/^(\d+):(\d{2})$/),minute=Number(game.MatchTime);
  if(clock)info.matchTimeMs=(Number(clock[1])*60+Number(clock[2]))*1000;else if(game.MatchTime!=null&&text(game.MatchTime)!==''&&Number.isFinite(minute))info.matchTimeMs=minute*60000;
  const stats={home:{},away:{}};

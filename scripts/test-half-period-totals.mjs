@@ -98,6 +98,7 @@ const makeDB=({facts=corners,complete=true,verified=true,event='corner'}={})=>{
     assert.equal(args[2],event);
     return {rows:facts};
   }
+  if(sql.includes('from app_match_half_result'))return {rows:[]};
   if(sql.includes('select 1 from app_match_event_coverage'))return {rows:[]};
   if(sql.includes('select provider from app_match_event_coverage'))return {rows:[]};
   throw Error('Unexpected SQL '+sql.slice(0,100));

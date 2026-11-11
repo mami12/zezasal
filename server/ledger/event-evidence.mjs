@@ -8,13 +8,22 @@ export const needsEvents=m=>!!eventMarketRequirement(m)||/header|headed|own goal
  * An empty/error fallback cannot replace already complete event evidence. */
 export function createEventEvidenceStore({runQuery=query,now=Date.now,cacheMs=10000}={}){
  let ready,pendingAt=-Infinity,pending=new Set(),watchFlight;
+ let acceptedAt=-Infinity,accepted=new Set(),acceptedFlight;
+ const acceptedBetWatchIds=async()=>{
+  if(now()-acceptedAt<cacheMs)return accepted;
+  if(!acceptedFlight)acceptedFlight=(async()=>{
+   const r=await runQuery("select distinct l.match_id from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING'");
+   accepted=new Set(r.rows.map(r=>String(r.match_id)));acceptedAt=now();return accepted;
+  })().finally(()=>{acceptedFlight=null;});
+  return acceptedFlight;
+ };
  const init=()=>ready??=runQuery(`create table if not exists app_match_event_evidence(match_id bigint primary key,payload jsonb not null,observed_at timestamptz not null default now())`).catch(e=>{ready=null;throw e;});
  const eventWatchIds=async()=>{
   if(now()-pendingAt<cacheMs)return pending;
   if(!watchFlight)watchFlight=(async()=>{const r=await runQuery("select l.match_id,l.market_name,l.line,l.outcome_name,l.outcome_key,l.live_contract from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING'");pending=new Set(r.rows.filter(r=>r.live_contract!=null||needsEvents(r)||parseTeamGoalMarket(r)!=null).map(r=>String(r.match_id)));pendingAt=now();return pending;})().finally(()=>{watchFlight=null;});
   return watchFlight;
  };
- return {eventWatchIds,async pruneUnbetMatchEvidence(){
+ return {eventWatchIds,acceptedBetWatchIds,async pruneUnbetMatchEvidence(){
   await init();
   // The latest raw evidence is temporary for unbet fixtures. Keep the
   // snapshot used by Finished Favorites until its separate 48-hour window.
@@ -33,7 +42,7 @@ export function createEventEvidenceStore({runQuery=query,now=Date.now,cacheMs=10
          (select count(*)::int from expired_snapshots) as snapshots`);
  },async saveEventEvidence(id,payload){
   if(!payload||!Array.isArray(payload.events)||payload.events.length>20000)throw new Error('Invalid event evidence');
-  if(!(await eventWatchIds()).has(String(id)))return false;
+  if(!(await acceptedBetWatchIds()).has(String(id)))return false;
   await init();
   const saved=await runQuery(`insert into app_match_event_evidence(match_id,payload)
    select $1,$2::jsonb where exists(select 1 from app_ticket_line where match_id=$1 and status='PENDING')
@@ -48,6 +57,7 @@ export function createEventEvidenceStore({runQuery=query,now=Date.now,cacheMs=10
 }
 const store=createEventEvidenceStore();
 export const eventWatchIds=()=>store.eventWatchIds();
+export const acceptedBetWatchIds=()=>store.acceptedBetWatchIds();
 export const pruneUnbetMatchEvidence=()=>store.pruneUnbetMatchEvidence();
 export const saveEventEvidence=(id,payload)=>store.saveEventEvidence(id,payload);
 export const loadEventEvidence=id=>store.loadEventEvidence(id);

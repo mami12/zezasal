@@ -28,6 +28,10 @@ export function normalizeLiveFrame(data){
     .map(e=>({id:String(e.id),type:e.type,team:e.team,minute:e.minute,seconds:e.seconds??null,
       player:e.player??null,playerId:e.playerId??null,ownGoal:e.ownGoal??null,
       cardColor:e.cardColor??null,phase:e.phase??null})):null;
+ // Keep the exact native actor/time/event payload for later replay and
+ // manual adjudication, without fetching additional upstream APIs.
+ const rawTimeline=Array.isArray(data?.TimeLines)?data.TimeLines.slice(0,2000):null;
+ const rawTimelineTruncated=Array.isArray(data?.TimeLines)&&data.TimeLines.length>2000;
  const coverage={};
  const verify=(kind,counters)=>{
   if(!events||!counters||clock===null||counters.home==null||counters.away==null)return;
@@ -55,13 +59,13 @@ export function normalizeLiveFrame(data){
   },teams:{goal:goals,corner:corners,card:cards,
     yellowCard:yellows,redCard:reds},cardColorsVerified,events:events??[],
   coverage,ended:Number(game.EventStatus??game.MatchStatusID)===40,
-  eventListAvailable:!!events};
+  eventListAvailable:!!events,rawTimeline,rawTimelineTruncated};
 }
 export const WATCHED_LIVE_LINES_SQL=
  'select l.id,l.live_contract,t.placed_at,false as is_lab from app_ticket_line l '+
  'join app_ticket t on t.id=l.ticket_id '+
  "where l.match_id=$1 and l.status='PENDING' and t.status='PENDING' "+
- 'and l.live_contract is not null ';
+ '';
 export const LIVE_OBSERVATION_SQL=[
  'create table if not exists app_live_event_frame (id bigserial primary key,match_id bigint not null,fingerprint text not null,payload jsonb not null,observed_at timestamptz not null default now());',
  'alter table app_live_event_frame drop constraint if exists app_live_event_frame_match_id_fingerprint_key;',

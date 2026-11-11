@@ -14,6 +14,7 @@ import { pool, query } from '../db.mjs';
 import {gradeEventLine,needsEvents,gradeClosedCornerWindow,loadEventEvidence} from './event-evidence.mjs';
 import { getMatchById } from '../matches.mjs';
 import { getResult, captureFinishedMatches, unsettledMatchIds } from './results.mjs';
+import {captureHalfTimeResults} from './halftime-results.mjs';
 import { chargeManagerCommission, refundManagerCommission } from './manager-finance.mjs';
 import { isResultBttsMarket, parseResultBttsOutcome, gradeResultBtts } from './result-btts.mjs';
 import { isResultTotalMarket, isTotalBttsMarket, isFirstHalfResultBtts, parseResultTotal, parseTotalBtts, gradeMixedTotal } from './mixed-combos.mjs';
@@ -67,6 +68,7 @@ export function classify(marketName = '') {
   const s = String(marketName).toLowerCase();
   if (isHtFtMarket(marketName)) return 'HT_FT';
   if (/correct score|exact score/i.test(s)) return 'CORRECT_SCORE';
+  if (/^\s*(?:half\s*time|halftime)\s*[-:.]?\s*(?:3[\s-]*way|1x2)\s*$/i.test(s))return '1X2';
   if (/odd[\s/]*even|tek[\s/]*cift/i.test(s)) return 'ODD_EVEN';
   if (/draw no bet|\bdnb\b/i.test(s)) return 'DNB';
   if (/clean sheet/i.test(s)) return 'CLEAN_SHEET';
@@ -89,13 +91,48 @@ const isFirstHalfLine = (marketName = '') =>
   !/half\s*time\s*[\/\-]?\s*full\s*time|\bht\s*[\/\-]?\s*ft\b/i.test(marketName);
 const isSecondHalfLine = (marketName = '') =>
   /\b(?:second|2nd)\s*half\b|\b2h\b/i.test(marketName);
+/** The provider's period field is part of the quoted contract. A generic
+ * "1X2", "BTTS" or "Exact Corners" name must not silently use full-time
+ * totals when its period is 1H/2H.
+ */
+export function scorePeriodOf(line={}) {
+ const market=String(line.market_name??line.marketName??'');
+ const raw=line.period??line.accepted_contract?.providerPeriod??0,period=Number(raw);
+ if(!Number.isInteger(period)||![0,1,2].includes(period))return null;
+ const first=isFirstHalfLine(market),second=isSecondHalfLine(market);
+ if(first&&second||first&&period===2||second&&period===1)return null;
+ return first?1:second?2:period;
+}
+const withFrozenPeriod=line=>{
+ if(!line||line.period!=null)return line;
+ const raw=line.accepted_contract?.providerPeriod;
+ const n=raw==null?null:Number(raw);
+ return n!=null&&Number.isInteger(n)&&[0,1,2].includes(n)?
+  {...line,period:n}:line;
+};
+const plainDnb=name=>/^(?:(?:full[ .-]*time|match|(?:first|1st|second|2nd)\s+half)\s*[.:-]?\s*)?(?:draw\s+no\s+bet|dnb)(?:\s+(?:first|1st|second|2nd)\s+half)?$/i
+ .test(String(name??'').trim());
+const scoreValue=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&
+  Number(v)>=0&&Number(v)<=200?Number(v):null;
+const periodScores=(line,result)=>{
+ const period=scorePeriodOf(line);
+ if(period===null)return null;
+ const home=scoreValue(result?.home_score),away=scoreValue(result?.away_score);
+ if(home===null||away===null)return null;
+ if(period===0)return {home,away};
+ const hh=scoreValue(result?.half_home_score),ha=scoreValue(result?.half_away_score);
+ if(hh===null||ha===null||hh>home||ha>away)return null;
+ return period===1?{home:hh,away:ha}:{home:home-hh,away:away-ha};
+};
+
 
 /** A known final score is not enough to grade first-half/corner/card props.
  * Keep those lines pending for more authoritative feed evidence instead of
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
-  if (!result) return false;
+  line=withFrozenPeriod(line);
+  if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
@@ -113,8 +150,15 @@ export function hasRequiredSettlementEvidence(line, result) {
   if (needsEvents(line)) return ['WON','LOST','VOID'].includes(gradeEventLine(line,result));
   if (isStatisticMarket(line)) return hasStatisticEvidence(line,result);
   const marketName = String(line.market_name ?? '');
-  if ((isFirstHalfLine(marketName) || isSecondHalfLine(marketName)) &&
-      (result.half_home_score == null || result.half_away_score == null)) return false;
+  const period=scorePeriodOf(line);
+  if(period===null||!periodScores(line,result))return false;
+  // HT/FT is a combined proposition. A separate 1H/2H period field would
+  // change its meaning and must not be guessed.
+  if(period!==0&&isHtFtMarket(marketName))return false;
+  // Period-specific corners/cards/fouls/shots require period-specific facts;
+  // neither a final match total nor a final half-time GOAL score proves them.
+  if(period!==0&&/\b(?:corners?|cards?|bookings?|fouls?|shots?|players?|kornera?|karton|faulle?)\b/i.test(marketName))
+   return false;
   if (isSecondHalfLine(marketName)) {
     // The 2H goals are FT minus the verified HT score. Never use this
     // subtraction for 2H corners/cards/players, which need period evidence.
@@ -124,6 +168,8 @@ export function hasRequiredSettlementEvidence(line, result) {
     if (!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0) return false;
   }
   const family = goalTotalContract(line,result)?'TOTAL':classify(marketName);
+  if(family==='DNB'&&!plainDnb(marketName))return false;
+
   if (family === 'CORNER_1X2' && (result.corners_home == null || result.corners_away == null)) return false;
   if (family === 'HT_FT') {
     // 1/X and 2/X are fully decidable whenever verified HT and FT
@@ -169,6 +215,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  line=withFrozenPeriod(line);
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
@@ -192,12 +239,9 @@ export function gradeLine(line, result) {
   // original ticket contract is snapshotted in market_name.
   if (!hasRequiredSettlementEvidence(line, result)) return null;
   if (isStatisticMarket(line)) return gradeStatisticLine(line,result);
-  const half = isFirstHalfLine(line.market_name);
-  const secondHalf = isSecondHalfLine(line.market_name);
-  const home = secondHalf ? Number(result.home_score)-Number(result.half_home_score)
-    : Number(half ? result.half_home_score : result.home_score);
-  const away = secondHalf ? Number(result.away_score)-Number(result.half_away_score)
-    : Number(half ? result.half_away_score : result.away_score);
+  const periodScore=periodScores(line,result);
+  if(!periodScore)return null;
+  const home=periodScore.home,away=periodScore.away;
   const totalGoals = home + away;
   const homeWin = home > away;
   const awayWin = away > home;
@@ -346,10 +390,12 @@ export function gradeLine(line, result) {
     }
 
     case 'DNB': {
-      if (homeWin) return decide(key === '1' || /^home/.test(name) || isHomeName(norm(name)));
-      if (awayWin) return decide(key === '2' || /^away/.test(name) || isAwayName(norm(name)));
-      if (draw) return 'VOID';
-      return null;
+      const pickedHome=key==='1'||key==='home'||name==='home'||isHomeName(norm(name));
+      const pickedAway=key==='2'||key==='away'||name==='away'||isAwayName(norm(name));
+      // An unknown selection is never a loss or a draw refund.
+      if(pickedHome===pickedAway)return null;
+      if(draw)return 'VOID';
+      return decide(homeWin?pickedHome:pickedAway);
     }
 
     case 'HT_FT': {
@@ -378,11 +424,13 @@ export function gradeLine(line, result) {
         if (ch === null || ca === null) return null;
         val = ch + ca;
       }
-      const cleanName = norm(line.outcome_name ?? line.outcome_key);
-      const plus = cleanName.match(/^(\d+)\+?$/);
-      if (cleanName.includes('+') && plus) {
-        return decide(val >= Number(plus[1]));
-      }
+      const rawName=String(line.outcome_name??line.outcome_key??'')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+      const cleanName=norm(rawName);
+      // norm() discards '+'; check the unstripped provider selection FIRST.
+      // "4+" is at least four, not exactly four.
+      const plus=rawName.match(/^(\d+)\s*(?:\+|or\s+more)$/);
+      if(plus)return decide(val>=Number(plus[1]));
       const band = String(line.outcome_name ?? line.outcome_key).match(/^(\d+)\s*(?:-|to|or)\s*(\d+)$/i);
       if (band) {
         const min = Number(band[1]), max = Number(band[2]);
@@ -401,12 +449,18 @@ export function gradeLine(line, result) {
     }
 
     case 'CLEAN_SHEET': {
-      const isHome = isHomeName(norm(name)) || /home|ekipi 1/.test(norm(line.market_name));
-      const isAway = isAwayName(norm(name)) || /away|ekipi 2/.test(norm(line.market_name));
-      const sheet = isHome ? away === 0 : isAway ? home === 0 : null;
-      if (sheet === null) return null;
-      if (key === 'yes' || /^yes|po/.test(name)) return decide(sheet);
-      if (key === 'no' || /^no|jo/.test(name)) return decide(!sheet);
+      const words=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+      const title=' '+words(line.market_name)+' ';
+      const has=term=>!!term&&title.includes(' '+words(term)+' ');
+      const h=has(result.home_team)||/\b(?:home(?: team)?|team 1|ekipi 1)\b/.test(title);
+      const a=has(result.away_team)||/\b(?:away(?: team)?|team 2|ekipi 2)\b/.test(title);
+      // A generic "Clean Sheet Yes" without an identifiable team cannot
+      // use the opponent's goals by guessing a side.
+      if(h===a)return null;
+      const sheet=h?away===0:home===0;
+      if(key==='yes'||name==='yes'||name==='po')return decide(sheet);
+      if(key==='no'||name==='no'||name==='jo')return decide(!sheet);
       return null;
     }
 
@@ -524,6 +578,7 @@ export async function recalcTicket(ticketId, { database = pool } = {}) {
  * two-way full-integer total push, never an unknown market or outcome.
  */
 export function isProvenTwoWayTotalPush(line,result){
+ line=withFrozenPeriod(line);
  if(!line||!result||Array.isArray(line.builder_legs)||needsEvents(line))return false;
  const market=String(line.market_name??'');
  if(/\b(?:3[\s-]*way|three[\s-]*way|3[\s-]*outcomes?|three[\s-]*outcomes?)\b/i.test(market))return false;
@@ -536,6 +591,113 @@ export function isProvenTwoWayTotalPush(line,result){
  const family=goalTotalContract(line,result)?'TOTAL':classify(market);
  if(!['TOTAL','CORNERS','CARDS'].includes(family))return false;
  return hasRequiredSettlementEvidence(line,result)&&gradeLine(line,result)==='VOID';
+}
+
+/** A draw in a quoted plain DNB market is a documented stake return.
+ * It is NOT the same as refunding an unknown or unparsable proposition.
+ */
+export function isProvenDrawNoBetPush(line,result){
+ line=withFrozenPeriod(line);
+ if(!line||!result||Array.isArray(line.builder_legs)||
+    !plainDnb(line.market_name)||!hasRequiredSettlementEvidence(line,result))return false;
+ const period=periodScores(line,result);
+ return !!period&&period.home===period.away&&gradeLine(line,result)==='VOID';
+}
+/**
+ * First-half-only score contracts may settle on verified HT independently of
+ * the full-time result. No corner/card/player-event or HT/FT proposition
+ * may use the synthetic HT-only score context.
+ */
+export function firstHalfScoreOnly(line){
+ if(!line||Array.isArray(line.builder_legs)||needsEvents(line))return false;
+ line=withFrozenPeriod(line);
+ const name=String(line.market_name??''),lower=name.toLowerCase();
+ const period=scorePeriodOf(line);
+ if(period!==1)return false;
+ if(/\b(?:both halves|either half|each half|second half|2nd half|full time|rest of match|extra time)\b/i.test(name)||
+    /\b(?:ht\s*\/\s*ft|halftime\s*\/\s*fulltime|half.?time\s*\/\s*full.?time)\b/i.test(name))
+  return false;
+ if(/\b(?:corners?|kornera?|cards?|bookings?|kartona?|fouls?|faulle?|shots?|goditj|players?|lojtare?|offsides?)\b/i.test(name))return false;
+ if(isHtFtMarket(name)||isStatisticMarket(line)||isHalfExactMarketFamily(line))return false;
+ const saved=line.live_contract;
+ if(saved){
+  if(saved.kind==='period-goal-total')
+   return saved.half===1&&saved.event==='goal';
+  if(saved.kind==='half-combo')return saved.half===1;
+  if(saved.kind==='score-handicap')
+   return saved.half===1&&saved.event==='goal'&&saved.rest!==true;
+  // Other incident contracts need their own chronological facts.
+  if(SUPPORTED_FACT_KINDS.has(saved.kind))return false;
+ }
+ if(isPeriodGoalTotal(line))
+  return parsePeriodGoalTotal(line,{home:line.home_team,away:line.away_team})?.half===1;
+ if(isHalfComboFamily(line))
+  return parseHalfCombination(line,{home:line.home_team,away:line.away_team})?.half===1;
+ if(isHandicapMarket(line))return false; // only explicit frozen rules
+ if(isScoringPropMarket(line))
+  return /\bto score(?: a goal)? in (?:first|1st) half\b/i.test(name);
+ const family=goalTotalContract(line)?'TOTAL':classify(name);
+ return ['1X2','BTTS','DC','TOTAL','DNB','CORRECT_SCORE',
+  'ODD_EVEN','CLEAN_SHEET','HALF_RESULT_BTTS','BANDS_EXACT'].includes(family);
+}
+export function gradeAtVerifiedHalfTime(line,half){
+ if(!firstHalfScoreOnly(line)||half?.confirmed_at==null)return null;
+ // A live half-time quote taken AFTER the HT result was already archived
+ // must never receive an automatic payout from that known past result.
+ if(line?.placed_at!=null&&half?.first_seen_at!=null&&
+    new Date(line.placed_at).getTime()>=new Date(half.first_seen_at).getTime())
+  return null;
+ const home=scoreValue(half.half_home_score),away=scoreValue(half.half_away_score);
+ if(home===null||away===null)return null;
+ line=withFrozenPeriod(line);
+ // Deliberately synthetic, scoped ONLY to the vetted 1H subset above.
+ // This result never enters app_match_result or a FT audit.
+ const result={home_team:half.home_team,away_team:half.away_team,
+  home_score:home,away_score:away,half_home_score:home,half_away_score:away};
+ let status;
+ if(line.live_contract?.kind==='period-goal-total')
+  status=gradePeriodGoalTotal(line.live_contract,result);
+ else if(line.live_contract?.kind==='half-combo')
+  status=gradeHalfCombination(line.live_contract,result);
+ else if(line.live_contract?.kind==='score-handicap')
+  status=gradeHandicapContract(line.live_contract,result);
+ else status=gradeLine(line,result);
+ if(!['WON','LOST','VOID'].includes(status))return null;
+ if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result)&&
+    !isProvenDrawNoBetPush(line,result)&&
+    !(line.live_contract?.kind==='score-handicap'&&
+      gradeHandicapContract(line.live_contract,result)==='VOID')&&
+    !(line.live_contract?.kind==='half-combo'&&
+      gradeHalfCombination(line.live_contract,result)==='VOID')&&
+    !(line.live_contract?.kind==='period-goal-total'&&
+      gradePeriodGoalTotal(line.live_contract,result)==='VOID'))
+  return null;
+ return status;
+}
+export async function settleVerifiedHalftimes({
+ runQuery=query,update=updatePendingLine,recalc=recalcTicket
+}={}){
+ const rows=(await runQuery([
+  'select l.*,t.placed_at,h.home_team,h.away_team,h.half_home_score,h.half_away_score,h.confirmed_at,h.first_seen_at',
+  'from app_ticket_line l',
+  'join app_ticket t on t.id=l.ticket_id',
+  'join app_match_half_result h on h.match_id=l.match_id',
+  "where l.status='PENDING' and t.status='PENDING' and h.confirmed_at is not null and t.placed_at < h.first_seen_at",
+  'and not exists(select 1 from app_settlement_override o where o.line_id=l.id)',
+  'order by l.match_id,l.id limit 5000'
+ ].join(' '))).rows;
+ const tickets=new Set();let graded=0,held=0;
+ for(const line of rows){
+  const status=gradeAtVerifiedHalfTime(line,line);
+  if(!status){held++;continue;}
+  if(await update(line.id,status,line.ticket_id)){graded++;tickets.add(line.ticket_id);}
+ }
+ const closed=[];
+ for(const ticketId of tickets){
+  const result=await recalc(ticketId);
+  if(result)closed.push(result);
+ }
+ return {examined:rows.length,graded,held,closed};
 }
 
 /** grades every pending line of one match, then closes the affected tickets */
@@ -611,6 +773,7 @@ export async function settleMatch(matchId) {
       // Only a proved two-way integer push is refundable on the legacy path.
       // Unsupported parsing remains PENDING.
       if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result)&&
+         !isProvenDrawNoBetPush(line,result)&&
          !(isHandicapMarket(line)&&legacyHandicapResult(line,result)==='VOID'))status=null;
     }
     if(!['WON','LOST','VOID'].includes(status)){
@@ -743,6 +906,12 @@ export async function settleAll() {
   let backfilled={examined:0,filled:0};
   try{backfilled=await backfillPendingTeamGoalContracts();}
   catch(error){console.error('[settle] team-goal backfill failed:',error.message);}
+  let halfTime={examined:0,recorded:0,confirmed:0};
+  try{halfTime=await captureHalfTimeResults();}
+  catch(error){console.warn('[settle] half-time capture failed:',error?.message);}
+  let atHalfTime={examined:0,graded:0,held:0,closed:[]};
+  try{atHalfTime=await settleVerifiedHalftimes();}
+  catch(error){console.error('[settle] verified half-time settlement failed:',error?.message);}
   let captured = 0;
   // A malformed/unavailable catalogue must not block already stored results or
   // recovery of payments whose line grading succeeded in an earlier pass.
@@ -779,10 +948,11 @@ export async function settleAll() {
   return {
     captured,
     matches: ids.length,
-    lines: results.reduce((acc, r) => acc + r.settled, 0) + windows.graded + primaryFacts.graded + verifiedLive.graded,
-    closed: results.reduce((acc, r) => acc + (r.tickets?.length ?? 0), 0) + windows.closed.length + primaryFacts.closed.length + verifiedLive.closed.length + recovered.length,
+    lines: atHalfTime.graded + results.reduce((acc, r) => acc + r.settled, 0) + windows.graded + primaryFacts.graded + verifiedLive.graded,
+    closed: atHalfTime.closed.length + results.reduce((acc, r) => acc + (r.tickets?.length ?? 0), 0) + windows.closed.length + primaryFacts.closed.length + verifiedLive.closed.length + recovered.length,
     recovered: recovered.length,
     backfilled,
+    halftime:{...halfTime,graded:atHalfTime.graded,held:atHalfTime.held,closed:atHalfTime.closed.length},
     primaryFacts:{examined:primaryFacts.examined,graded:primaryFacts.graded,closed:primaryFacts.closed.length},
     verifiedLive:{enabled:verifiedLive.enabled,examined:verifiedLive.examined,graded:verifiedLive.graded,closed:verifiedLive.closed.length},
     livePreview:preview,

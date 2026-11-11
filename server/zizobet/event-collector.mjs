@@ -1,11 +1,11 @@
-import {eventWatchIds,saveEventEvidence,normalizeEvents} from '../ledger/event-evidence.mjs';
+import {acceptedBetWatchIds,saveEventEvidence,normalizeEvents} from '../ledger/event-evidence.mjs';
 import {recordWatchedLiveFrame} from '../ledger/live-observation-store.mjs';
 
 /** One PRIMARY Zizobet snapshot per watched fixture, no secondary API calls.
  * Feed corrections are reconciled in the transactional PostgreSQL fact store.
  */
 export function createEventCollector({
- getWatchIds=eventWatchIds,save=saveEventEvidence,recordFrame=recordWatchedLiveFrame,
+ getWatchIds=acceptedBetWatchIds,save=saveEventEvidence,recordFrame=recordWatchedLiveFrame,
  now=Date.now,refreshMs=15000,maxActive=3
 }={}){
  let active=0;

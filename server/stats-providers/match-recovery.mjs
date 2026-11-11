@@ -102,6 +102,9 @@ export function extractTeamNames(matchName, row = null) {
 export async function findFotMobFixture(home,away,targetDates,expectedKickoff=null){
   const matches=new Map();
   const expected=Date.parse(expectedKickoff??'');
+  // This lookup can authorize historical payouts. A matching name/date with
+  // missing independent kickoff is not sufficient proof of the same fixture.
+  if(!Number.isFinite(expected)||!Array.isArray(targetDates))return null;
   for(const dateStr of targetDates){
     const data=await fetchFotMobDate(dateStr);
     if(!Array.isArray(data?.leagues))continue;
@@ -111,7 +114,7 @@ export async function findFotMobFixture(home,away,targetDates,expectedKickoff=nu
         const awayName=match.away?.name??match.away?.shortName;
         if(!teamsMatch(home,homeName)||!teamsMatch(away,awayName))continue;
         const kickoff=Date.parse(match.time?.utcTime??match.time?.utc??match.time??'');
-        if(Number.isFinite(expected)&&Number.isFinite(kickoff)&&Math.abs(kickoff-expected)>7200000)continue;
+        if(!Number.isFinite(kickoff)||Math.abs(kickoff-expected)>7200000)continue;
         if(match.id!=null)matches.set(String(match.id),{match,league:league.name,dateStr});
       }
     }
