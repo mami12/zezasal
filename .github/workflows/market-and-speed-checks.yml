@@ -125,6 +125,12 @@ jobs:
           node --check scripts/audit-ticket-settlement-integrity.mjs
           node --check scripts/audit-provider-readiness.mjs
           node --check scripts/audit-market-settlement-readiness.mjs
+          node --check server/ledger/halftime-results.mjs
+          node --check server/ledger/settler.mjs
+          node --check server/zizobet/normalize.mjs
+          node --check server/stats-providers/adapters.mjs
+          node --check scripts/test-halftime-results.mjs
+          node --check scripts/test-fixture-name-matching.mjs
       - name: Safe team-name aliases and external fixture identity
         if: always()
         run: node scripts/test-fixture-name-matching.mjs
