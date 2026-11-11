@@ -101,7 +101,7 @@ export function scorePeriodOf(line={}) {
  if(first&&second||first&&period===2||second&&period===1)return null;
  return first?1:second?2:period;
 }
-const plainDnb=name=>/^(?:(?:full[ .-]*time|match|(?:first|1st|second|2nd)\s+half)\s*[.:-]?\s*)?(?:draw\s+no\s+bet|dnb)$/i
+const plainDnb=name=>/^(?:(?:full[ .-]*time|match|(?:first|1st|second|2nd)\s+half)\s*[.:-]?\s*)?(?:draw\s+no\s+bet|dnb)(?:\s+(?:first|1st|second|2nd)\s+half)?$/i
  .test(String(name??'').trim());
 const scoreValue=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&
   Number(v)>=0&&Number(v)<=200?Number(v):null;
