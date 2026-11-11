@@ -2,6 +2,7 @@ import {MANAGER_CASINO_SQL} from '../casino/manager-settings.mjs';
 import {ORIGINAL_WALLET_SQL} from '../casino/original-wallet-schema.mjs';
 import {SETTLEMENT_REVIEW_SQL} from './settlement-review.mjs';
 import {MATCH_EVENT_FACT_SQL} from './match-event-facts.mjs';
+import {HALFTIME_RESULT_SQL} from './halftime-results.mjs';
 import {PROVIDER_OFFER_ARCHIVE_SQL} from './provider-offer-archive.mjs';
 import {LIVE_OBSERVATION_SQL} from './live-observation-store.mjs';
 import {FOOTBALL_INFORMATION_SQL} from '../stats-providers/football-information.mjs';
@@ -232,6 +233,7 @@ create index if not exists app_ticket_line_match_idx  on app_ticket_line (match_
 
 -- final results, persisted the moment a match is seen finished: settlement must work even
 -- if the process restarts or the match later leaves the feed
+${HALFTIME_RESULT_SQL}
 create table if not exists app_match_result (
   match_id     bigint primary key,
   home_team    text,
