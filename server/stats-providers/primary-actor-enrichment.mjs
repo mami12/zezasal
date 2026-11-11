@@ -35,7 +35,8 @@ export async function enrichPrimaryActors(matchId,source,primaryFacts,events,{ex
  let updated=0;
  for(const [slot,event] of candidate){
   const f=primary.get(slot);
-  if(!f||!event||!missingActor(f)||f.kind==='goal'&&f.own_goal!==false)continue;
+  if(!f||!event||!missingActor(f)||f.kind==='goal'&&
+    (f.own_goal!==false||event.ownGoal===true||event.own===true))continue;
   if(f.kind==='card'&&f.card_color&&event.cardColor&&f.card_color!==event.cardColor)continue;
   const player=actorName(event.playerName??event.player);
   if(!player)continue;
