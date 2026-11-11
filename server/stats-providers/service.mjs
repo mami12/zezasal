@@ -2,7 +2,7 @@ import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
 import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
 import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
 import {enrichPrimaryActors} from './primary-actor-enrichment.mjs';
-import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
+import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,rawProviderIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
 import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
@@ -127,27 +127,32 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   if(provider==='bsd'){
    const f=await get(`/events/${m.id}/`),availability=await get(`/events/${m.id}/availability/`);
    const inc=await get(`/events/${m.id}/incidents/`),stats=await get(`/events/${m.id}/stats/`),lineups=await get(`/events/${m.id}/lineups/`);
-   return {...normalizeBsd(f,inc,stats,lineups,availability),...bsdTimedIncidents(inc.incidents)};
+   return {...normalizeBsd(f,inc,stats,lineups,availability),...bsdTimedIncidents(inc.incidents),
+     otherIncidents:rawProviderIncidents(provider,inc.incidents),sourcePayload:{incidents:inc,statistics:stats}};
   }
   if(provider==='goalapi'){
    const detail=await get('/fixtures/'+m.id),e=await get('/fixtures/'+m.id+'/events'),l=await get('/fixtures/'+m.id+'/lineups');
    if(!detail.success||String(detail.data?.id)!==String(m.id)||!e.success||!Array.isArray(e.data)||!l.success)throw Error('STATS_INVALID_RESPONSE');
    if((e.count!=null&&e.count!==e.data.length)||e.pagination?.hasMore)throw Error('STATS_INCOMPLETE_PAGES');
-   return {...normalizeGoalApi(detail.data,e.data,l.data??{}),...goalApiTimedIncidents(e.data)};
+   return {...normalizeGoalApi(detail.data,e.data,l.data??{}),...goalApiTimedIncidents(e.data),
+     otherIncidents:rawProviderIncidents(provider,e.data),sourcePayload:{incidents:e.data}};
   }
   if(provider==='apifootball'){
    const f=(await get('/fixtures?id='+m.id)).response?.[0];if(!f)throw Error('STATS_NO_FIXTURE');
    const e=await get('/fixtures/events?fixture='+m.id),l=await get('/fixtures/lineups?fixture='+m.id);
-   return {...normalizeApiFootball(f,e.response??[],l.response??[]),...apiFootballTimedIncidents(e.response??[],f)};
+   return {...normalizeApiFootball(f,e.response??[],l.response??[]),...apiFootballTimedIncidents(e.response??[],f),
+     otherIncidents:rawProviderIncidents(provider,e.response),sourcePayload:{incidents:e.response}};
   }
   if(provider==='sportapi'){
    const f=(await get('/fixtures/'+m.id)).fixture,e=await get(`/fixtures/${m.id}/events`),l=await get(`/fixtures/${m.id}/lineups`);
-   if(!f)throw Error('STATS_NO_FIXTURE');return {...normalizeSportApi(f,e.data??[],l),...sportApiTimedIncidents(e.data??[])};
+   if(!f)throw Error('STATS_NO_FIXTURE');return {...normalizeSportApi(f,e.data??[],l),...sportApiTimedIncidents(e.data??[]),
+     otherIncidents:rawProviderIncidents(provider,e.data),sourcePayload:{incidents:e.data}};
   }
   const d=await get(`/get/soccer/${m.league}/scoreboard?dates=${String(m.start).slice(0,10).replaceAll('-','')}`),f=d.events?.find(x=>String(x.id)===String(m.id));if(!f)throw Error('STATS_NO_FIXTURE');
   const plays=[];for(let pageIndex=1;pageIndex<=25;pageIndex++){
    const p=await get(`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`);plays.push(...(p.items??[]));
-   if(pageIndex>=p.pageCount)return normalizeWorld(f,plays);
+   if(pageIndex>=p.pageCount)return {...normalizeWorld(f,plays),
+     otherIncidents:rawProviderIncidents(provider,plays),sourcePayload:{plays}};
   }throw Error('STATS_INCOMPLETE_PAGES');
  }
  // Backup incidents are kept in their own provenance namespace. Only
