@@ -107,6 +107,9 @@ jobs:
       - name: Market 19 - team interval contracts
         if: always()
         run: node scripts/test-team-interval-contracts.mjs
+      - name: Supplemental event and actor rotation archive
+        if: always()
+        run: node scripts/test-supplemental-incidents.mjs
       - name: FotMob scorer and 1X2 team statistics regression
         if: always()
         run: node scripts/test-fotmob-scorer-enrichment.mjs
