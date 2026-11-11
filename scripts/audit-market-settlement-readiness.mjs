@@ -107,13 +107,12 @@ try{
   const cap=Math.min(2500,limit-offset);
   const {rows}=await query(`select
    coalesce(provider_id,'?') as provider_id,coalesce(native_market_id,'?') as native_market_id,
-   min(market_key) as market_key,min(outcome_key) as outcome_key,
-   min(native_outcome_id) as native_outcome_id,
+   market_key,outcome_key,min(native_outcome_id) as native_outcome_id,
    market_name,outcome_name,period,line,count(*)::int as offers,
    count(distinct match_id)::int as fixtures
    from app_provider_offer_current
-   group by provider_id,native_market_id,market_name,outcome_name,period,line
-   order by provider_id,native_market_id,market_name,outcome_name,period,line
+   group by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
+   order by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
    limit $1 offset $2`,[cap,offset]);
   for(const row of rows){
    const audit=auditOffer(row),item={...row,...audit};
