@@ -513,8 +513,21 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    (c.event!=='card'||!['yellow','red'].includes(c.cardColor)||
     data.card_colors_verified!==true))return null;
  const through=Number(data.through_minute);
+ // Half-time is a valid end of the FIRST-HALF event scope, but only once
+ // a separately confirmed Zizobet HT score exists AND the chronological
+ // coverage has been reconfirmed by another primary poll at/after that HT.
+ // The entire match is still unfinished: 2H/FT contracts remain untouched.
+ let firstHalfComplete=false;
+ if(provider==='zizobet'&&c.half===1&&Number.isFinite(through)&&through>=45){
+  const ht=(await execute(
+   'select confirmed_at from app_match_half_result where match_id=$1 and confirmed_at is not null',
+   [line.match_id])).rows[0];
+  const at=ht?.confirmed_at==null?NaN:new Date(ht.confirmed_at).getTime();
+  firstHalfComplete=Number.isFinite(at)&&stored>=at;
+ }
+ const completedScope=full||firstHalfComplete;
  if(c.kind==='score-handicap'&&c.event==='corner'&&c.half){
-  if(!full)return null;
+  if(!completedScope)return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='corner' and active=true`,[line.match_id,provider]);
@@ -535,14 +548,14 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   return gradeMultiCornerFacts(c,facts,{complete:true});
  }
  if(c.kind==='half-parity'){
-  if(!full||c.event!=='corner')return null;
+  if(!completedScope||c.event!=='corner')return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='corner' and active=true`,[line.match_id,provider]);
   return gradeHalfParityFacts(c,facts,{complete:true});
  }
  if(c.kind==='half-exact-count'){
-  if(!full||!['corner','card'].includes(c.event))return null;
+  if(!completedScope||!['corner','card'].includes(c.event))return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase,card_color
     from app_match_event_fact
     where match_id=$1 and provider=$2 and kind=$3 and active=true`,
@@ -551,7 +564,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
     cardColorsVerified:data.card_colors_verified===true});
  }
  if(c.kind==='half-total'){
-  if(!full||!['corner','card'].includes(c.event))return null;
+  if(!completedScope||!['corner','card'].includes(c.event))return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase,card_color
     from app_match_event_fact
     where match_id=$1 and provider=$2 and kind=$3 and active=true`,
@@ -560,7 +573,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
     cardColorsVerified:data.card_colors_verified===true});
  }
  if(['half-first-event','half-last-event','half-race'].includes(c.kind)){
-  if(!full||!['goal','corner','card'].includes(c.event))return null;
+  if(!completedScope||!['goal','corner','card'].includes(c.event))return null;
   const events=(await execute(`select minute,seconds,team,phase
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind=$3 and active=true`,[line.match_id,provider,c.event])).rows;
