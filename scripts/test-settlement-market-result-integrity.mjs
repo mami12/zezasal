@@ -1,3 +1,4 @@
+import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
 import {gradeLine,hasRequiredSettlementEvidence,isProvenDrawNoBetPush,
  scorePeriodOf} from '../server/ledger/settler.mjs';
