@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {fotMobIncidents,backupIncidents,storeSupplementalIncidents,SUPPLEMENTAL_INCIDENT_SQL}
+import {fotMobIncidents,backupIncidents,rawProviderIncidents,storeSupplementalIncidents,SUPPLEMENTAL_INCIDENT_SQL}
  from '../server/stats-providers/supplemental-incidents.mjs';
 import {enrichPrimaryActors} from '../server/stats-providers/primary-actor-enrichment.mjs';
 
@@ -28,6 +28,17 @@ assert.equal(incidents[5].minute,null,'Missing event time stays unknown');
 const backup=backupIncidents({events:[{id:'a',type:'goal',team:'home',minute:23,player:'Other Scorer'}],
  cardEvents:[{id:'b',type:'card',team:'away',minute:30,playerName:'Player B'}]});
 assert.deepEqual(backup.map(x=>x.kind),['goal','card']);
+const extra=rawProviderIncidents('goalapi',[
+ {seq:18,kind_name:'shot',side:'home',minute:62,player_name:'Shooting Player',on_target:true},
+ {seq:19,kind_name:'foul',side:'away',minute:63,player_name:'Fouling Player'},
+ {seq:20,kind_name:'unknown',side:'home',minute:64,player_name:'Ignore'}
+]);
+assert.equal(extra.length,2);
+assert.deepEqual(extra.map(x=>x.kind),['shot','foul']);
+assert.equal(extra[0].onTarget,true);
+assert.equal(extra[0].sourceOrder,18);
+assert.equal(backupIncidents({otherIncidents:extra}).length,2);
+
 
 const calls=[];
 const execute=async(sql,args)=>{calls.push({sql,args});return {rowCount:1};};
