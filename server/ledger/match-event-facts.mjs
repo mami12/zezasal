@@ -518,7 +518,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  // coverage has been reconfirmed by another primary poll at/after that HT.
  // The entire match is still unfinished: 2H/FT contracts remain untouched.
  let firstHalfComplete=false;
- if(provider==='zizobet'&&c.half===1&&Number.isFinite(through)&&through>=45){
+ if(!full&&provider==='zizobet'&&c.half===1&&Number.isFinite(through)&&through>=45){
   const ht=(await execute(
    'select confirmed_at from app_match_half_result where match_id=$1 and confirmed_at is not null',
    [line.match_id])).rows[0];
