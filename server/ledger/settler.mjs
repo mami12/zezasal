@@ -213,8 +213,10 @@ export function gradeLine(line, result) {
 
   const homeName = norm(result.home_team);
   const awayName = norm(result.away_team);
-  const isHomeName = (n) => !!n && !!homeName && homeName.startsWith(n);
-  const isAwayName = (n) => !!n && !!awayName && awayName.startsWith(n);
+  // A shared team-name prefix cannot identify which side won. For example,
+  // Manchester is not proof of Manchester City versus Manchester United.
+  const isHomeName = (n) => !!n && !!homeName && homeName === n;
+  const isAwayName = (n) => !!n && !!awayName && awayName === n;
 
   const decide = (yes) => (yes ? 'WON' : 'LOST');
 
