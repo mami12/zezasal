@@ -405,9 +405,12 @@ ledgerRouter.get(
     // somebody is looking at this match: make sure it gets its full market list (corners,
     // cards, every total) on the next subscribe cycle, instead of base markets only
     boostMatch(row.match_id);
-    statsProviders.warm(row);
-    // A selected match can request supplementary scorer names once per minute.
-    void footballInformation.warm(matchId).catch(error=>console.warn('[aiscore] selected match:',error.message));
+    // Explicit provider rotation: FotMob and configured statistical feeds get
+    // the first chance, then mapped AiScore is checked for a missing actor.
+    // This runs asynchronously; no network wait holds the market request open.
+    const warmStats=statsProviders.warm(row);
+    void Promise.resolve(warmStats).then(()=>footballInformation.warm(matchId))
+      .catch(error=>console.warn('[aiscore] selected match:',error.message));
     await req.app.locals.loadMatchDetail?.(row.match_id);
     row=await getMatchRow(Number(req.params.id))??row;
     const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
