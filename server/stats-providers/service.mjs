@@ -29,7 +29,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  const init=()=>initFlight??=(async()=>{
   await runQuery('create table if not exists app_stats_cache(cache_key text primary key,payload jsonb not null,updated_at timestamptz not null default now())');
   await runQuery('create table if not exists app_stats_usage(provider text not null,period text not null,calls int not null,primary key(provider,period))');
-  await runQuery(SUPPLEMENTAL_INCIDENT_SQL);
+  // The embedded local PostgreSQL adapter prepares every query; it rejects
+  // multi-command prepared statements. Create the tables one at a time.
+  for(const statement of SUPPLEMENTAL_INCIDENT_SQL.split(';').map(s=>s.trim()).filter(Boolean))
+   await runQuery(statement);
  })().catch(e=>{initFlight=null;throw e;});
  const read=async key=>(await runQuery('select payload from app_stats_cache where cache_key=$1',[key])).rows[0]?.payload;
  const write=async(key,payload)=>runQuery('insert into app_stats_cache(cache_key,payload) values($1,$2::jsonb) on conflict(cache_key) do update set payload=excluded.payload,updated_at=now()',[key,JSON.stringify(payload)]);
