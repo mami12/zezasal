@@ -603,6 +603,98 @@ export function isProvenDrawNoBetPush(line,result){
  const period=periodScores(line,result);
  return !!period&&period.home===period.away&&gradeLine(line,result)==='VOID';
 }
+/**
+ * First-half-only score contracts may settle on verified HT independently of
+ * the full-time result. No corner/card/player-event or HT/FT proposition
+ * may use the synthetic HT-only score context.
+ */
+export function firstHalfScoreOnly(line){
+ if(!line||Array.isArray(line.builder_legs)||needsEvents(line))return false;
+ line=withFrozenPeriod(line);
+ const name=String(line.market_name??''),lower=name.toLowerCase();
+ const period=scorePeriodOf(line);
+ if(period!==1)return false;
+ if(/\b(?:both halves|either half|each half|second half|2nd half|full time|rest of match|extra time)\b/i.test(name)||
+    /\b(?:ht\s*\/\s*ft|halftime\s*\/\s*fulltime|half.?time\s*\/\s*full.?time)\b/i.test(name))
+  return false;
+ if(/\b(?:corners?|kornera?|cards?|bookings?|kartona?|fouls?|faulle?|shots?|goditj|players?|lojtare?|offsides?)\b/i.test(name))return false;
+ if(isHtFtMarket(name)||isStatisticMarket(line)||isHalfExactMarketFamily(line))return false;
+ const saved=line.live_contract;
+ if(saved){
+  if(saved.kind==='period-goal-total')
+   return saved.half===1&&saved.event==='goal';
+  if(saved.kind==='half-combo')return saved.half===1;
+  if(saved.kind==='score-handicap')
+   return saved.half===1&&saved.event==='goal'&&saved.rest!==true;
+  // Other incident contracts need their own chronological facts.
+  if(SUPPORTED_FACT_KINDS.has(saved.kind))return false;
+ }
+ if(isPeriodGoalTotal(line))
+  return parsePeriodGoalTotal(line,{home:line.home_team,away:line.away_team})?.half===1;
+ if(isHalfComboFamily(line))
+  return parseHalfCombination(line,{home:line.home_team,away:line.away_team})?.half===1;
+ if(isHandicapMarket(line))return false; // only explicit frozen rules
+ if(isScoringPropMarket(line))
+  return /\bto score(?: a goal)? in (?:first|1st) half\b/i.test(name);
+ const family=goalTotalContract(line)?'TOTAL':classify(name);
+ return ['1X2','BTTS','DC','TOTAL','DNB','CORRECT_SCORE',
+  'ODD_EVEN','CLEAN_SHEET','HALF_RESULT_BTTS','BANDS_EXACT'].includes(family);
+}
+export function gradeAtVerifiedHalfTime(line,half){
+ if(!firstHalfScoreOnly(line)||half?.confirmed_at==null)return null;
+ const home=scoreValue(half.half_home_score),away=scoreValue(half.half_away_score);
+ if(home===null||away===null)return null;
+ line=withFrozenPeriod(line);
+ // Deliberately synthetic, scoped ONLY to the vetted 1H subset above.
+ // This result never enters app_match_result or a FT audit.
+ const result={home_team:half.home_team,away_team:half.away_team,
+  home_score:home,away_score:away,half_home_score:home,half_away_score:away};
+ let status;
+ if(line.live_contract?.kind==='period-goal-total')
+  status=gradePeriodGoalTotal(line.live_contract,result);
+ else if(line.live_contract?.kind==='half-combo')
+  status=gradeHalfCombination(line.live_contract,result);
+ else if(line.live_contract?.kind==='score-handicap')
+  status=gradeHandicapContract(line.live_contract,result);
+ else status=gradeLine(line,result);
+ if(!['WON','LOST','VOID'].includes(status))return null;
+ if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result)&&
+    !isProvenDrawNoBetPush(line,result)&&
+    !(line.live_contract?.kind==='score-handicap'&&
+      gradeHandicapContract(line.live_contract,result)==='VOID')&&
+    !(line.live_contract?.kind==='half-combo'&&
+      gradeHalfCombination(line.live_contract,result)==='VOID')&&
+    !(line.live_contract?.kind==='period-goal-total'&&
+      gradePeriodGoalTotal(line.live_contract,result)==='VOID'))
+  return null;
+ return status;
+}
+export async function settleVerifiedHalftimes({
+ runQuery=query,update=updatePendingLine,recalc=recalcTicket
+}={}){
+ const rows=(await runQuery([
+  'select l.*,h.home_team,h.away_team,h.half_home_score,h.half_away_score,h.confirmed_at',
+  'from app_ticket_line l',
+  'join app_ticket t on t.id=l.ticket_id',
+  'join app_match_half_result h on h.match_id=l.match_id',
+  "where l.status='PENDING' and t.status='PENDING' and h.confirmed_at is not null",
+  'and not exists(select 1 from app_settlement_override o where o.line_id=l.id)',
+  'order by l.match_id,l.id limit 5000'
+ ].join(' '))).rows;
+ const tickets=new Set();let graded=0,held=0;
+ for(const line of rows){
+  const status=gradeAtVerifiedHalfTime(line,line);
+  if(!status){held++;continue;}
+  if(await update(line.id,status,line.ticket_id)){graded++;tickets.add(line.ticket_id);}
+ }
+ const closed=[];
+ for(const ticketId of tickets){
+  const result=await recalc(ticketId);
+  if(result)closed.push(result);
+ }
+ return {examined:rows.length,graded,held,closed};
+}
+
 /** grades every pending line of one match, then closes the affected tickets */
 export async function updatePendingLine(lineId,status,ticketId,{database=pool}={}){
   const client=await database.connect();
@@ -809,6 +901,12 @@ export async function settleAll() {
   let backfilled={examined:0,filled:0};
   try{backfilled=await backfillPendingTeamGoalContracts();}
   catch(error){console.error('[settle] team-goal backfill failed:',error.message);}
+  let halfTime={examined:0,recorded:0,confirmed:0};
+  try{halfTime=await captureHalfTimeResults();}
+  catch(error){console.warn('[settle] half-time capture failed:',error?.message);}
+  let atHalfTime={examined:0,graded:0,held:0,closed:[]};
+  try{atHalfTime=await settleVerifiedHalftimes();}
+  catch(error){console.error('[settle] verified half-time settlement failed:',error?.message);}
   let captured = 0;
   // A malformed/unavailable catalogue must not block already stored results or
   // recovery of payments whose line grading succeeded in an earlier pass.
@@ -845,10 +943,11 @@ export async function settleAll() {
   return {
     captured,
     matches: ids.length,
-    lines: results.reduce((acc, r) => acc + r.settled, 0) + windows.graded + primaryFacts.graded + verifiedLive.graded,
-    closed: results.reduce((acc, r) => acc + (r.tickets?.length ?? 0), 0) + windows.closed.length + primaryFacts.closed.length + verifiedLive.closed.length + recovered.length,
+    lines: atHalfTime.graded + results.reduce((acc, r) => acc + r.settled, 0) + windows.graded + primaryFacts.graded + verifiedLive.graded,
+    closed: atHalfTime.closed.length + results.reduce((acc, r) => acc + (r.tickets?.length ?? 0), 0) + windows.closed.length + primaryFacts.closed.length + verifiedLive.closed.length + recovered.length,
     recovered: recovered.length,
     backfilled,
+    halftime:{...halfTime,graded:atHalfTime.graded,held:atHalfTime.held,closed:atHalfTime.closed.length},
     primaryFacts:{examined:primaryFacts.examined,graded:primaryFacts.graded,closed:primaryFacts.closed.length},
     verifiedLive:{enabled:verifiedLive.enabled,examined:verifiedLive.examined,graded:verifiedLive.graded,closed:verifiedLive.closed.length},
     livePreview:preview,
