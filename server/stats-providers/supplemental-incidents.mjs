@@ -26,6 +26,7 @@ create table if not exists app_supplemental_match_incident (
  observed_at timestamptz not null default now(),
  primary key(match_id,provider,provider_event_id,kind)
 );
+alter table app_supplemental_match_incident add column if not exists active boolean not null default true;
 create index if not exists app_supplemental_match_incident_lookup
  on app_supplemental_match_incident(match_id,kind,minute,added_minute);
 create table if not exists app_supplemental_match_snapshot (
