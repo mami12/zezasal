@@ -121,7 +121,9 @@ export function gradePlayerGoalSpecial(contract,facts,{complete=false,participat
   // decided from a partial identity list.
   const own=fact.own_goal??fact.ownGoal;
   if(own===true)continue;
-  const scorer=canonical(fact.player_name??fact.playerName??fact.aiscore_player_name);
+  const scorer=canonical(fact.player_name??fact.playerName??
+   (fact.aiscore_verified===true?fact.aiscore_player_name:null)??
+   (own===false&&fact.fotmob_verified===true?fact.fotmob_player_name:null));
   const validated=own===false||fact.aiscore_verified===true;
   if(!validated||!scorer){ambiguous=true;continue;}
   const scorerId=fact.player_id??fact.playerId??fact.aiscore_player_id;
