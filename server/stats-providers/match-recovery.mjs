@@ -53,7 +53,7 @@ export async function fetchFotMobDate(dateStr) {
  */
 export async function fetchFotMobDetails(matchId) {
  const id=String(matchId??'').trim();
- if(!/^\\d+$/.test(id))return null;
+ if(!/^\d+$/.test(id))return null;
  const cached=fotmobDetailsCache.get(id);
  if(cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
  if(fotmobDetailFlights.has(id))return fotmobDetailFlights.get(id);
