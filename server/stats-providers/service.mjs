@@ -1,6 +1,8 @@
 import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
 import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
 import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
+import {enrichPrimaryActors} from './primary-actor-enrichment.mjs';
+import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
 import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
@@ -27,6 +29,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  const init=()=>initFlight??=(async()=>{
   await runQuery('create table if not exists app_stats_cache(cache_key text primary key,payload jsonb not null,updated_at timestamptz not null default now())');
   await runQuery('create table if not exists app_stats_usage(provider text not null,period text not null,calls int not null,primary key(provider,period))');
+  await runQuery(SUPPLEMENTAL_INCIDENT_SQL);
  })().catch(e=>{initFlight=null;throw e;});
  const read=async key=>(await runQuery('select payload from app_stats_cache where cache_key=$1',[key])).rows[0]?.payload;
  const write=async(key,payload)=>runQuery('insert into app_stats_cache(cache_key,payload) values($1,$2::jsonb) on conflict(cache_key) do update set payload=excluded.payload,updated_at=now()',[key,JSON.stringify(payload)]);
@@ -255,22 +258,29 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    const result=(await runQuery('select * from app_match_result where match_id=$1',[Number(id)])).rows[0];
    if(result)final=true;
    await init();const old=cached??await read('display:'+id);
-   if(old?.version===2&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
+   if(old?.version===3&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
-   const entry={version:2,identity,values:{},goalIntervals:null,sources:{},at:now()};
+   const entry={version:3,identity,values:{},goalIntervals:null,sources:{},at:now()};
    // Zizobet's independently reconfirmed event history is the authority for
    // goals, clock windows and minute buckets. Other services supply only
    // missing scorer labels/statistics and never replace these incidents.
-   let primaryFacts=[],primaryGoal=null;
+   let primaryFacts=[],primaryGoal=null,primaryActors=[];
+   const actorSQL="select provider_event_id,kind,minute,team,card_color,player_name,aiscore_player_name,aiscore_verified,own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified from app_match_event_fact where match_id=$1 and provider='zizobet' and kind in ('goal','card','foul','corner') and active=true";
+   const refreshActors=async()=>{primaryActors=(await runQuery(actorSQL,[Number(id)])).rows;return primaryActors;};
+   const needsActors=()=>primaryActors.some(f=>['goal','card','foul'].includes(f.kind)&&
+     !f.player_name&&!(f.aiscore_verified&&f.aiscore_player_name)&&
+     !(f.fotmob_verified&&f.fotmob_player_name)&&
+     !(f.supplemental_verified&&f.supplemental_player_name));
    try{
     const coverage=(await runQuery(
       "select through_minute,count_home,count_away,confirmed_at "+
       "from app_match_event_coverage where match_id=$1 and provider='zizobet' and kind='goal'",
       [Number(id)])).rows[0];
+    await refreshActors();
     if(coverage){
      primaryFacts=(await runQuery(
        "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified, "+
-       "own_goal,fotmob_player_name,fotmob_verified "+ 
+       "own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified "+  
        "from app_match_event_fact where match_id=$1 and provider='zizobet' and kind='goal' and active=true",
        [Number(id)])).rows;
      primaryGoal=primaryGoalDisplay(coverage,primaryFacts,row);
@@ -384,7 +394,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(!final&&statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
-   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || !statsReady(entry)) {
+   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsActors() || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
      const dates = candidateDateStrings(targetDate);
@@ -393,6 +403,14 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if (fm && fm.match) {
       const details = await fetchFotMobDetails(fm.match.id);
       const parsed = parseFotMobPayload(fm.match, details);
+      if(details){
+       try{
+        const incidents=fotMobIncidents(details);
+        await storeSupplementalIncidents(Number(id),'fotmob',fm.match.id,incidents,{execute:runQuery,payload:details});
+        await enrichPrimaryActors(Number(id),'fotmob',primaryActors,incidents,{execute:runQuery});
+        await refreshActors();
+       }catch(error){console.warn('[supplemental incident archive]',String(error?.message??error));}
+      }
       if (primaryGoal?.hasGoals && parsed.goalEvents.length) {
        // FotMob names can fill only one-to-one Zizobet scorer slots.
        // Missing or conflicting goals are never imported as primary events.
