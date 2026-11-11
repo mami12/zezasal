@@ -264,7 +264,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    // Zizobet's independently reconfirmed event history is the authority for
    // goals, clock windows and minute buckets. Other services supply only
    // missing scorer labels/statistics and never replace these incidents.
-   let primaryFacts=[],primaryGoal=null,primaryActors=[];
+   let primaryFacts=[],primaryGoal=null,primaryActors=[],goalCoverage=null;
    const actorSQL="select provider_event_id,kind,minute,team,card_color,player_name,aiscore_player_name,aiscore_verified,own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified from app_match_event_fact where match_id=$1 and provider='zizobet' and kind in ('goal','card','foul','corner') and active=true";
    const refreshActors=async()=>{primaryActors=(await runQuery(actorSQL,[Number(id)])).rows;return primaryActors;};
    const needsActors=()=>primaryActors.some(f=>['goal','card','foul'].includes(f.kind)&&
@@ -278,6 +278,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       [Number(id)])).rows[0];
     await refreshActors();
     if(coverage){
+     goalCoverage=coverage;
      primaryFacts=(await runQuery(
        "select provider_event_id,minute,team,phase,player_name,aiscore_player_name,aiscore_verified, "+
        "own_goal,fotmob_player_name,fotmob_verified,supplemental_player_name,supplemental_verified "+  
@@ -414,15 +415,12 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       if (primaryGoal?.hasGoals && parsed.goalEvents.length) {
        // FotMob names can fill only one-to-one Zizobet scorer slots.
        // Missing or conflicting goals are never imported as primary events.
-       const matched=matchedSupplementalScorers(primaryFacts,
-        parsed.goalEvents.map(e=>({minute:Number(e.minute)+Number(e.injury??0),team:e.team,player:e.player,own:e.own})));
+       // Match identity into persistent primary slots, never an unverified UI-only guess.
        // Persist an actor label only when it matches ONE confirmed primary
        // goal and primary facts explicitly rule out an own goal.
        try{await enrichFotMobScorerNames(Number(id),primaryFacts,parsed.goalEvents,{execute:runQuery});}
        catch(error){console.warn('[fotmob scorer enrichment]',Number(id),String(error?.message??error));}
-       const used=new Set((entry.scorers??[]).map(e=>e.team+'|'+e.minute));
-       entry.scorers=[...(entry.scorers??[]),
-        ...matched.filter(e=>!used.has(e.team+'|'+e.minute))];
+       await refreshActors();
       }
       const fmValues = {
        possession: parsed.statistics.possession,
@@ -454,6 +452,52 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       }
      }
     } catch {}
+   }
+   // Identity rotation: FotMob first (above), then a confirmed AiScore mapping,
+   // then the configured daily-quota providers. Stop once known primary actors
+   // are identified. All offers, goals, clocks and prices remain Zizobet.
+   if(needsActors()){
+    try{
+     const {footballInformation}=await import('./football-information.mjs');
+     await footballInformation.warm(Number(id));
+     await refreshActors();
+    }catch(error){health.lastError='AISCORE_ACTOR_LOOKUP_UNAVAILABLE';}
+   }
+   if(needsActors()){
+    const fallback=await providerOrder('missing-player-events');
+    for(const provider of fallback){
+     try{
+      const fixture=mapping[provider]??await discover(provider,row);
+      if(!fixture)continue;
+      mapping[provider]=fixture;
+      const evidence=await collect(provider,fixture,final?0:displayTtl);
+      const incidents=backupIncidents(evidence);
+      if(incidents.length){
+       await storeSupplementalIncidents(Number(id),provider,fixture.id,incidents,
+         {execute:runQuery,payload:evidence});
+       await enrichPrimaryActors(Number(id),provider,primaryActors,incidents,
+         {execute:runQuery});
+       await refreshActors();
+      }
+      if(!needsActors())break;
+     }catch(error){
+      health.providers[provider]={...(health.providers[provider]??{}),
+       lastActorError:/^STATS_[A-Z_0-9]+$/.test(String(error?.message))?
+       error.message:'STATS_UNAVAILABLE'};
+     }
+    }
+   }
+   if(goalCoverage&&primaryGoal?.hasGoals){
+    try{
+     const {rows:fresh}=await runQuery(
+      "select provider_event_id,minute,team,phase,player_name,own_goal,"+
+      "aiscore_player_name,aiscore_verified,fotmob_player_name,fotmob_verified,"+
+      "supplemental_player_name,supplemental_verified "+
+      "from app_match_event_fact where match_id=$1 and provider='zizobet' "+
+      "and kind='goal' and active=true",[Number(id)]);
+     const verified=primaryGoalDisplay(goalCoverage,fresh,row);
+     if(verified){entry.scorers=verified.scorers;entry.goalIntervals=verified.goalIntervals;}
+    }catch(error){health.lastError='GOAL_ACTOR_DISPLAY_UNAVAILABLE';}
    }
    if(final){const review=compareFinalStatistics(observations,{attempted,unavailable});
     await runQuery('insert into app_stat_review(match_id,payload)values($1,$2::jsonb)on conflict(match_id)do update set payload=excluded.payload,updated_at=now()',[Number(id),JSON.stringify(review)]);
