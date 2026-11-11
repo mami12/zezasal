@@ -100,7 +100,9 @@ export function finishedResultParameters(row) {
     if (!team) return null;
     const yellow = statNum(team.yellow);
     const red = statNum(team.red);
-    return yellow === null && red === null ? null : (yellow ?? 0) + (red ?? 0);
+    // A missing red/yellow component is UNKNOWN, not zero. An incomplete
+    // final-card sum could otherwise mark a valid Over as LOST or Under WON.
+    return yellow === null || red === null ? null : yellow + red;
   };
   const half = verifiedFirstHalf(row.periods_score);
   return [row.match_id, row.home, row.away, Number(row.home_score), Number(row.away_score),
