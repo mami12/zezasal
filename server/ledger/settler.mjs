@@ -101,6 +101,8 @@ export function scorePeriodOf(line={}) {
  if(first&&second||first&&period===2||second&&period===1)return null;
  return first?1:second?2:period;
 }
+const plainDnb=name=>/^(?:(?:full[ .-]*time|match|(?:first|1st|second|2nd)\s+half)\s*[.:-]?\s*)?(?:draw\s+no\s+bet|dnb)$/i
+ .test(String(name??'').trim());
 const scoreValue=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&
   Number(v)>=0&&Number(v)<=200?Number(v):null;
 const periodScores=(line,result)=>{
@@ -156,6 +158,8 @@ export function hasRequiredSettlementEvidence(line, result) {
     if (!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0) return false;
   }
   const family = goalTotalContract(line,result)?'TOTAL':classify(marketName);
+  if(family==='DNB'&&!plainDnb(marketName))return false;
+
   if (family === 'CORNER_1X2' && (result.corners_home == null || result.corners_away == null)) return false;
   if (family === 'HT_FT') {
     // 1/X and 2/X are fully decidable whenever verified HT and FT
@@ -434,12 +438,18 @@ export function gradeLine(line, result) {
     }
 
     case 'CLEAN_SHEET': {
-      const isHome = isHomeName(norm(name)) || /home|ekipi 1/.test(norm(line.market_name));
-      const isAway = isAwayName(norm(name)) || /away|ekipi 2/.test(norm(line.market_name));
-      const sheet = isHome ? away === 0 : isAway ? home === 0 : null;
-      if (sheet === null) return null;
-      if (key === 'yes' || /^yes|po/.test(name)) return decide(sheet);
-      if (key === 'no' || /^no|jo/.test(name)) return decide(!sheet);
+      const words=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+      const title=' '+words(line.market_name)+' ';
+      const has=term=>!!term&&title.includes(' '+words(term)+' ');
+      const h=has(result.home_team)||/\b(?:home(?: team)?|team 1|ekipi 1)\b/.test(title);
+      const a=has(result.away_team)||/\b(?:away(?: team)?|team 2|ekipi 2)\b/.test(title);
+      // A generic "Clean Sheet Yes" without an identifiable team cannot
+      // use the opponent's goals by guessing a side.
+      if(h===a)return null;
+      const sheet=h?away===0:home===0;
+      if(key==='yes'||name==='yes'||name==='po')return decide(sheet);
+      if(key==='no'||name==='no'||name==='jo')return decide(!sheet);
       return null;
     }
 
@@ -571,6 +581,15 @@ export function isProvenTwoWayTotalPush(line,result){
  return hasRequiredSettlementEvidence(line,result)&&gradeLine(line,result)==='VOID';
 }
 
+/** A draw in a quoted plain DNB market is a documented stake return.
+ * It is NOT the same as refunding an unknown or unparsable proposition.
+ */
+export function isProvenDrawNoBetPush(line,result){
+ if(!line||!result||Array.isArray(line.builder_legs)||
+    !plainDnb(line.market_name)||!hasRequiredSettlementEvidence(line,result))return false;
+ const period=periodScores(line,result);
+ return !!period&&period.home===period.away&&gradeLine(line,result)==='VOID';
+}
 /** grades every pending line of one match, then closes the affected tickets */
 export async function updatePendingLine(lineId,status,ticketId,{database=pool}={}){
   const client=await database.connect();
@@ -644,6 +663,7 @@ export async function settleMatch(matchId) {
       // Only a proved two-way integer push is refundable on the legacy path.
       // Unsupported parsing remains PENDING.
       if(status==='VOID'&&!isProvenTwoWayTotalPush(line,result)&&
+         !isProvenDrawNoBetPush(line,result)&&
          !(isHandicapMarket(line)&&legacyHandicapResult(line,result)==='VOID'))status=null;
     }
     if(!['WON','LOST','VOID'].includes(status)){
