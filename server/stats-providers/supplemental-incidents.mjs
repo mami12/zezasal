@@ -106,10 +106,38 @@ export function fotMobIncidents(details){
 /** Normalize an independently fixture-matched backup. No invented minutes,
  * actor IDs, foul incidents, or shot-on-target indicators from totals.
  */
+/** Only explicitly timed FOUL/SHOT native incidents. Never manufacture an
+ * event minute or player name from aggregate team statistics.
+ */
+export function rawProviderIncidents(provider,raw=[]){
+ if(!Array.isArray(raw))return [];
+ const source=String(provider).toLowerCase();
+ return raw.flatMap((e,i)=>{
+  const label=String(e?.kind_name??e?.event_type??e?.type??e?.kind??'')
+   .trim().toLowerCase().replace(/[_-]+/g,' ');
+  const kind=/^(?:foul|foul committed)$/.test(label)?'foul':
+    /^(?:shot|shot on target|shot on goal|shot off target|attempt saved)$/.test(label)?'shot':null;
+  if(!kind||e?.cancelled===true||e?.disabled===true)return [];
+  const team=e?.side==='home'||e?.side==='away'?e.side:
+   e?.team_side==='home'||e?.team_side==='away'?e.team_side:
+   e?.is_home===true||e?.isHome===true?'home':
+   e?.is_home===false||e?.isHome===false?'away':null;
+  const clock=minutes(e.minute??e.time?.elapsed??e.time??e.min);
+  const injury=count(e.injury_time??e.added_time??e.minAdded??e.time?.extra);
+  const onTarget=kind==='shot'?typeof e.isOnTarget==='boolean'?e.isOnTarget:
+   typeof e.on_target==='boolean'?e.on_target:/on (?:target|goal)|attempt saved/.test(label)?true:
+   /off target/.test(label)?false:null:null;
+  return [{kind,team,minute:clock.minute,
+   addedMinute:injury!==null&&injury<=30?injury:clock.addedMinute,
+   ...identity(e),providerEventId:eventId(source,kind,i,e),
+   sourceOrder:Number.isSafeInteger(Number(e.seq))?Number(e.seq):i,
+   cardColor:null,onTarget,raw:e}];
+ });
+}
 export function backupIncidents(evidence={}){
  const rows=[...(evidence.events??[]),...(evidence.cornerEvents??[]),
   ...(evidence.cardEvents??[]),...(evidence.foulEvents??[]),
-  ...(evidence.shotEvents??[])];
+  ...(evidence.shotEvents??[]),...(evidence.otherIncidents??[])];
  return rows.flatMap((e,i)=>{
   const type=String(e?.type??'').toLowerCase();
   const kind=type==='goal'?'goal':type==='corner'?'corner':
@@ -126,7 +154,8 @@ export function backupIncidents(evidence={}){
    playerName:nameOf(e.player??e.playerName),
    providerEventId:eventId('backup',kind,i,e),cardColor:e.cardColor??null,
    onTarget:typeof e.onTarget==='boolean'?e.onTarget:null,
-   sourceOrder:i,raw:e
+   seconds:e.seconds!=null&&Number.isFinite(Number(e.seconds))?Number(e.seconds):null,
+   sourceOrder:Number.isSafeInteger(Number(e.sourceOrder))?Number(e.sourceOrder):i,raw:e
   }];
  });
 }
