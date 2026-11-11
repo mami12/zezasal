@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {HALFTIME_RESULT_SQL,extractConfirmedHalfTimeCandidate,
  persistHalfTimeCandidate} from '../server/ledger/halftime-results.mjs';
 import {firstHalfScoreOnly,gradeAtVerifiedHalfTime,scorePeriodOf} from '../server/ledger/settler.mjs';
+import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 const observed='2026-11-11T20:45:30Z',status='2026-11-11T20:45:31Z';
 const live={match_id:123,home:'Red FC',away:'Blue FC',home_score:2,away_score:1,
  periods_score:[{t1:2,t2:1}],feed_status:'HT',score_at:observed,
@@ -66,4 +67,33 @@ assert.match(sql,/excluded\.observed_at>app_match_half_result\.observed_at/);
 assert.match(sql,/interval '5 seconds'/);
 assert.match(sql,/when app_match_half_result\.signature<>excluded\.signature then null/);
 assert.equal(args[0],123);
+// First-half corners/cards use the actual verified PRIMARY chronology; the
+// half-time score alone is insufficient to decide their event totals.
+const facts=[
+ {team:'home',minute:12,phase:'First Half',seconds:null},
+ {team:'home',minute:25,phase:'First Half',seconds:null},
+ {team:'away',minute:41,phase:'First Half',seconds:null}
+];
+const cornerContract={kind:'half-total',event:'corner',half:1,side:'home',
+ choice:'over',threshold:1.5};
+const verifiedCorner=async(sql)=>{
+ if(sql.startsWith('with covered as'))return {rows:[{
+  home:2,away:1,total:3,count_home:2,count_away:1,complete:false,
+  through_minute:45,open_recovery_gap:false,card_colors_verified:false,
+  confirmed_at:'2026-11-11T20:46:00Z',observed_at:'2026-11-11T20:47:00Z',
+  second_poll_at:'2026-11-11T20:47:00Z'
+ }]};
+ if(sql.includes('from app_match_half_result'))return {rows:[{
+   confirmed_at:'2026-11-11T20:46:30Z'
+ }]};
+ if(sql.includes('select minute,seconds,team,phase,card_color'))return {rows:facts};
+ throw Error('Unexpected query '+sql);
+};
+assert.equal(await gradeStoredEventContract({id:'a',match_id:123,live_contract:cornerContract},
+ null,{execute:verifiedCorner}),'WON',
+ '1H corner contract can settle from the confirmed HT primary chronology');
+const noHT=async sql=>sql.includes('from app_match_half_result')?{rows:[]}:verifiedCorner(sql);
+assert.equal(await gradeStoredEventContract({id:'a',match_id:123,live_contract:cornerContract},
+ null,{execute:noHT}),null,'No HT confirmation => no 1H corner payout');
+
 console.log('PASS HT-only grades 1st half, rejects FT/2H, freezes real periods and requires 2 primary snapshots');
