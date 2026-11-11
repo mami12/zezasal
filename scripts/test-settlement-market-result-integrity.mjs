@@ -52,6 +52,10 @@ assert.equal(isProvenDrawNoBetPush(choice('Draw No Bet','Mystery'),draw),false);
 assert.equal(isProvenDrawNoBetPush(choice('Draw No Bet','1'),score),false);
 assert.equal(gradeLine(choice('Draw No Bet','2',{period:1}),draw),'VOID');
 assert.equal(isProvenDrawNoBetPush(choice('Draw No Bet','2',{period:1}),draw),true);
+assert.equal(isProvenDrawNoBetPush(choice('Draw No Bet first half','2'),draw),true);
+assert.equal(isProvenDrawNoBetPush(choice('1st half - Draw no bet','2'),draw),true);
+assert.equal(gradeLine(choice('Draw No Bet first half','2'),score),'WON');
+assert.equal(gradeLine(choice('Draw No Bet first half','1'),score),'LOST');
 assert.equal(grade('Draw No Bet + BTTS','1'),null);
 
 // Corners 4+ means four OR MORE, not exactly four. The legacy norm()
