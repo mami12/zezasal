@@ -1,34 +1,100 @@
 // Provider identities remain separate. Never fuzzy-match a player or swap home/away.
 export const canonical=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 
+/** Names are provider-specific labels. Strip only non-identifying club
+ * prefixes/suffixes (FC/FK/CF/etc), not identities such as City or United.
+ * A six-letter prefix or one name contained in another is NOT evidence of the
+ * same football club.
+ */
+const foldTeam=s=>String(s??'')
+ .replace(/[ßẞ]/g,'ss').replace(/[æÆ]/g,'ae').replace(/[œŒ]/g,'oe')
+ .replace(/[øØ]/g,'o').replace(/[łŁ]/g,'l').replace(/[đĐ]/g,'d')
+ .replace(/[ıİ]/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+ .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+const CLUB_TAGS=new Set([
+ 'fc','fk','cf','afc','sc','ac','as','sk','bsc','cs','cd','ss','us','sv',
+ 'vfb','tsv','spvgg','rb','hnk','nk','club','clube','futbol','futebol',
+ 'kulubu','kulub','calcio','sd'
+]);
+const CONNECTORS=new Set(['de','del','di','da','do','the']);
+const WORD_ALIASES=new Map([
+ ['utd','united'],['muenchen','munich'],['munchen','munich'],
+ ['praha','prague'],['milano','milan'],['internazionale','inter'],
+ ['koln','cologne']
+]);
+const youthRE=/\b(?:u|under)\s*(1[5-9]|2[0-3])\b/;
+const womenRE=/\b(?:women|womens|woman|ladies|female|frauen|femeni|femenina|feminine|feminino|wfc)\b|\bw$/;
+const reservesRE=/\b(?:reserves?|reserve|second\s+team)\b|(?:^|\s)(?:ii|iii|b|c)$/;
+const academyRE=/\b(?:academy|akademie|youth)\b/;
+const teamIdentity=s=>{
+ let spaced=foldTeam(s);
+ if(!spaced)return null;
+ // "FC Koln" and "1. FC Koln" are the same official name. The leading
+ // "1." must never be stripped from names without the FC marker.
+ spaced=spaced.replace(/^1 fc\b/,'fc');
+ const youth=spaced.match(youthRE)?.[1]??null;
+ const women=womenRE.test(spaced);
+ const reserve=spaced.match(/\b(?:reserves?|reserve|second\s+team)\b|(?:^|\s)(?:ii|iii|b|c)$/)?.[0]?.trim()??null;
+ const academy=academyRE.test(spaced);
+ let tokens=spaced.split(' ').filter(Boolean);
+ // Normalize only literal abbreviations that are uniquely associated with a
+ // particular complete club label, not every "Man..." string.
+ if(tokens[0]==='man'&&['utd','united','city'].includes(tokens[1]))tokens[0]='manchester';
+ if(tokens.length===1&&tokens[0]==='psg')tokens=['paris','saint','germain'];
+ if(tokens.length===2&&tokens[0]==='paris'&&tokens[1]==='sg')tokens=['paris','saint','germain'];
+ tokens=tokens.map(token=>WORD_ALIASES.get(token)??token);
+ // "St Pauli" and "Saint Pauli" share one spelling; leave all other names.
+ if(tokens[0]==='st')tokens[0]='saint';
+ const categoryParts=[];
+ if(youth)categoryParts.push('u'+youth);
+ if(women)categoryParts.push('women');
+ if(reserve)categoryParts.push('reserve:'+reserve.replace(/\s+/g,''));
+ if(academy)categoryParts.push('academy');
+ // One provider might say Arsenal Women, another Arsenal W. Both are
+ // women's clubs, but neither is the Arsenal senior men's fixture.
+ tokens=tokens.filter((token,i,all)=>{
+  if(CLUB_TAGS.has(token)||CONNECTORS.has(token)&&all.length>2)return false;
+  if(/^(?:u1[5-9]|u2[0-3])$/.test(token))return false;
+  if(token==='under'&&/^(?:1[5-9]|2[0-3])$/.test(all[i+1]??''))return false;
+  if(token==='u'&&/^(?:1[5-9]|2[0-3])$/.test(all[i+1]??''))return false;
+  if(/^(?:1[5-9]|2[0-3])$/.test(token)&&['u','under'].includes(all[i-1]))return false;
+  if(women&&(/^(?:women|womens|woman|ladies|female|frauen|femeni|femenina|feminine|feminino|wfc)$/.test(token)||
+    token==='w'&&i===all.length-1))return false;
+  if(reserve&&(/^(?:reserves?|reserve|second|team)$/.test(token)||
+    ['ii','iii','b','c'].includes(token)&&i===all.length-1))return false;
+  if(academy&&['academy','akademie','youth'].includes(token))return false;
+  return true;
+ });
+ const core=tokens.join(' ');
+ return core.length>=3?{core,category:categoryParts.sort().join('|')}:null;
+};
+/** Human-readable standardized comparison key, not a provider or database ID. */
 export function cleanTeam(s) {
- return String(s ?? '')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/\b(futbol|kulubu|kulub|club|clube|calcio|deportivo|sporting|athletic|united|city|town|wanderers|rovers)\b/gi, '')
-  .replace(/\b(fc|fk|cf|afc|sc|as|ac|sk|bsc|cs|cd|ss|us|sv|vfb|tsv|spvgg|rb)\b/gi, '')
-  .replace(/y/g, 'i')
-  .replace(/[^a-z0-9]/g, '');
+ const identity=teamIdentity(s);
+ return identity?identity.core.replace(/ /g,'')+(identity.category?'#'+identity.category:''):'';
 }
-
-export function teamsMatch(a, b) {
- const ca = cleanTeam(a), cb = cleanTeam(b);
- if (!ca || !cb) return false;
- if (ca === cb) return true;
- if (ca.length >= 4 && cb.length >= 4) {
-  if (ca.includes(cb) || cb.includes(ca)) return true;
- }
- return false;
+export function teamsMatch(a,b) {
+ const one=teamIdentity(a),two=teamIdentity(b);
+ return !!one&&!!two&&one.core===two.core&&one.category===two.category;
 }
-
+/** A unique matching fixture requires BOTH teams in the correct home/away
+ * order, a plausible independent kickoff, and exactly one matched provider ID.
+ * Never choose the first name or a short prefix match for payout evidence.
+ */
 export function uniqueFixture(row,list){
- const time=Date.parse(row.start_at??row.startAt),h=canonical(row.home),a=canonical(row.away);
- if(!h||!a||h===a||!Number.isFinite(time))return null;
- const exact=list.filter(x=>canonical(x.home)===h&&canonical(x.away)===a&&Math.abs(Date.parse(x.start)-time)<=7200000);
- if(exact.length===1)return exact[0];
- const found=list.filter(x=>teamsMatch(x.home,row.home)&&teamsMatch(x.away,row.away)&&Math.abs(Date.parse(x.start)-time)<=7200000);
- return found.length===1?found[0]:null;
+ const time=Date.parse(row?.start_at??row?.startAt??'');
+ if(!Number.isFinite(time)||!teamsMatch(row?.home,row?.home)||
+    !teamsMatch(row?.away,row?.away)||teamsMatch(row.home,row.away)||
+    !Array.isArray(list))return null;
+ const matches=new Map();
+ for(const candidate of list){
+  if(candidate?.id==null)continue;
+  const kickoff=Date.parse(candidate.start??'');
+  if(!Number.isFinite(kickoff)||Math.abs(kickoff-time)>7200000)continue;
+  if(!teamsMatch(candidate.home,row.home)||!teamsMatch(candidate.away,row.away))continue;
+  matches.set(String(candidate.id),candidate);
+ }
+ return matches.size===1?[...matches.values()][0]:null;
 }
 export function goalCapabilities(e){
  const goals=e.events.filter(x=>x.type==='goal'&&!x.shootout);
