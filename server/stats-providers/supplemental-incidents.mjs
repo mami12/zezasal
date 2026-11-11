@@ -5,7 +5,7 @@
  */
 import {createHash} from 'node:crypto';
 
-export const SUPPLEMENTAL_INCIDENT_SQL=String.raw\`
+export const SUPPLEMENTAL_INCIDENT_SQL=String.raw`
 create table if not exists app_supplemental_match_incident (
  match_id bigint not null,
  provider text not null,
@@ -36,7 +36,7 @@ create table if not exists app_supplemental_match_snapshot (
  observed_at timestamptz not null default now(),
  primary key(match_id,provider,payload_hash)
 );
-\`;
+`;
 const kinds=new Set(['goal','corner','card','foul','shot']);
 const providers=new Set(['fotmob','aiscore','apifootball','sportapi','goalapi','bsd','worldcup26']);
 const count=v=>v!==null&&v!==undefined&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0?Number(v):null;
@@ -90,7 +90,7 @@ export function fotMobIncidents(details){
  }
  if(Array.isArray(shots)){
   for(const [i,s] of shots.entries()){
-   const base=count(s.min),injury=count(s.minAdded);
+   const base=count(s.min),injury=count(s.minAdded??0);
    const clock=base!==null&&base<=130&&injury!==null&&injury<=30?
     {minute:base,addedMinute:injury}:{minute:null,addedMinute:null};
    result.push({kind:'shot',team:teamOf(s),...clock,
@@ -148,7 +148,7 @@ export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows
    raw:row.raw??{}
   }));
  if(valid.length){
-  await execute(\`insert into app_supplemental_match_incident
+  await execute(`insert into app_supplemental_match_incident
     (match_id,provider,provider_fixture_id,provider_event_id,kind,team,minute,
       added_minute,seconds,source_order,player_id,player_name,card_color,on_target,raw)
     select $1,$2,$3,x.provider_event_id,x.kind,x.team,x.minute,x.added_minute,
@@ -162,16 +162,16 @@ export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows
      added_minute=excluded.added_minute,seconds=excluded.seconds,
      source_order=excluded.source_order,player_id=excluded.player_id,
      player_name=excluded.player_name,card_color=excluded.card_color,
-     on_target=excluded.on_target,raw=excluded.raw,observed_at=now()\`,
+     on_target=excluded.on_target,raw=excluded.raw,observed_at=now()`,
    [id,source,String(fixtureId),JSON.stringify(valid)]);
  }
  if(payload!=null){
   const json=JSON.stringify(payload);
   const hash=createHash('sha256').update(json).digest('hex');
-  await execute(\`insert into app_supplemental_match_snapshot
+  await execute(`insert into app_supplemental_match_snapshot
     (match_id,provider,provider_fixture_id,payload_hash,payload)
     values($1,$2,$3,$4,$5::jsonb)
-    on conflict(match_id,provider,payload_hash) do nothing\`,
+    on conflict(match_id,provider,payload_hash) do nothing`,
    [id,source,String(fixtureId),hash,json]);
  }
  return {stored:valid.length};
