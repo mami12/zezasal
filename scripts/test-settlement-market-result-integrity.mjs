@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {gradeLine,hasRequiredSettlementEvidence,isProvenDrawNoBetPush,
  scorePeriodOf} from '../server/ledger/settler.mjs';
-import {finishedResultParameters} from '../server/ledger/results.mjs';
+import {finishedResultParameters,isFinished} from '../server/ledger/results.mjs';
 const score={home_team:'Manchester City',away_team:'Manchester United',
  home_score:3,away_score:1,half_home_score:0,half_away_score:1,
  corners_home:3,corners_away:2,cards_home:3,cards_away:2};
@@ -73,4 +73,10 @@ params=finishedResultParameters({...raw,stats:{home:{yellow:3,red:0,corners:5},
  away:{yellow:1,red:0,corners:4}}});
 assert.equal(params[7],3);
 assert.equal(params[8],1);
+const finishedFrame={feed_status:'FT',score_at:'2026-11-11T20:00:00Z',home_score:1,away_score:1};
+assert.equal(isFinished(finishedFrame),true);
+for(const status of ['After penalties','Penalties','Extra time','After match','Penalty shootout']){
+ assert.equal(isFinished({...finishedFrame,feed_status:status}),false,
+  status+' score could be non-regulation and must not settle 90m bets');
+}
 console.log('PASS period-scoped score markets, strict DNB refund, clean sheets, exact bands, card unknowns');
