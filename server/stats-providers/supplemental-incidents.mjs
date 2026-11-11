@@ -22,6 +22,7 @@ create table if not exists app_supplemental_match_incident (
  card_color text,
  on_target boolean,
  raw jsonb not null,
+ active boolean not null default true,
  observed_at timestamptz not null default now(),
  primary key(match_id,provider,provider_event_id,kind)
 );
@@ -159,7 +160,7 @@ export function backupIncidents(evidence={}){
   }];
  });
 }
-export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows,{execute,payload=null}={}){
+export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows,{execute,payload=null,completeKinds=[]}={}){
  const id=Number(matchId),source=String(provider).toLowerCase();
  if(!Number.isSafeInteger(id)||id<=0||!providers.has(source)||
   fixtureId==null||!String(fixtureId).trim()||typeof execute!=='function'||!Array.isArray(rows))
@@ -178,6 +179,14 @@ export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows
    card_color:row.cardColor??null,on_target:row.onTarget??null,
    raw:row.raw??{}
   }));
+ const certifiedKinds=[...new Set(completeKinds)].filter(kind=>kinds.has(kind));
+ if(certifiedKinds.length){
+  const ids=valid.filter(row=>certifiedKinds.includes(row.kind)).map(row=>row.provider_event_id);
+  // Preserve corrections for audit, but do not keep withdrawn source events active.
+  await execute("update app_supplemental_match_incident set active=false,observed_at=now() "+
+   "where match_id=$1 and provider=$2 and provider_fixture_id=$3 and kind=any($4::text[]) "+
+   "and not(provider_event_id=any($5::text[]))",[id,source,String(fixtureId),certifiedKinds,ids]);
+ }
  if(valid.length){
   await execute(`insert into app_supplemental_match_incident
     (match_id,provider,provider_fixture_id,provider_event_id,kind,team,minute,
@@ -193,7 +202,7 @@ export async function storeSupplementalIncidents(matchId,provider,fixtureId,rows
      added_minute=excluded.added_minute,seconds=excluded.seconds,
      source_order=excluded.source_order,player_id=excluded.player_id,
      player_name=excluded.player_name,card_color=excluded.card_color,
-     on_target=excluded.on_target,raw=excluded.raw,observed_at=now()`,
+     on_target=excluded.on_target,raw=excluded.raw,active=true,observed_at=now()`,
    [id,source,String(fixtureId),JSON.stringify(valid)]);
  }
  if(payload!=null){
