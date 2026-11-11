@@ -2,12 +2,23 @@ import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
 import {HALFTIME_RESULT_SQL,extractConfirmedHalfTimeCandidate,
  persistHalfTimeCandidate} from '../server/ledger/halftime-results.mjs';
+import {infoOf} from '../server/zizobet/normalize.mjs';
 import {firstHalfScoreOnly,gradeAtVerifiedHalfTime,scorePeriodOf} from '../server/ledger/settler.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 const observed='2026-11-11T20:45:30Z',status='2026-11-11T20:45:31Z';
 const live={match_id:123,home:'Red FC',away:'Blue FC',home_score:2,away_score:1,
  periods_score:[{t1:2,t2:1}],feed_status:'HT',score_at:observed,
  feed_status_at:status,raw:{provider:'ZIZOBET'}};
+// Native Zizobet SetScores can report only one completed period at HT.
+const feedMeta={statuses:new Map([['1_31','Half Time'],['1_30','1st half']])};
+const htNative=infoOf({match_id:123,service:'LIVE'},
+ {EventStatus:31,Score:'2:1',SetScores:['2:1']},feedMeta);
+assert.deepEqual(htNative.periodsScore,[{t1:2,t2:1}]);
+assert.equal(htNative.feedStatus,'Half Time');
+const inPlay=infoOf({match_id:123,service:'LIVE'},
+ {EventStatus:30,Score:'2:1',SetScores:['2:1']},feedMeta);
+assert.equal(inPlay.periodsScore,undefined,
+ 'A single first-period value is not final before HT');
 const candidate=extractConfirmedHalfTimeCandidate(live);
 assert.deepEqual([candidate.home,candidate.away],[2,1]);
 assert.ok(HALFTIME_RESULT_SQL.includes('app_match_half_result'));
