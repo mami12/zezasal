@@ -31,6 +31,9 @@ create table if not exists app_match_event_fact (
  aiscore_verified boolean not null default false,
  fotmob_player_name text,
  fotmob_verified boolean not null default false,
+ supplemental_player_name text,
+ supplemental_actor_provider text,
+ supplemental_verified boolean not null default false,
  phase text,
  active boolean not null default true,
  observed_at timestamptz not null default now(),
@@ -43,6 +46,9 @@ alter table app_match_event_fact add column if not exists aiscore_player_name te
 alter table app_match_event_fact add column if not exists aiscore_verified boolean not null default false;
 alter table app_match_event_fact add column if not exists fotmob_player_name text;
 alter table app_match_event_fact add column if not exists fotmob_verified boolean not null default false;
+alter table app_match_event_fact add column if not exists supplemental_player_name text;
+alter table app_match_event_fact add column if not exists supplemental_actor_provider text;
+alter table app_match_event_fact add column if not exists supplemental_verified boolean not null default false;
 create index if not exists app_match_event_fact_lookup
  on app_match_event_fact(match_id,provider,kind,active,minute,seconds);
 create table if not exists app_match_event_coverage (
@@ -144,6 +150,24 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
           and (excluded.player_name is null or app_match_event_fact.fotmob_player_name is null
                or lower(excluded.player_name)=lower(app_match_event_fact.fotmob_player_name))
           then app_match_event_fact.fotmob_player_name else null end,
+        supplemental_verified=case when app_match_event_fact.team=excluded.team
+          and app_match_event_fact.minute=excluded.minute
+          and (excluded.kind<>'goal' or excluded.own_goal=false)
+          and (excluded.player_name is null or app_match_event_fact.supplemental_player_name is null
+               or lower(excluded.player_name)=lower(app_match_event_fact.supplemental_player_name))
+          then app_match_event_fact.supplemental_verified else false end,
+        supplemental_player_name=case when app_match_event_fact.team=excluded.team
+          and app_match_event_fact.minute=excluded.minute
+          and (excluded.kind<>'goal' or excluded.own_goal=false)
+          and (excluded.player_name is null or app_match_event_fact.supplemental_player_name is null
+               or lower(excluded.player_name)=lower(app_match_event_fact.supplemental_player_name))
+          then app_match_event_fact.supplemental_player_name else null end,
+        supplemental_actor_provider=case when app_match_event_fact.team=excluded.team
+          and app_match_event_fact.minute=excluded.minute
+          and (excluded.kind<>'goal' or excluded.own_goal=false)
+          and (excluded.player_name is null or app_match_event_fact.supplemental_player_name is null
+               or lower(excluded.player_name)=lower(app_match_event_fact.supplemental_player_name))
+          then app_match_event_fact.supplemental_actor_provider else null end,
         phase=excluded.phase,active=true,observed_at=now()`,
    [matchId,kind,JSON.stringify(facts.map(f=>({
     id:f.id,team:f.team,minute:f.minute,seconds:f.seconds,player_id:f.playerId,
@@ -411,7 +435,9 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
        (aiscore_verified=true and aiscore_player_name is not null
          and lower(aiscore_player_name)=lower($7)) or
        (own_goal=false and fotmob_verified=true and fotmob_player_name is not null
-         and lower(fotmob_player_name)=lower($7))))))::int as player_goals,
+         and lower(fotmob_player_name)=lower($7)) or
+       (own_goal=false and supplemental_verified=true and supplemental_player_name is not null
+         and lower(supplemental_player_name)=lower($7))))))::int as player_goals,
     bool_or(same_time>1) as ambiguous_order,
     bool_or(seconds is null) as minute_only
    from ordered
@@ -634,7 +660,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   if(!full||c.event!=='goal')return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase,player_id,
     player_name,aiscore_player_id,aiscore_player_name,aiscore_verified,
-    fotmob_player_name,fotmob_verified,own_goal
+    fotmob_player_name,fotmob_verified,supplemental_player_name,
+    supplemental_verified,own_goal
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='goal' and active=true`,[line.match_id,provider]);
   return gradePlayerGoalSpecial(c,facts,{complete:true});
@@ -643,7 +670,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   if(!full||c.event!=='goal')return null;
   const {rows:facts}=await execute(`select minute,seconds,team,player_id,
     player_name,aiscore_player_id,aiscore_player_name,aiscore_verified,
-    fotmob_player_name,fotmob_verified,own_goal
+    fotmob_player_name,fotmob_verified,supplemental_player_name,
+    supplemental_verified,own_goal
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='goal' and active=true`,[line.match_id,provider]);
   return gradePlayerOrdinalScorerFacts(c,facts,{complete:true});
