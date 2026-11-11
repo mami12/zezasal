@@ -11,7 +11,7 @@ import {pool,query} from '../server/db.mjs';
 import {getResult} from '../server/ledger/results.mjs';
 import {gradeStoredEventContract,SUPPORTED_FACT_KINDS} from '../server/ledger/match-event-facts.mjs';
 import {gradeLine,hasRequiredSettlementEvidence,isProvenTwoWayTotalPush,
- isProvenDrawNoBetPush} from '../server/ledger/settler.mjs';
+ isProvenDrawNoBetPush,firstHalfScoreOnly,gradeAtVerifiedHalfTime} from '../server/ledger/settler.mjs';
 import {isHandicapMarket,gradeHandicapContract} from '../server/ledger/handicap-contracts.mjs';
 const actualStatuses=new Set(['PENDING','WON','LOST','VOID']);
 const reportStatus=(actual,expected,manual)=>{
@@ -36,7 +36,7 @@ try{
   left join app_match_result r on r.match_id=l.match_id
   order by t.placed_at desc,l.id
   limit $1`,[limit]);
- const results=new Map();
+ const results=new Map(),halftimes=new Map();
  for(const line of rows){
   scanned++;
   const id=String(line.match_id);
@@ -63,6 +63,16 @@ try{
     }else reason='MARKET_EVIDENCE_INCOMPLETE';
    }catch(error){gradeErrors++;reason='READ_ONLY_GRADE_ERROR';}
   }
+  let htResult=null;
+  if(!result&&!line.manual_override&&firstHalfScoreOnly(line)){
+   htResult=halftimes.get(id);
+   if(htResult===undefined){
+    try{htResult=(await query('select * from app_match_half_result where match_id=$1',[Number(id)])).rows[0]??null;}
+    catch{htResult=null;}
+    halftimes.set(id,htResult);
+   }
+   expected=gradeAtVerifiedHalfTime(line,htResult);
+  }
   const status=reportStatus(line.status,expected,line.manual_override===true);
   summary[status]=(summary[status]??0)+1;
   if(status!=='AGREES_WITH_CURRENT_EVIDENCE'){
@@ -76,10 +86,10 @@ try{
    if(examples.length<250)examples.push({
     lineId:line.id,ticketId:line.ticket_id,matchId:id,
     market:line.market_name,selection:line.outcome_name,
-    period:line.accepted_contract?.period??null,
+    period:line.accepted_contract?.providerPeriod??null,
     actual:line.status,expected,status,
     reason:reason??line.settlement_reason??null,
-    resultSource:result?.source??null
+    resultSource:result?.source??(htResult?.confirmed_at?'CONFIRMED_HT':null)
    });
   }
  }
