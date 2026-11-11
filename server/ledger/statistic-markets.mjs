@@ -25,6 +25,9 @@ export function statisticMarketContract(line){
   .replace(/\bshots? on (?:target|goal)\b|\bshots?\b|\bfouls?(?: committed)?\b|goditj\w* ne porte|goditj\w*|faulle?/g,' ')
   .replace(/\b(?:home(?: team)?|away(?: team)?|team [12]|[12] team)\b|skuadra [12]|ekipi [12]/g,' ')
   .replace(/\b(?:full time|regular time|match|total|totals|over|under|result|winner|most|1x2|totali|totalit|ndeshjes|ndeshja|lart|poshte|mbi|nen)\b/g,' ');
+ // Team-comparison statistics are settlement-safe only for an explicit
+ // three-way 1/X/2 quote. A two-way 'most fouls' may refund on a tie.
+ if(result)remainder=remainder.replace(/\b(?:which team|who)\s+(?:has|have|commits?|makes?|takes?|will have)\s+(?:the\s+)?(?:most|more)\b/g,' ');
  if((home||away))remainder=remainder.replace(/\bby\b/g,' ');
  if(lineValue!==null){const literal=text(line.line??line.specifier).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');remainder=remainder.replace(new RegExp(`\\b${literal}\\b`,'g'),' ');}
  const unrecognized=/[a-z0-9]/.test(remainder);
