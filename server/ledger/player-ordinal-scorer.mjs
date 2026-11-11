@@ -56,10 +56,12 @@ export function gradePlayerOrdinalScorerFacts(contract,facts,{complete=false}={}
   // 'aiscore_verified' comes from a matched scorer incident and its own-goal
   // exclusion. An unknown own-goal flag with no proof is not a player goal.
   if(fact.own_goal!==false&&fact.aiscore_verified!==true)return null;
-  const name=normalizeScorerName(fact.player_name??fact.aiscore_player_name);
-  const alt=normalizeScorerName(fact.aiscore_player_name);
-  if(!name&&!alt)return null; // unknown actor could have been the winner
-  eligible.push({...fact,minute,seconds,name,alt});
+  const name=normalizeScorerName(fact.player_name??(fact.aiscore_verified===true?fact.aiscore_player_name:null)??(fact.fotmob_verified===true?fact.fotmob_player_name:null));
+  const alt=fact.aiscore_verified===true?normalizeScorerName(fact.aiscore_player_name):'';
+  const fotmob=fact.own_goal===false&&fact.fotmob_verified===true?
+   normalizeScorerName(fact.fotmob_player_name):'';
+  if(!name&&!alt&&!fotmob)return null; // unknown actor could have been the winner
+  eligible.push({...fact,minute,seconds,name,alt,fotmob});
  }
  eligible.sort((a,b)=>a.minute-b.minute||
    (a.seconds!==null&&b.seconds!==null?a.seconds-b.seconds:0));
@@ -74,7 +76,7 @@ export function gradePlayerOrdinalScorerFacts(contract,facts,{complete=false}={}
  const picked=normalizeScorerName(contract.playerName);
  if(!picked)return null;
  if(!selected)return null; // no goal is not proof that the player started
- const match=picked===selected.name||picked===selected.alt;
+ const match=picked===selected.name||picked===selected.alt||picked===selected.fotmob;
  if(match)return 'WON';
  // A losing named scorer is only enforceable when the player's required
  // participation/start conditions are independently verified.
