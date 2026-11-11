@@ -586,7 +586,7 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
       const {rows:incidents}=await dbQuery(`select match_id,provider,provider_event_id,
         kind,team,minute,added_minute,player_name,on_target,card_color,source_order
         from app_supplemental_match_incident
-        where match_id=any($1::bigint[]) and minute is not null
+        where match_id=any($1::bigint[]) and active=true and minute is not null
           and team in ('home','away') and kind in ('goal','corner','card','foul','shot')
         order by minute,added_minute,source_order limit 500`,[ids]);
       for(const match of matches){
