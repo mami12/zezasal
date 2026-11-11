@@ -19,7 +19,7 @@ const CLUB_TAGS=new Set([
 ]);
 const CONNECTORS=new Set(['de','del','di','da','do','the']);
 const WORD_ALIASES=new Map([
- ['utd','united'],['muenchen','munich'],['munchen','munich'],
+ ['utd','united'],['st','saint'],['muenchen','munich'],['munchen','munich'],
  ['praha','prague'],['milano','milan'],['internazionale','inter'],
  ['koln','cologne']
 ]);
