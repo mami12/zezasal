@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {enrichPrimaryScorerNames} from './aiscore-scorer-enrichment.mjs';
 import {query} from '../db.mjs';
 import {getMatchById} from '../matches.mjs';
+import {teamsMatch} from './adapters.mjs';
 
 export const FOOTBALL_INFORMATION_SQL=String.raw`
 create table if not exists app_football_information_map (
@@ -214,9 +215,16 @@ export function aiscoreFixtureMatches(payload,mappedId,match){
   const v=detail[side+'_team']??detail[side+'Team']??detail[side];
   return typeof v==='string'?v:v?.name??v?.Name??null;
  };
- const tidy=s=>String(s??'').normalize('NFC').trim().toLowerCase().replace(/\s+/g,' ');
- return identifier!=null&&String(identifier)===String(mappedId)&&
-  tidy(name('home'))===tidy(match?.home)&&tidy(name('away'))===tidy(match?.away);
+ const providerKickoff=Date.parse(detail.start_at??detail.startAt??
+  detail.start_time??detail.startTime??detail.kickoff??'');
+ const primaryKickoff=Date.parse(match?.start_at??match?.startAt??'');
+ const timeCompatible=!Number.isFinite(providerKickoff)||!Number.isFinite(primaryKickoff)||
+  Math.abs(providerKickoff-primaryKickoff)<=7200000;
+ // The mapped external fixture ID must agree, as must BOTH normalized
+ // participant names and (when independently present) the kickoff. A name
+ // similarity score must never override a conflicting provider ID.
+ return identifier!=null&&String(identifier)===String(mappedId)&&timeCompatible&&
+  teamsMatch(name('home'),match?.home)&&teamsMatch(name('away'),match?.away);
 }
 export async function inspectFootballInformation(matchId,{runQuery=query,request=fetch,loadMatch=getMatchById,now=Date.now,needsOverride=null}={}){
  const id=Number(matchId);
