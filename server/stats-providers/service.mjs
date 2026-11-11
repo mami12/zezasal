@@ -303,6 +303,20 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     // On new installations the fact table may not exist yet. Never invent
     // Zizobet coverage or block ordinary scoreboard/statistics rendering.
    }
+   // Even when Zizobet reports goals but its incident timeline is missing,
+   // an opened match still needs a source-labelled scorer history.
+   const scoreHome=Number(row.home_score),scoreAway=Number(row.away_score);
+   const knownScore=Number.isSafeInteger(scoreHome)&&scoreHome>=0&&
+     Number.isSafeInteger(scoreAway)&&scoreAway>=0;
+   const missingPrimaryTimeline=knownScore&&scoreHome+scoreAway>0&&
+     !primaryGoal?.hasGoals;
+   let supplementalScorersComplete=false;
+   const needsAnyActors=()=>needsActors()||missingPrimaryTimeline&&!supplementalScorersComplete;
+   const observesAllScorers=events=>knownScore&&Array.isArray(events)&&
+     events.filter(e=>e.team==='home').length===scoreHome&&
+     events.filter(e=>e.team==='away').length===scoreAway&&
+     events.every(e=>!!String(e.player??e.playerName??'').trim()&&
+       ['home','away'].includes(e.team));
    const observations=[],attempted=[],unavailable={};
    if(final&&result)observations.push({provider:'primary',final:true,observedAt:new Date(now()).toISOString(),values:{...(result.statistics??{}),corners:{home:result.corners_home,away:result.corners_away},cards:{home:result.cards_home,away:result.cards_away}}});
    const state=await read('match:'+id),mapping={...(state?.identity===identity?state.mapping??{}:{}),...(old?.identity===identity?old.mapping??{}:{})};
@@ -378,7 +392,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(!final&&statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
-   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsActors() || !statsReady(entry)) {
+   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsAnyActors() || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
      const dates = candidateDateStrings(targetDate);
@@ -387,6 +401,8 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if (fm && fm.match) {
       const details = await fetchFotMobDetails(fm.match.id);
       const parsed = parseFotMobPayload(fm.match, details);
+      if(missingPrimaryTimeline&&observesAllScorers(parsed.goalEvents))
+       supplementalScorersComplete=true;
       if(details){
        try{
         const incidents=fotMobIncidents(details);
@@ -444,14 +460,14 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    // Identity rotation: FotMob first (above), then a confirmed AiScore mapping,
    // then the configured daily-quota providers. Stop once known primary actors
    // are identified. All offers, goals, clocks and prices remain Zizobet.
-   if(needsActors()){
+   if(needsAnyActors()){
     try{
      const {footballInformation}=await import('./football-information.mjs');
      await footballInformation.warm(Number(id));
      await refreshActors();
     }catch(error){health.lastError='AISCORE_ACTOR_LOOKUP_UNAVAILABLE';}
    }
-   if(needsActors()){
+   if(needsAnyActors()){
     const fallback=await providerOrder('missing-player-events');
     for(const provider of fallback){
      try{
@@ -460,6 +476,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       mapping[provider]=fixture;
       const evidence=await collect(provider,fixture,final?0:displayTtl);
       const incidents=backupIncidents(evidence);
+      if(missingPrimaryTimeline&&observesAllScorers(
+        (evidence.events??[]).filter(e=>e.type==='goal'&&!e.shootout)))
+       supplementalScorersComplete=true;
       if(incidents.length){
        await storeSupplementalIncidents(Number(id),provider,fixture.id,incidents,
          {execute:runQuery,payload:evidence});
@@ -467,7 +486,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
          {execute:runQuery});
        await refreshActors();
       }
-      if(!needsActors())break;
+      if(!needsAnyActors())break;
      }catch(error){
       health.providers[provider]={...(health.providers[provider]??{}),
        lastActorError:/^STATS_[A-Z_0-9]+$/.test(String(error?.message))?
