@@ -669,7 +669,44 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
  * shadow decisions until the provider's live results have been validated.
  */
 export function gradeFromAcceptedCounters(contract,frame={}){
- if(!contract||!['sequence','race'].includes(contract.kind))return null;
+ if(!contract||!['sequence','race','window','window-total'].includes(contract.kind))return null;
+ const timed=['window','window-total'].includes(contract.kind);
+ // A timed bet placed during an interval is about incidents AFTER purchase.
+ // Its accepted cumulative counters are frozen in entryBaseline. A later
+ // observation INSIDE that same window can prove an irreversible positive
+ // event without the entire pre-purchase minute-by-minute history.
+ // Any ambiguity about which side/minute/colour means PENDING, not payout.
+ if(timed){
+  const initial=Number(contract.entryClockMinute),nowClock=Number(frame.clock);
+  const from=Number(contract.from),to=Number(contract.to);
+  if(!contract.entryBaseline||!Number.isFinite(initial)||
+     !Number.isFinite(nowClock)||!Number.isFinite(from)||!Number.isFinite(to)||
+     initial<from||initial>=to+1||nowClock<=initial||nowClock>to||
+     contract.cardColor!=null||contract.startExclusive===true&&
+      (!Number.isFinite(contract.from)||!Number.isFinite(contract.to)))
+   return null;
+  const before=contract.entryBaseline,after=frame.teams?.[contract.event];
+  const bh=nonNeg(before.home),ba=nonNeg(before.away),
+   h=nonNeg(after?.home),a=nonNeg(after?.away);
+  if([bh,ba,h,a].some(v=>v===null)||h<bh||a<ba)return null;
+  const deltaHome=h-bh,deltaAway=a-ba;
+  const count=contract.side==='home'?deltaHome:
+   contract.side==='away'?deltaAway:
+    contract.side==null?deltaHome+deltaAway:null;
+  if(count===null)return null;
+  if(contract.kind==='window')
+   return count>0&&typeof contract.choice==='boolean'?
+     (contract.choice?'WON':'LOST'):null;
+  if(!Number.isSafeInteger(count))return null;
+  if(['over','under'].includes(contract.choice)&&
+     Number.isFinite(contract.threshold)&&count>contract.threshold)
+   return contract.choice==='over'?'WON':'LOST';
+  if(contract.choice==='atLeast'&&Number.isInteger(contract.target)&&
+     count>=contract.target)return 'WON';
+  if(contract.choice==='exact'&&Number.isInteger(contract.target)&&
+     count>contract.target)return 'LOST';
+  return null;
+ }
  const base=contract.baseline,latest=frame.teams?.[contract.event];
  const bh=nonNeg(base?.home),ba=nonNeg(base?.away),
   h=nonNeg(latest?.home),a=nonNeg(latest?.away);
