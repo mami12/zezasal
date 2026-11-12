@@ -7,6 +7,7 @@ import {HALFTIME_RESULT_SQL} from './halftime-results.mjs';
 import {PROVIDER_OFFER_ARCHIVE_SQL} from './provider-offer-archive.mjs';
 import {LIVE_OBSERVATION_SQL} from './live-observation-store.mjs';
 import {FOOTBALL_INFORMATION_SQL} from '../stats-providers/football-information.mjs';
+import {SUPPLEMENTAL_INCIDENT_SQL} from '../stats-providers/supplemental-incidents.mjs';
 /**
  * Ledger schema - users, money, tickets.
  *
@@ -388,6 +389,7 @@ ${FOOTBALL_INFORMATION_SQL}
 ${MATCH_EVENT_FACT_SQL}
 ${ZIZOBET_MATCH_HISTORY_SQL}
 ${PROVIDER_OFFER_ARCHIVE_SQL}
+${SUPPLEMENTAL_INCIDENT_SQL}
 insert into app_casino_settings(id) values (1) on conflict(id) do nothing;
 -- Migrate the old disabled-by-default casino exactly once. Afterwards the
 -- administrator's OFF switch is persistent even across future restarts.
