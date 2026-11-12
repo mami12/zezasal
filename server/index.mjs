@@ -291,8 +291,11 @@ function armSettlement() {
   settleTimer.unref?.();
 }
 
+// An all-match archive must continue polling when no browser is connected.
+// Operator can opt out with ZIZO_HISTORY_ALWAYS_ON=false; that restores idle mode.
+const archiveAlwaysOn=config.sportsProvider==='zizobet'&&process.env.ZIZO_HISTORY_ALWAYS_ON!=='false';
 const idle = createIdleMonitor({
-  enabled: process.env.FEED_IDLE_ENABLED !== 'false',
+  enabled: process.env.FEED_IDLE_ENABLED !== 'false'&&!archiveAlwaysOn,
   idleAfterMs: Number(process.env.FEED_IDLE_AFTER_MS ?? 60_000),
   coldBootIdleMs: Number(process.env.FEED_IDLE_COLD_BOOT_MS ?? 60_000),
   onIdle: () => {

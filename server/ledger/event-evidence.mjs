@@ -121,13 +121,16 @@ export function normalizeEvents(data,source){
   const type=String(e.type??'').toLowerCase();
   const minute=zizobetMinute(e.gt),color=explicitCardColor(e);
   return {disabled:!active(e)||cornerNotTaken(e),id:stableZizoId(e),
-   type:type==='score_change'?'goal':type==='corner_kick'?'corner':/card|booking/.test(type)?'card':e.type,
+   type:type==='score_change'?'goal':type==='corner_kick'?'corner':/card|booking/.test(type)?'card':/foul/.test(type)?'foul':e.type,
    cardColor:/card|booking/.test(type)?color:null,
    ownGoal:type==='score_change'?explicitOwnGoal(e):null,
    team:/^(?:1|home|h)$/i.test(String(e.team))?'home':/^(?:2|away|a)$/i.test(String(e.team))?'away':null,
    minute:minute??NaN,seconds:zizobetEventSeconds(e.clk,minute),
-   player:typeof e.pl==='string'?e.pl.trim()||null:null,
-   playerId:e.playerId??e.player_id??null,
+   minuteLabel:e.gt==null?null:String(e.gt),
+   player:[e.pl,e.player,e.player_name,e.playerName,e.actor]
+     .map(v=>typeof v==='string'?v.trim():v&&typeof v==='object'?
+       String(v.name??v.fullName??v.full_name??'').trim():'').find(Boolean)??null,
+   playerId:e.playerId??e.player_id??e.player?.id??null,
    // The provider's 45+N notation unambiguously belongs to first-half
    // stoppage. Keep it as phase evidence: 45+2 must not be treated as 2H.
    phase:e.phase??(/^45\s*\+\s*[1-9]\d?$/.test(String(e.gt??'').trim())?'1st half':
