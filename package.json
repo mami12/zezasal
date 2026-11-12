@@ -77,7 +77,7 @@
     "test:feed-route": "node scripts/test-feed-route-interest.mjs",
     "test:scoped-socket": "node scripts/test-scoped-socket-work.mjs",
     "test:quote-dedup": "node scripts/test-quote-dedup.mjs",
-    "test:market-coverage": "node scripts/test-market-coverage.mjs",
+    "test:market-coverage": "node scripts/test-market-coverage.mjs && node scripts/test-full-zizobet-market-catalog.mjs && node scripts/test-zizo-board-demand.mjs",
     "test:protected": "node scripts/test-protected-requirements.mjs",
     "test:protected:browser": "node scripts/test-protected-requirements.mjs --browser",
     "test:protected:simulation": "node scripts/test-protected-requirements.mjs --simulation",
