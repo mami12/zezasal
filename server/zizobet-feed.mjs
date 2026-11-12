@@ -161,12 +161,19 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
     if(!Array.isArray(data.gmk))historyOnly=true;if(Number(data.Match.GameID)!==Number(id))throw Error('Zizobet live identity mismatch');for(const m of data.mk??[])meta.liveMarkets.set(Number(m.ID),m);
     if(entry.row.status==='ended'&&Number(data.Match.EventStatus)!==40)return;
     const game={...entry.raw,...data.Match,...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row={...entry.row,service:'LIVE',status:entry.row.status==='ended'||Number(game.EventStatus)===40?'ended':'live'};
+    // One upstream response has one observation time, even when it feeds
+    // both the all-match archive and the ticket recovery reader.
+    const sampledAt=new Date();
+    let archiveFactsPersisted=false;
     // The independently retained sports archive covers EVERY live fixture,
     // not only fixtures with accepted bets. Never persist gmk/odds.
     if(historyEnabled){
      try{
       const recorded=await archiveHistory(row.match_id,{Match:data.Match,
-       ...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row);
+       ...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row,
+       {observedAt:sampledAt});
+      archiveFactsPersisted=Array.isArray(recorded?.verifiedKinds)&&
+       recorded.verifiedKinds.length>0;
       const interval=Math.max(30000,Number(process.env.ZIZO_HISTORY_REFRESH_MS)||60000);
       const ended=Number(data.Match.EventStatus??data.Match.MatchStatusID)===40;
       // At FT retry incomplete provider timelines at a slower pace rather
@@ -185,7 +192,10 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
        historyFinalized.add(Number(id));
      }catch(error){console.warn('[zizobet] match history',row.match_id,error?.message);}
     }
-    if(autoStart&&(full||needsTicketEvidence))void collectEventEvidence(row,{...data,Match:game}).catch(()=>{});
+    if(autoStart&&(full||needsTicketEvidence))
+     void collectEventEvidence(row,{...data,Match:game},{
+       observedAt:sampledAt,factsPersisted:archiveFactsPersisted
+     }).catch(()=>{});
     await queue(async()=>{const published=await publish(row,game,historyOnly?[]:oddsOf(row,full?data.gmk:mainQuotes(data.gmk,true),meta,true,game.LiveBetStatus!==false&&row.status!=='ended'),{complete:historyOnly?false:full,startedAt});if(startedAt>=(versions.get(row.match_id)??0)){const promoted=!entry.live;entry.live=true;entry.row=published??row;entry.raw=game;entry.verifiedAt=now();transitions.delete(Number(id));delete entry.transitionAt;if(full)fullObserved.set(Number(id),now());if(promoted){const ids=liveIds();state.live=ids.length;mqtt?.setLiveIds(ids);await onCycle?.(state);}}});
    }else{const result=await request(META+'prematch/getprematchgamefull/319/'+Number(id));const g=decode(result?.game);if(Number(g?.id)!==Number(id))throw Error('Zizobet prematch identity mismatch');
     const quotes=[];for(const[mid,list]of Object.entries(g.ev??{}))for(const[id,q]of Object.entries(list??{}))quotes.push({...q,id,mid});const disabled=new Set((Array.isArray(result.disableMarkets)?result.disableMarkets:[]).map(Number));
