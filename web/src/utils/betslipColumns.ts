@@ -1,4 +1,5 @@
 import type { BetSelection } from '../types';
+import {selectionMarketIdentity} from '../../../server/ledger/selection-market.mjs';
 import { frozenSelectionPrice, systemColumnPayout } from '../../../server/ledger/system-columns.mjs';
 
 export const MAX_BETSLIP_COLUMNS = 24;
@@ -21,11 +22,15 @@ export function splitStakeCents(totalCents: number, count: number): number[] {
 
 /** Count before expansion so a large slip cannot allocate an exponential array. */
 export function buildBetslipColumns(selections: BetSelection[]) {
+  // One fixed market selection per column. Different markets in the SAME
+  // match stay together and multiply their odds; alternative outcomes of one
+  // exact market are distributed across independent system columns.
   const groups = new Map<string, BetSelection[]>();
   for (const selection of selections) {
-    const group = groups.get(selection.matchId);
+    const identity=selectionMarketIdentity(selection)??JSON.stringify([selection.matchId,'legacy']);
+    const group = groups.get(identity);
     if (group) group.push(selection);
-    else groups.set(selection.matchId, [selection]);
+    else groups.set(identity, [selection]);
   }
   const automaticSystem = [...groups.values()].some(group => group.length > 1);
   let columnCount = selections.length ? 1 : 0;
