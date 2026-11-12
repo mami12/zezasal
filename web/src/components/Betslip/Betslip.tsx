@@ -303,7 +303,7 @@ export default function Betslip() {
           {hasMultipleColumns && (
             <details className="border-t border-accent-yellow/30 bg-[#1d2835] px-3 py-2 text-xs" data-betslip-columns>
               <summary className="cursor-pointer font-bold text-accent-yellow">{t("Sistem ·") + " "}{columnsOverflow ? 'Mbi 24' : columns.length} {" " + t("kolona automatike")}</summary>
-              <p className="mt-1 text-text-secondary">{t("Një zgjedhje për ndeshje në çdo kolonë. Shuma totale ndahet mes kolonave.")}</p>
+              <p className="mt-1 text-text-secondary">{t("Një alternativë për treg në çdo kolonë; disa tregje të së njëjtës ndeshje qëndrojnë bashkë. Shuma totale ndahet mes kolonave.")}</p>
               <div className="mt-2 space-y-1">
                 {columns.map((col, i) => (
                   <div key={i} className="flex items-center justify-between gap-2 border-b border-tertiary/50 py-1">
@@ -326,7 +326,7 @@ export default function Betslip() {
             </div>
           )}
 
-          <p className="zs-slip-help px-1 py-2 text-[10px] text-text-secondary">{hasMultipleColumns?tr('Një zgjedhje për ndeshje në çdo kolonë. Shuma totale ndahet mes kolonave.','One selection per match in each column. The total stake is divided between columns.'):tr('Kuotat verifikohen kur vendoset bileta.','Odds are verified when the ticket is placed.')}</p>
+          <p className="zs-slip-help px-1 py-2 text-[10px] text-text-secondary">{hasMultipleColumns?tr('Një alternativë për treg në çdo kolonë; disa tregje të së njëjtës ndeshje qëndrojnë bashkë. Shuma totale ndahet mes kolonave.','One alternative per market in each column. Multiple markets from the same match stay together. The total stake is split between columns.'):tr('Kuotat verifikohen kur vendoset bileta.','Odds are verified when the ticket is placed.')}</p>
         </>
       )}
       </div>
