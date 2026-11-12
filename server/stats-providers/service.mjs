@@ -58,7 +58,15 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  const health={lastRunAt:null,lastError:null,providers:{}};
  const enabled=()=>env.STATS_PROVIDERS_ENABLED==='true';
  const betWatchIds=async()=>new Set([...(getWatchIds?await getWatchIds():(await runQuery("select distinct l.match_id from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING' order by l.match_id")).rows.map(row=>row.match_id))].map(String));
- const watchIds=async()=>{const ids=await betWatchIds();for(const[id,until]of viewed){if(until>now())ids.add(id);else viewed.delete(id);}if(realtime())for(const id of activeObserved())ids.add(id);return ids;};
+ // Only pending tickets and explicitly opened match details may spend
+ // supplementary API requests. Observing a Zizobet live header is not user
+ // interest; otherwise hundreds of unbet fixtures trigger remote work.
+ const watchIds=async()=>{
+  const ids=await betWatchIds();
+  for(const[id,until]of viewed){if(until>now())ids.add(id);else viewed.delete(id);}
+  if(realtime())activeObserved(); // prune observation cache; never auto-watch it
+  return ids;
+ };
  const watched=async id=>(await watchIds()).has(String(id));
  const init=()=>initFlight??=(async()=>{
   await runQuery('create table if not exists app_stats_cache(cache_key text primary key,payload jsonb not null,updated_at timestamptz not null default now())');
