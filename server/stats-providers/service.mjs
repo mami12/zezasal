@@ -10,6 +10,7 @@ import {supportedContract} from '../ledger/event-evidence.mjs';
 import {canonical,uniqueFixture,teamsMatch,goalCapabilities,normalizeBsd,normalizeApiFootball,normalizeSportApi,normalizeWorld,normalizeGoalApi} from './adapters.mjs';
 import {findFotMobFixture,fetchFotMobDetails,parseFotMobPayload,candidateDateStrings} from './match-recovery.mjs';
 import {apiFootballTimedIncidents,bsdTimedIncidents,sportApiTimedIncidents,goalApiTimedIncidents} from './historical-incidents.mjs';
+import {supplementalRefreshMs,fixtureLive,prematchSoon,sportingFingerprint} from './realtime-policy.mjs';
 const query=async(...a)=>(await import('../db.mjs')).query(...a);
 const specs={bsd:{base:'https://sports.bzzoiro.com/api/v2',env:'BSD_API_KEY',header:'Authorization',prefix:'Token ',day:1000,month:14000},worldcup26:{base:'https://worldcup26.ir',day:500,month:10000},sportapi:{base:'https://sportapi.ai/api',env:'SPORTAPI_API_KEY',header:'X-Api-Key',day:2000,month:14000},goalapi:{base:'https://api.goal-api.com/v1',env:'GOALAPI_API_KEY',header:'Authorization',prefix:'Bearer ',day:1000,month:31000},apifootball:{base:'https://v3.football.api-sports.io',env:'APIFOOTBALL_API_KEY',header:'x-apisports-key',day:100,month:3100}};
 const refreshMs=10*60*1000,requiredStats=['shotsOnTarget','fouls','shots','corners'];
@@ -18,13 +19,31 @@ const live=row=>!finished(row)&&String(row.service??row.status).toUpperCase()===
 export const providerUrls=Object.fromEntries(Object.entries(specs).map(([k,v])=>[k,v.base]));
 export function createStatsService({runQuery=query,env=process.env,request=fetch,now=Date.now,saveEvidence,persistGoalFacts,persistTimedFacts,loadMatch,loadSnapshots,getWatchIds,getEventWatchIds}={}){
  let initFlight,busy=false,active=0;const offers=new Map(),inflight=new Map();
- const viewed=new Map();
+ const viewed=new Map(),observed=new Map(),urgent=new Set();
+ const realtime=()=>env.STATS_REALTIME_ENABLED!=='false';
+ const refreshFor=row=>supplementalRefreshMs(row,env,now());
+ const fastPollBatch=()=>Math.min(8,Math.max(1,Number(env.STATS_REALTIME_BATCH)||4));
+ const observeMatch=row=>{
+  if(!enabled()||!realtime()||!row)return false;
+  const id=String(row.match_id??row.id??'');
+  if(!/^\d+$/.test(id)||(!fixtureLive(row)&&!prematchSoon(row,now(),env)))return false;
+  const fingerprint=sportingFingerprint(row),old=observed.get(id);
+  const changed=old!=null&&old.fingerprint!==fingerprint;
+  observed.delete(id);observed.set(id,{row,fingerprint,at:now()});
+  if(changed){urgent.add(id);displayCache.delete(id);}
+  if(observed.size>1000){const first=observed.keys().next().value;observed.delete(first);urgent.delete(first);}
+  return changed;
+ };
+ const activeObserved=()=>{
+  for(const[id,entry] of observed)if(now()-entry.at>900000||(!fixtureLive(entry.row)&&!prematchSoon(entry.row,now(),env))){observed.delete(id);urgent.delete(id);}
+  return [...observed.keys()];
+ };
  const displayCache=new Map(),displayFlights=new Map();let displayActive=0;const displayWaiters=[];
  const displayTtl=refreshMs;
  const health={lastRunAt:null,lastError:null,providers:{}};
  const enabled=()=>env.STATS_PROVIDERS_ENABLED==='true';
  const betWatchIds=async()=>new Set([...(getWatchIds?await getWatchIds():(await runQuery("select distinct l.match_id from app_ticket_line l join app_ticket t on t.id=l.ticket_id where l.status='PENDING' and t.status='PENDING' order by l.match_id")).rows.map(row=>row.match_id))].map(String));
- const watchIds=async()=>{const ids=await betWatchIds();for(const[id,until]of viewed){if(until>now())ids.add(id);else viewed.delete(id);}return ids;};
+ const watchIds=async()=>{const ids=await betWatchIds();for(const[id,until]of viewed){if(until>now())ids.add(id);else viewed.delete(id);}if(realtime())for(const id of activeObserved())ids.add(id);return ids;};
  const watched=async id=>(await watchIds()).has(String(id));
  const init=()=>initFlight??=(async()=>{
   await runQuery('create table if not exists app_stats_cache(cache_key text primary key,payload jsonb not null,updated_at timestamptz not null default now())');
@@ -203,15 +222,15 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    if(!(await watched(id)))return;
    await init();let state=await read('match:'+id)??{mapping:{},attempts:0};
    const result=(await runQuery('select home_score,away_score from app_match_result where match_id=$1',[Number(id)])).rows[0];
-   const final=!!result||finished(row);if(!final&&!live(row))return;
+   const final=!!result||finished(row);if(!final&&!live(row)&&!(realtime()&&prematchSoon(row,now(),env)))return;
    const contracts=pending?(await runQuery("select market_name from app_ticket_line where match_id=$1 and status='PENDING'",[Number(id)])).rows:[];
    const requiredMethods=[...new Set(contracts.map(eventContract).map(c=>c.method).filter(Boolean))],needsAssists=contracts.some(c=>/assist/i.test(c.market_name));
    const fingerprint=[canonical(row.home),canonical(row.away),Date.parse(row.start_at??row.startAt)].join('|');
    if(state.identity&&state.identity!==fingerprint){state={mapping:{},attempts:0};offers.delete(id);}
    const schedule=pending?'next':'preflightNext';
-   if(!final&&state[schedule]>now()+refreshMs)state[schedule]=now();
+   if(!final&&state[schedule]>now()+refreshFor(row))state[schedule]=now();
    if(state[schedule]>now()&&!(pending&&final&&state.final!==true)){if(state.offer&&state.expires>now())offers.set(id,state);return;}
-   state.final=final;state.identity=fingerprint;state[schedule]=now()+(pending?(final?[180000,900000,3600000,21600000][Math.min(state.attempts++,3)]:refreshMs):refreshMs);state.expires=now()+2400000;state.offer=null;
+   state.final=final;state.identity=fingerprint;state[schedule]=now()+(pending?(final?[180000,900000,3600000,21600000][Math.min(state.attempts++,3)]:refreshFor(row)):refreshFor(row));state.expires=now()+2400000;state.offer=null;
    for(const provider of pending?await providerOrder('evidence'):['bsd']){
     if(!pending&&provider!=='bsd')continue;
     if(specs[provider].env&&!env[specs[provider].env])continue;
@@ -221,12 +240,12 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(!pending){
       // Legacy explicit coverage checks are restricted to matches with active bets.
       if(provider!=='bsd')continue;
-      const a=await api(provider,`/events/${m.id}/availability/`,600000),l=await api(provider,`/events/${m.id}/lineups/`,600000);
+      const a=await api(provider,`/events/${m.id}/availability/`,refreshFor(row)),l=await api(provider,`/events/${m.id}/lineups/`,refreshFor(row));
       const players=Object.values(l.lineups??{}).flatMap(t=>t.players??[]).flatMap(p=>[p.name,p.short_name]).filter(Boolean);
       if(a.available?.incidents===true&&l.lineup_status==='confirmed'&&players.length>=22){state.offer={goals:true,methods:a.available?.shotmap===true,methodFields:{header:a.available?.shotmap===true,leftFoot:a.available?.shotmap===true,rightFoot:a.available?.shotmap===true,own:true,penalty:true},assists:true,players};break;}
       continue;
      }
-     const evidence=await collect(provider,m,final?0:refreshMs),cap=goalCapabilities(evidence);
+     const evidence=await collect(provider,m,final?0:refreshFor(row)),cap=goalCapabilities(evidence);
      evidence.providerFixtureId=m.id;evidence.observedAt=new Date(now()).toISOString();
      state.offer={...cap,players:(evidence.participants??[]).filter(x=>x.played).flatMap(x=>[x.name,...(x.aliases??[])])};
      const goals=evidence.events.filter(e=>e.type==='goal'&&!e.shootout&&!/extra|shoot/i.test(e.phase??'')&&Number.isFinite(e.minute)&&e.minute>=0&&e.minute<=90);
@@ -251,9 +270,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   return d.events?.find(x=>String(x.id)===String(m.id))?.competitions?.[0]?.status?.type?.completed===true;
  }
  async function warmStatistics(row){
-  if(!enabled()||!row||(!live(row)&&!finished(row)&&!viewed.has(String(row.match_id??row.id))))return;
+  if(!enabled()||!row||(!live(row)&&!finished(row)&&!viewed.has(String(row.match_id??row.id))&&!(realtime()&&prematchSoon(row,now(),env))))return;
   let final=finished(row);
-  const primary=teamStatisticsFromRow(row),id=String(row.match_id??row.id),identity=identityOf(row);
+  const primary=teamStatisticsFromRow(row),id=String(row.match_id??row.id),identity=identityOf(row),localTtl=refreshFor(row);
   const cached=displayCache.get(id);
   const statsReady=entry=>requiredStats.every(field=>['home','away'].every(side=>primary[side]?.[field]!=null||entry.values[field]?.[side]!=null));
   // Check the durable FT archive before reusing a live timer: the catalogue
@@ -332,7 +351,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(final||!statsReady(entry)){
       try{
        const path=provider==='bsd'?'/events/'+m.id+'/stats/':provider==='goalapi'?'/fixtures/'+m.id+'/statistics':provider==='sportapi'?'/fixtures/'+m.id+'/stats':provider==='apifootball'?'/fixtures/statistics?fixture='+m.id:'/get/soccer/'+m.league+'/scoreboard?dates='+String(m.start).slice(0,10).replaceAll('-','');
-       const payload=await api(provider,path,final?0:displayTtl),values=displayTeamStatistics(provider,payload,m);
+       const payload=await api(provider,path,final?0:localTtl),values=displayTeamStatistics(provider,payload,m);
        if(final){if(await finalFixture(provider,m,payload)){
         if(values.yellow&&values.red)values.cards={home:values.yellow.home+values.red.home,away:values.yellow.away+values.red.away};
         observations.push({provider,final:true,values,fixtureId:m.id,observedAt:new Date(now()).toISOString()});
@@ -510,13 +529,13 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     await runQuery('insert into app_stat_review(match_id,payload)values($1,$2::jsonb)on conflict(match_id)do update set payload=excluded.payload,updated_at=now()',[Number(id),JSON.stringify(review)]);
     entry.finalReview=review;
    }
-   entry.next=now()+displayTtl;entry.at=now();entry.mapping=mapping;
+   entry.next=now()+localTtl;entry.at=now();entry.mapping=mapping;
    await write('display:'+id,entry);displayCache.set(id,entry);if(displayCache.size>3000)displayCache.delete(displayCache.keys().next().value);
   })().finally(()=>{displayFlights.delete(id);const next=displayWaiters.shift();if(next)next();else displayActive--;});displayFlights.set(id,flight);return flight;
  }
  function displayStatistics(row){
   const entry=displayCache.get(String(row.match_id??row.id));
-  if(!entry?.values||entry.identity!==identityOf(row)||now()-entry.at>displayTtl*2)return row.stats;
+  if(!entry?.values||entry.identity!==identityOf(row)||now()-entry.at>refreshFor(row)*2)return row.stats;
   const primary=teamStatisticsFromRow(row),stats={...(row.stats??{})};
   for(const field of TEAM_STAT_FIELDS){
    const pair=entry.values[field];if(!pair)continue;
@@ -602,7 +621,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   }
   function displayGoalIntervalStats(row){
   const entry=displayCache.get(String(row.match_id??row.id));
-  return entry?.identity===identityOf(row)&&now()-entry.at<=displayTtl*2?entry.goalIntervals??null:null;
+  return entry?.identity===identityOf(row)&&now()-entry.at<=refreshFor(row)*2?entry.goalIntervals??null:null;
  }
  function warm(row){
   if(row)viewed.set(String(row.match_id??row.id),now()+12*60000);
@@ -612,21 +631,30 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     error.message:'STATS_UNAVAILABLE';
   });
  }
+ let cursor=0;
  async function tick(){
   if(!enabled()||busy)return;busy=true;health.lastRunAt=new Date(now()).toISOString();
   try{
    const ids=await watchIds(),events=new Set([...(getEventWatchIds?await getEventWatchIds():[])].map(String));
    health.watchedMatches=ids.size;health.lastError=null;
-   for(const id of ids){
+   const all=[...ids],prioritized=all.filter(id=>urgent.has(id)||events.has(id));
+   const rest=all.filter(id=>!urgent.has(id)&&!events.has(id));
+   const selected=realtime()?[...prioritized.slice(0,fastPollBatch()),
+    ...Array.from({length:Math.max(0,fastPollBatch()-prioritized.length)},
+     (_,i)=>rest.length?rest[(cursor+i)%rest.length]:null).filter(Boolean)]:all;
+   if(realtime()&&rest.length)cursor=(cursor+Math.max(1,selected.length-prioritized.length))%rest.length;
+   for(const id of selected){
     try{
-     const row=await loadMatch?.(Number(id))??(await loadSnapshots?.([Number(id)]))?.[0];if(!row)continue;
+     const row=observed.get(id)?.row??await loadMatch?.(Number(id))??(await loadSnapshots?.([Number(id)]))?.[0];
+     if(!row)continue;
      await warmStatistics(row);
-     if(events.has(id))await update(row,true);
+     if(events.has(id)||realtime()&&prematchSoon(row,now(),env))await update(row,events.has(id));
+     urgent.delete(id);
     }catch{health.lastError='STATS_UNAVAILABLE';}
    }
   }catch{health.lastError='STATS_UNAVAILABLE';}finally{busy=false;}
  }
- return {warm,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,recoverHistoricalMatch,update,tick,enabled,health:()=>({...health,enabled:enabled(),cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:refreshMs}),allows(id,market){
+ return {warm,observeMatch,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,recoverHistoricalMatch,update,tick,enabled,health:()=>({...health,enabled:enabled(),observedMatches:observed.size,urgentMatches:urgent.size,cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:realtime()?Number(env.STATS_LIVE_REFRESH_MS)||30000:refreshMs}),allows(id,market){
   if(!enabled())return false;const s=offers.get(String(id));if(!s?.offer||s.expires<=now())return false;
   const name=String(market.market_name??market.name??'');
   if(!supportedContract(market)||!eventSelectionSupported(market))return false;
