@@ -472,12 +472,11 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    from ordered
  )
  select a.*,c.through_minute,c.count_home,c.count_away,c.complete,c.observed_at,c.confirmed_at,c.card_colors_verified,
-  -- A watched-bet cursor or transactionally persisted archive proof
-  -- can confirm a SECOND identical source sample, not an invented event.
-  greatest(
-    (select last_seen_at from app_live_event_cursor where match_id=$1),
-    (select evidence_observed_at from app_zizobet_match_history where match_id=$1)
-  ) as second_poll_at,
+  -- Each valid writer has its own timestamp. Do NOT use greatest() here:
+  -- the watched gap cursor may be updated after the archive proof but
+  -- before the next settlement pass, and must not hide valid evidence.
+  (select last_seen_at from app_live_event_cursor where match_id=$1) as second_poll_at,
+  (select evidence_observed_at from app_zizobet_match_history where match_id=$1) as archive_poll_at,
   exists(select 1 from app_live_event_recovery g
     where g.match_id=$1 and g.status='AWAITING_BACKUP_API' and $9::uuid=any(g.line_ids)
       and $16::text='zizobet') as open_recovery_gap,
@@ -538,9 +537,9 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  const stored=new Date(data.observed_at).getTime();
  if(![confirmed,stored].every(Number.isFinite)||confirmed>stored)return null;
  if(provider==='zizobet'){
-   if(data.second_poll_at==null)return null;
-   const cursor=new Date(data.second_poll_at).getTime();
-   if(!Number.isFinite(cursor)||stored!==cursor)return null;
+   const watcher=data.second_poll_at==null?NaN:new Date(data.second_poll_at).getTime();
+   const archive=data.archive_poll_at==null?NaN:new Date(data.archive_poll_at).getTime();
+   if(stored!==watcher&&stored!==archive)return null;
  }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
    !['goal','corner','card'].includes(c.event)||!full)return null;
  // No exact-second interval or rolling window may use a minute-only timestamp
