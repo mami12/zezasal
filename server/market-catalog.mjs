@@ -9,6 +9,18 @@ export function marketFamily(m={}){
  const key=name.toLowerCase().replace(/\s+/g,' ');
  return {key,name};
 }
+/** Exact Zizobet native ID policies apply even to markets that have not
+ * yet been quoted on the lightweight board. This supplements, never
+ * replaces, the existing name-based family policies. */
+export function nativeMarketPolicyKeys(m,match){
+ const quoteKey=String(m?.market_key??m?.marketKey??m?.extId??m?.key??'');
+ const id=quoteKey.match(/^zz(\d+)@/)?.[1];
+ if(!id)return [];
+ const service=String(match?.service??match?.status??(match?.live?'LIVE':'')).toUpperCase();
+ if(service==='LIVE')return ['zizobet:live:'+id];
+ if(service==='PREMATCH'||service==='SCHEDULED')return ['zizobet:prematch:'+id];
+ return ['zizobet:live:'+id,'zizobet:prematch:'+id];
+}
 export function marketCategories(name){
  const n=String(name).toLowerCase(),tags=[];
  for(const[tag,pattern]of Object.entries({totals:/total|over.?under/,intervals:/interval|minutes?|when will|time of/,corners:/corner/,cards:/card|booking/,fouls:/foul/,shots:/shot/,players:/player|scorer|\{pl\}|scoring type/,combos:/&|(?:^|[^\d])\+|bet builder|\b(?:and|both halves)\b/,results:/1x2|result|winner|double chance|correct score|draw no bet/,goals:/goal|score|clean sheet|to nil/}))if(pattern.test(n))tags.push(tag);
@@ -38,7 +50,7 @@ export function marketScopeBlocked(m,match,rules){
  const family=marketFamily(m);if(!family)return false;
  return scopeBlocked(family,match,(rules??[]).map(r=>({country:normScope(r.country),league:normScope(r.league),categories:(r.categories??[]).map(normScope),families:(r.families??[]).map(normScope)})));
 }
-export function marketIsEnabled(m,match){const f=observeMarket(m);if(!f)return true;return !disabled.has(f.key)&&!marketCategories(f.name).some(c=>disabledCategories.has(c))&&!scopeBlocked(f,match);}
+export function marketIsEnabled(m,match){const f=observeMarket(m);if(!f)return true;return !disabled.has(f.key)&&!nativeMarketPolicyKeys(m,match).some(k=>disabled.has(k))&&!marketCategories(f.name).some(c=>disabledCategories.has(c))&&!scopeBlocked(f,match);}
 export function setCatalogRows(rows){disabled.clear();for(const r of rows){catalog.set(r.key,{key:r.key,name:r.name,sortOrder:Number(r.sort_order??r.sortOrder??1000000),categories:marketCategories(r.name)});if(r.enabled===false)disabled.add(r.key);}}
 export const catalogRows=()=>[...catalog.values()].map(r=>{const blockedBy=r.categories.filter(c=>disabledCategories.has(c));return {...r,sortOrder:r.sortOrder??1000000,manualEnabled:!disabled.has(r.key),blockedBy,enabled:!disabled.has(r.key)&&!blockedBy.length};}).sort((a,b)=>a.sortOrder-b.sortOrder||a.name.localeCompare(b.name)).map((r,i)=>({...r,position:i+1}));
 export function setCategoryPolicies(rows){disabledCategories.clear();for(const r of rows??[])if(r.enabled===false&&MARKET_CATEGORY_IDS.includes(r.category))disabledCategories.add(r.category);}
