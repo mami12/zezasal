@@ -247,5 +247,25 @@ try{
  assert.equal(displayGoalIntervals('bsd',{incidents:[{id:'card',type:'card',minute:2,is_home:true},{id:'missed',type:'penalty_missed',minute:3,is_home:true}]},{}).reduce((sum,x)=>sum+x.home+x.away,0),0);
  assert.equal(displayGoalIntervals('sportapi',{data:[{id:'g',event_type:'goal',team_side:'home',minute:"55'"}]},{} )[3].home,1);
  assert.equal(displayTeamStatistics('bsd',{stats:{home:{total_shots:12,corner_kicks:0,ball_possession:55,yellow_cards:2},away:{}}},{}).corners.home,0);
- console.log(`PASS ${cases} provider scenarios: watched live matches only, ten-minute background refresh, rotation/restart, fallback, current totals/timeline, HTTP quotas/pauses, pagination and final evidence`);
+ // Live fixtures without bets are observed. Provider HTTP calls stay bounded.
+ {
+  const rows=[row(101),row(102)];
+  const h=await harness({rows,env:{STATS_REALTIME_ENABLED:'true',
+   BSD_API_KEY:'test-key',WORLDCUP26_DAY_LIMIT:'0'}});
+  h.service.observeMatch(rows[0]);h.service.observeMatch(rows[1]);
+  await h.service.tick();
+  const initial=h.calls.length;
+  assert.ok(initial>=2,'Unbet live matches get supplemental stats');
+  h.advance(10000);await h.service.tick();
+  assert.equal(h.calls.length,initial,'No new requests on mere 10-second clock advancement');
+  h.advance(25000);await h.service.tick();
+  assert.ok(h.calls.length>initial,'Refresh after 30 seconds, not ten minutes');
+  const beforeEvent=h.calls.length;
+  h.service.observeMatch({...rows[0],home_score:1,away_score:0,
+   raw:{...rows[0].raw,eventTimeline:[{id:'goal-1'}]}});
+  await h.service.tick();
+  assert.ok(h.calls.length>beforeEvent,'Zizobet goal change bypasses cached secondary stats');
+  h.verify();
+ }
+ console.log(`PASS ${cases} provider scenarios: legacy ten-minute fallback and active all-match refresh, rotation/restart, fallback, current totals/timeline, HTTP quotas/pauses, pagination and final evidence`);
 }finally{await database.close();}
