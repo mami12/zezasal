@@ -148,17 +148,25 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
     if(Number(candidate?.Match?.GameID)!==Number(id)||!Array.isArray(candidate?.gmk)||!Number.isFinite(Number(candidate.Match.EventStatus))||Number(candidate.Match.EventStatus)<=0)throw Error('Live transition not confirmed');
     recovered=candidate;
    }
-   if(entry.live||recovered){const data=recovered??await request(CACHE+'live/gamenew/'+Number(id));if(!data?.Match||!Array.isArray(data.gmk))throw Error('Missing live game snapshot');if(Number(data.Match.GameID)!==Number(id))throw Error('Zizobet live identity mismatch');for(const m of data.mk??[])meta.liveMarkets.set(Number(m.ID),m);
+   if(entry.live||recovered){const data=recovered??await request(CACHE+'live/gamenew/'+Number(id));if(!data?.Match)throw Error('Missing live game snapshot');
+    // Ended/suspended fixtures may have no market grid yet still provide goals,
+    // corners and cards. Record that history without touching existing odds.
+    if(!Array.isArray(data.gmk))historyOnly=true;if(Number(data.Match.GameID)!==Number(id))throw Error('Zizobet live identity mismatch');for(const m of data.mk??[])meta.liveMarkets.set(Number(m.ID),m);
     if(entry.row.status==='ended'&&Number(data.Match.EventStatus)!==40)return;
     const game={...entry.raw,...data.Match,...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row={...entry.row,service:'LIVE',status:entry.row.status==='ended'||Number(game.EventStatus)===40?'ended':'live'};
     // The independently retained sports archive covers EVERY live fixture,
     // not only fixtures with accepted bets. Never persist gmk/odds.
     if(historyEnabled){
      try{
-      await archiveHistory(row.match_id,{Match:data.Match,
+      const recorded=await archiveHistory(row.match_id,{Match:data.Match,
        ...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row);
-      historyPollAt.set(Number(id),now()+Math.max(30000,Number(process.env.ZIZO_HISTORY_REFRESH_MS)||60000));
-      if(Number(data.Match.EventStatus??data.Match.MatchStatusID)===40)
+      const interval=Math.max(30000,Number(process.env.ZIZO_HISTORY_REFRESH_MS)||60000);
+      const ended=Number(data.Match.EventStatus??data.Match.MatchStatusID)===40;
+      // At FT retry incomplete provider timelines at a slower pace rather
+      // than declaring that all missing incidents were archived.
+      historyPollAt.set(Number(id),now()+(ended?Math.max(300000,interval*5):interval));
+      if(ended&&Array.isArray(data.TimeLines)&&
+         ['goal','corner','card'].every(kind=>recorded?.verifiedKinds?.includes(kind)))
        historyFinalized.add(Number(id));
      }catch(error){console.warn('[zizobet] match history',row.match_id,error?.message);}
     }
