@@ -393,7 +393,18 @@ ledgerRouter.get('/matches/favorites',guard(async(req,res)=>{
 ledgerRouter.get(
   '/matches/:id',
   guard(async (req, res) => {
-    const matchId=Number(req.params.id);
+    const matchId=Number(req.params.id),startedAt=Date.now();
+    let matchReadAt=startedAt,oddsReadAt=startedAt,decoratedAt=startedAt;
+    res.once('finish',()=>{
+      const totalMs=Date.now()-startedAt;
+      if(totalMs>=3000)console.warn('[match-detail] slow request',{
+        matchId,status:res.statusCode,totalMs,
+        matchReadMs:matchReadAt-startedAt,
+        oddsMs:oddsReadAt-matchReadAt,
+        decorationMs:decoratedAt-oddsReadAt,
+        responseMs:Date.now()-decoratedAt
+      });
+    });
     if(!Number.isSafeInteger(matchId)||matchId<=0)return res.status(404).json({message:'match not found'});
     let row=await getMatchRow(matchId);
     if(row&&(matchOverride(row.match_id)?.hidden||isSyntheticFootballMatch(row)))return res.status(404).json({message:'match not found'});
@@ -402,6 +413,7 @@ ledgerRouter.get(
       if(archive)return res.json(archive);
     }
     if(!row)return res.status(404).json({message:'match not found'});
+    matchReadAt=Date.now();
     // somebody is looking at this match: make sure it gets its full market list (corners,
     // cards, every total) on the next subscribe cycle, instead of base markets only
     boostMatch(row.match_id);
@@ -416,8 +428,10 @@ ledgerRouter.get(
     // Do not block detail or tracker requests on provider HTTP/database writes.
     req.app.locals.loadMatchDetail?.(row.match_id);
     const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
+    oddsReadAt=Date.now();
     const match = toClientMatch(serialized);
     if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
+    decoratedAt=Date.now();
     const category=CATEGORIES.includes(req.query.category)?req.query.category:'all';
     return res.json(detailProjection(match,category));
   }),
