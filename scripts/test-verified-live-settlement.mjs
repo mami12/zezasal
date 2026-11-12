@@ -63,6 +63,36 @@ const cornerFrame={source:'zizobet',clock:50,counts:{corner:8},
  teams:{corner:{home:6,away:2}},events:[],coverage:{},ended:false};
 assert.equal(primaryLiveDecision(cornerRace,cornerFrame),'WON',
  'Race to six corners can be proven by PRIMARY team counters without another API');
+// Real money requires two independent snapshots AND a unique delta since
+// purchase. A partial timeline alone may never select a first/next winner.
+const cornerRow={...row,live_contract:cornerRace,proposed_status:'WON',
+ payload:{contract:cornerRace,frame:cornerFrame,frameAt:row.payload.frameAt},
+ provider_frame:cornerFrame};
+assert.equal(verifiedSecondLiveDecision(cornerRow,{now}),'WON',
+ 'A safely reached Race-to-X corner threshold settles from two polls');
+const ambiguousNext={...firstOnly,kind:'sequence',event:'goal',target:1,side:'home'};
+const twoUnordered={...counted,counts:{goal:2},
+ teams:{goal:{home:1,away:1}},events:[
+  {id:'h',type:'goal',team:'home',minute:10,seconds:600},
+  {id:'a',type:'goal',team:'away',minute:14,seconds:840}
+ ],coverage:{goalThrough:20}};
+const disputed={...row,live_contract:ambiguousNext,proposed_status:'WON',
+ payload:{contract:ambiguousNext,frame:twoUnordered,frameAt:row.payload.frameAt},
+ provider_frame:twoUnordered};
+assert.equal(verifiedSecondLiveDecision(disputed,{now}),null,
+ 'Two events after acceptance must not be decided by final counters alone');
+const timed={version:1,kind:'window',event:'goal',choice:true,from:10,to:20};
+const timedFrame={...frame,teams:{goal:{home:1,away:1}}};
+const timedRow={...row,live_contract:timed,proposed_status:'WON',
+ payload:{contract:timed,frame:timedFrame,frameAt:row.payload.frameAt},
+ provider_frame:timedFrame};
+assert.equal(verifiedSecondLiveDecision(timedRow,{now}),null,
+ 'A past goal inside the quoted window is not proof of an event after LIVE purchase');
+const player={version:1,kind:'player-goal',event:'goal',playerName:'Alice',choice:true};
+const playerRow={...row,live_contract:player,proposed_status:'WON',
+ payload:{contract:player,frame,frameAt:row.payload.frameAt},provider_frame:frame};
+assert.equal(verifiedSecondLiveDecision(playerRow,{now}),null,
+ 'Score-only observations can never settle named-player wagers');
 
 
 const calls=[];
