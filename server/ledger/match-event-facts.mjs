@@ -672,8 +672,12 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   if(data.nth_team!=null){
    if(Number(data.nth_same_time)>1)return null;
    if(c.choice==='none')return 'LOST';
-   if(c.choice!=='range'||!Number.isInteger(c.from)||!Number.isInteger(c.to))return null;
-   return decision(Number(data.nth_minute)>=c.from&&Number(data.nth_minute)<=c.to);
+   if(!Number.isInteger(c.from)||!Number.isInteger(c.to))return null;
+   const inside=Number(data.nth_minute)>=c.from&&Number(data.nth_minute)<=c.to;
+   if(c.choice==='team-window')
+     return ['home','away'].includes(c.side)?decision(inside&&data.nth_team===c.side):null;
+   if(c.choice!=='range')return null;
+   return decision(inside);
   }
   if(!full)return null;
   return c.choice==='none'?'WON':'LOST';
