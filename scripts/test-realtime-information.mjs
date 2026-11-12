@@ -25,6 +25,7 @@ assert.notEqual(sportingFingerprint(live),sportingFingerprint({...live,home_scor
 let time=now,checked=0,requests=0,nextCheck=0,seenIDs=null;
 const mapped={aiscore_id:'j374oi0xz04sgqo',mapping_status:'ADMIN_SUPPLIED_UNVERIFIED'};
 const sql=async (statement,params=[])=>{
+ if(statement.startsWith('select next_check_at'))return {rows:[{next_check_at:new Date(time-1000).toISOString()}]};
  if(statement.startsWith('select m.match_id')){
   seenIDs=params[0];
   return {rows:time>=nextCheck&&seenIDs.includes(live.match_id)?
@@ -47,15 +48,19 @@ const collector=createFootballInformationCollector({
  now:()=>time
 });
 collector.observeMatch(live);
-assert.equal((await collector.tick()).scanned,1,'AiScore must refresh a mapped live match without pending bets');
-assert.ok(seenIDs.includes(live.match_id));
-assert.equal(requests,2);
+assert.equal((await collector.tick()).scanned,0,
+ 'Unviewed LIVE header cannot trigger AiScore without a pending ticket');
+assert.deepEqual(seenIDs,[]);
+assert.equal(requests,0);
+await collector.warm(live.match_id);
+assert.equal(requests,2,'Opening a match starts mapped AiScore player enrichment');
 assert.equal(checked,1);
 time+=20000;
 assert.equal((await collector.tick()).scanned,0,'Respect shared source cooldown');
 assert.equal(requests,2);
 time+=16000;
-assert.equal((await collector.tick()).scanned,1,'Refresh mapped LIVE scorer info after 30 seconds');
+assert.equal((await collector.tick()).scanned,1,'Refresh mapped, viewed LIVE scorer info after 30 seconds');
+assert.ok(seenIDs.includes(live.match_id));
 assert.equal(requests,4);
 
 // Even board-filtered PREMATCH fixtures are registered for information
@@ -87,4 +92,4 @@ try{
  assert.equal(prematch.length,1,'Prematch catalog fixture reaches background information watcher');
  assert.equal(prematchSoon(prematch[0],now),true);
 }finally{feed.stop();await feed.drain();}
-console.log('PASS near-live information cadence, unselected prematch preflight and mapped AiScore without bet');
+console.log('PASS near-live information cadence, on-demand mapped AiScore and prematch fixture observation');
