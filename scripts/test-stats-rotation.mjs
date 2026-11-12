@@ -250,15 +250,19 @@ try{
  assert.equal(displayGoalIntervals('bsd',{incidents:[{id:'card',type:'card',minute:2,is_home:true},{id:'missed',type:'penalty_missed',minute:3,is_home:true}]},{}).reduce((sum,x)=>sum+x.home+x.away,0),0);
  assert.equal(displayGoalIntervals('sportapi',{data:[{id:'g',event_type:'goal',team_side:'home',minute:"55'"}]},{} )[3].home,1);
  assert.equal(displayTeamStatistics('bsd',{stats:{home:{total_shots:12,corner_kicks:0,ball_possession:55,yellow_cards:2},away:{}}},{}).corners.home,0);
- // Live fixtures without bets are observed. Provider HTTP calls stay bounded.
+ // Observed headers do not spend remote requests without a bet or detail viewer.
  {
   const rows=[row(101),row(102)];
   const h=await harness({rows,env:{STATS_REALTIME_ENABLED:'true',
    BSD_API_KEY:'test-key',WORLDCUP26_DAY_LIMIT:'0'}});
   h.service.observeMatch(rows[0]);h.service.observeMatch(rows[1]);
   await h.service.tick();
+  assert.equal(h.calls.length,0,'Unbet, unopened LIVE matches must not call supplemental APIs');
+  await h.service.warm(rows[0]);
   const initial=h.calls.length;
-  assert.ok(initial>=2,'Unbet live matches get supplemental stats');
+  assert.ok(initial>0,'Opening one match allows targeted supplemental statistics');
+  assert.ok(h.calls.every(call=>!call.url.toString().includes('/events/102/')),
+    'Other unopened fixtures do not start independent requests');
   h.advance(10000);await h.service.tick();
   assert.equal(h.calls.length,initial,'No new requests on mere 10-second clock advancement');
   h.advance(25000);await h.service.tick();
@@ -270,5 +274,5 @@ try{
   assert.ok(h.calls.length>beforeEvent,'Zizobet incident change bypasses cached secondary stats');
   h.verify();
  }
- console.log(`PASS ${cases} provider scenarios: legacy ten-minute fallback and active all-match refresh, rotation/restart, fallback, current totals/timeline, HTTP quotas/pauses, pagination and final evidence`);
+ console.log(`PASS ${cases} provider scenarios: on-demand watched matches, ten-minute fallback, rotation/restart, verified statistics, HTTP quotas and final evidence`);
 }finally{await database.close();}
