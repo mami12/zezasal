@@ -61,6 +61,7 @@ export default function MatchControl() {
   const epoch = useRef(0);
   const listRequest = useRef(0);
   const detailRequest = useRef(0);
+  const fullMarketAttempts = useRef(0);
   const actionRunning = useRef(false);
   const detailAvailable = useRef(false);
   const overrideMap = useMemo(() => new Map(overrides.map(row => [`${row.kind}:${row.ref}`, row])), [overrides]);
@@ -119,7 +120,25 @@ export default function MatchControl() {
     void loadList();
     return () => { mounted.current = false; listRequest.current++; detailRequest.current++; };
   }, [loadList]);
-  useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
+  useEffect(() => {
+    fullMarketAttempts.current = 0;
+    if (selectedId) void loadDetail(selectedId);
+  }, [selectedId, loadDetail]);
+  useEffect(() => {
+    if (!selectedId || detail?.id !== selectedId ||
+        detail.fullMarketsReady !== false || detailLoading ||
+        fullMarketAttempts.current >= 16) return;
+    // A selected LIVE/PREMATCH fixture starts with its cheap board quotes.
+    // Retry only this fixture until the background full provider snapshot
+    // arrives. Switching matches cancels the outstanding refresh timer.
+    const timer = window.setTimeout(() => {
+      if (mounted.current && selection.current === selectedId && !actionRunning.current) {
+        fullMarketAttempts.current++;
+        void loadDetail(selectedId);
+      }
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [selectedId, detail, detailLoading, loadDetail]);
   useEffect(() => {
     if (!automatic || dialog || busy || bulkBusy) return;
     const timer = window.setInterval(() => { if (document.visibilityState === 'visible' && !actionRunning.current) void refresh(); }, 30_000);
@@ -222,7 +241,7 @@ export default function MatchControl() {
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const selected = detail && detail.id === selectedId ? detail : null;
-  const controlsBlocked = busy || bulkBusy || detailLoading || detailStale;
+  const controlsBlocked = busy || bulkBusy || detailLoading || detailStale || selected?.fullMarketsReady === false;
   const shownError = adminUiError(error || detailError || listError, lang);
   const markets = selected?.markets ?? [];
   const categoryCounts = new Map(categories.map(key => [key, markets.filter(market => marketCategoryOf(market) === key).length]));
@@ -302,6 +321,10 @@ export default function MatchControl() {
             </div>
             {selected.isSuspended && <p className="mc-lock-note"><Lock size={14} />{ownLock('match', selected.id) ? tr('Ndeshja është pezulluar nga administratori. Tregjet trashëgojnë këtë pezullim.') : tr('Ndeshja është pezulluar nga burimi ose rregullat e sistemit. Heqja e një pezullimi individual nuk e hap ndeshjen.')}</p>}
           </section>
+          {selected.fullMarketsReady === false && <div className="mc-message" role="status">
+            <Loader2 size={16} className="mc-spin" />
+            <span>{tr("Po ngarkohen të gjitha tregjet e ndeshjes…")}</span>
+          </div>}
           <section className="mc-market-controls">
             <div className="mc-section-heading"><h3>{tr("Tregjet")}{' '}<span>{markets.length}</span></h3><small>{filteredMarkets.length}{' '}{tr("të shfaqshme")}</small></div>
             <div className="mc-market-search"><label className="mc-search"><Search size={17} /><input aria-label={tr("Kërko treg ose zgjedhje")} placeholder={tr("Kërko treg, zgjedhje ose linjë…")} value={marketQuery} onChange={event => setMarketQuery(event.target.value)} /></label><select aria-label={tr("Gjendja e tregjeve")} value={marketState} onChange={event => setMarketState(event.target.value)}><option value="ALL">{tr("Çdo gjendje")}</option><option value="ACTIVE">{tr("Tregje aktive")}</option><option value="SUSPENDED">{tr("Të pezulluara")}</option></select></div>
