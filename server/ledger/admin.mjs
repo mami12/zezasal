@@ -494,7 +494,7 @@ const matchDetail = guard(async (req, res) => {
   const id = String(row.match_id);
   const relevantOverrides = (await overrides.list()).filter((entry) =>
     entry.kind === 'match' ? entry.ref === id : entry.ref.startsWith(`${id}|`));
-  return res.json({ item: toClientMatch(serialized), overrides: relevantOverrides });
+  return res.json({ item: {...toClientMatch(serialized),fullMarketsReady:req.app.locals.matchMarketsReady?.(matchId)??true}, overrides: relevantOverrides });
 });
 
 adminRouter.get('/admin/matches/:id', ...admin, matchDetail);
