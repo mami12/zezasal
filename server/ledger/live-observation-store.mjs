@@ -26,7 +26,7 @@ export function normalizeLiveFrame(data){
  const events=Array.isArray(data?.TimeLines)?
   normalizeEvents(data,'zizobet').events.filter(e=>['goal','corner','card','foul'].includes(e.type))
     .map(e=>({id:String(e.id),type:e.type,team:e.team,minute:e.minute,seconds:e.seconds??null,
-      player:e.player??null,playerId:e.playerId??null,ownGoal:e.ownGoal??null,
+      player:e.player??null,playerId:e.playerId??null,minuteLabel:e.minuteLabel??null,ownGoal:e.ownGoal??null,
       cardColor:e.cardColor??null,phase:e.phase??null})):null;
  // Keep the exact native actor/time/event payload for later replay and
  // manual adjudication, without fetching additional upstream APIs.
