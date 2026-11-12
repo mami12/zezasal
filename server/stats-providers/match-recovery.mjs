@@ -14,9 +14,14 @@ import {persistHistoricalTimedEvents} from '../ledger/historical-timed-events.mj
 import {fotMobTimedIncidents} from './historical-incidents.mjs';
 
 const fotmobDailyCache = new Map(),fotmobDateFlights=new Map();
-let fotmobPauseUntil=0;
+let fotmobPauseUntil=0,fotmobLastError=null;
 const blocked=()=>Date.now()<fotmobPauseUntil;
+export const fotMobTransportStatus=()=>({
+ paused:blocked(),pausedUntil:blocked()?new Date(fotmobPauseUntil).toISOString():null,
+ lastError:fotmobLastError
+});
 const noteRateLimit=response=>{
+ if(!response?.ok)fotmobLastError='FOTMOB_HTTP_'+String(response?.status??'ERROR');
  if([403,429].includes(response?.status)){
   const seconds=Number(response.headers?.get?.('retry-after'));
   fotmobPauseUntil=Date.now()+(Number.isFinite(seconds)&&seconds>=0?Math.max(60000,seconds*1000):300000);
@@ -44,10 +49,12 @@ export async function fetchFotMobDate(dateStr) {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},signal:AbortSignal.timeout(12000)});
    if(!res.ok){noteRateLimit(res);return cached?.data??null;}
    const data=await res.json();
+   fotmobLastError=null;
    fotmobDailyCache.set(dateStr,{at:Date.now(),data});
    if(fotmobDailyCache.size>32)fotmobDailyCache.delete(fotmobDailyCache.keys().next().value);
    return data;
   }catch(error){
+   fotmobLastError='FOTMOB_TRANSPORT_FAILED';
    console.warn('[fotmob] date refresh:',String(error?.message??error));
    return cached?.data??null;
   }
@@ -78,10 +85,12 @@ export async function fetchFotMobDetails(matchId,{force=false}={}) {
    });
    if(!res.ok){noteRateLimit(res);return cached?.data??null;}
    const data=await res.json();
+   fotmobLastError=null;
    fotmobDetailsCache.set(id,{at:Date.now(),data});
    if(fotmobDetailsCache.size>400)fotmobDetailsCache.delete(fotmobDetailsCache.keys().next().value);
    return data;
   } catch(e) {
+   fotmobLastError='FOTMOB_TRANSPORT_FAILED';
    console.warn('[fotmob-recovery] fetchFotMobDetails error for',id,e.message);
    return null;
   }
