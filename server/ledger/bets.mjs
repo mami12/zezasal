@@ -391,7 +391,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     }catch{ /* missing coverage means no historical fallback */ }
   }
   let raceCardSnapshot=null;
-  if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence)&&
+  if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence||
+       (isHalfIncident&&/\b(?:cards?|bookings?)\b/i.test(raceName)))&&
      String(match.service??'').toUpperCase()==='LIVE'&&!primaryLiveCounters(match,'card')){
     try{
       raceCardSnapshot=(await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at
