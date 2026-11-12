@@ -11,8 +11,10 @@ function fixture(minute){return {
  match_time_ms:minute*60000,clock_at:new Date(now).toISOString(),score_at:new Date(now).toISOString()
 };}
 assert.equal(frozenLiveContract(bet,fixture(9),now).kind,'window');
-assert.throws(()=>frozenLiveContract(bet,fixture(10),now),/Intervali ka nisur/);
-assert.throws(()=>frozenLiveContract(bet,fixture(15),now),/Intervali ka nisur/);
+assert.equal(frozenLiveContract(bet,fixture(10),now).kind,'window',
+ 'A started window is not automatically settled for a new ticket');
+assert.equal(frozenLiveContract(bet,fixture(15),now).kind,'window',
+ 'A new LIVE ticket watches future incidents after its own frozen acceptance');
 assert.throws(()=>frozenLiveContract(bet,fixture(21),now),/përfunduar/);
 
 const original={Match:{Score:'0:0',MatchTimeExtended:'21:00',
@@ -39,7 +41,8 @@ const row={payload:{contract,frame,frameAt:first.toISOString()},
  live_contract:contract,provider_frame:frame,placed_at:placed.toISOString(),
  preview_at:stored.toISOString(),frame_at:current.toISOString(),
  second_seen_at:seen.toISOString(),proposed_status:'WON',open_recovery_gap:false};
-assert.equal(verifiedSecondLiveDecision(row,{now}),'WON');
+assert.equal(verifiedSecondLiveDecision(row,{now}),null,
+ 'A fixed time window cannot be paid from a provider-frame preview alone: SQL incident and frozen baseline required');
 assert.equal(verifiedSecondLiveDecision({...row,open_recovery_gap:true},{now}),null);
 assert.equal(verifiedSecondLiveDecision({...row,second_seen_at:stored.toISOString()},{now}),null);
 assert.equal(verifiedSecondLiveDecision({...row,proposed_status:'LOST'},{now}),null);
