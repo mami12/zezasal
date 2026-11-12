@@ -79,6 +79,17 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  if(first<placed||stored<first||latest<first||latest>second||
     second<stored+5000||second>now+5000||now-second>60000||
     now-stored>300000||now-latest>300000)return null;
+ // If Zizobet reassigns or corrects an incident between the two polls,
+ // both snapshots might still have the same TOTAL even though its identity
+ // changed. Never make a financial write from an unsettled correction.
+ const firstTeamCounts=oldFrame.teams?.[contract.event];
+ const secondTeamCounts=current.teams?.[contract.event];
+ if(!['home','away'].every(side=>
+    Number.isSafeInteger(firstTeamCounts?.[side])&&
+    Number.isSafeInteger(secondTeamCounts?.[side])&&
+    firstTeamCounts[side]===secondTeamCounts[side]))return null;
+ if(!Number.isFinite(oldFrame.clock)||!Number.isFinite(current.clock)||
+    current.clock<oldFrame.clock)return null;
  // A full provider timeline may corroborate the counters, but without
  // that timeline ONLY an unambiguous delta from the frozen purchase state
  // may authorize a financial write. Partial lists cannot choose the winner.
