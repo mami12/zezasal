@@ -261,10 +261,10 @@ try{
   h.advance(25000);await h.service.tick();
   assert.ok(h.calls.length>initial,'Refresh after 30 seconds, not ten minutes');
   const beforeEvent=h.calls.length;
-  h.service.observeMatch({...rows[0],home_score:1,away_score:0,
-   raw:{...rows[0].raw,eventTimeline:[{id:'goal-1'}]}});
+  h.service.observeMatch({...rows[0],home_score:0,away_score:0,
+   raw:{...rows[0].raw,eventTimeline:[{id:'corner-1',type:'corner',minute:18}]}});
   await h.service.tick();
-  assert.ok(h.calls.length>beforeEvent,'Zizobet goal change bypasses cached secondary stats');
+  assert.ok(h.calls.length>beforeEvent,'Zizobet incident change bypasses cached secondary stats');
   h.verify();
  }
  console.log(`PASS ${cases} provider scenarios: legacy ten-minute fallback and active all-match refresh, rotation/restart, fallback, current totals/timeline, HTTP quotas/pauses, pagination and final evidence`);
