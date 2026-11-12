@@ -80,22 +80,24 @@ export async function captureHalfTimeResults({
   'order by l.match_id limit 4000'
  ].join(' '))).rows.map(v=>Number(v.match_id));
  if(!pend.length)return {examined:0,recorded:0,confirmed:0};
+ // A fresh in-memory row sometimes contains only a clock/score delta,
+ // while the durable snapshot still has the native HT SetScores. Choose
+ // among VALID primary candidates; an invalid header cannot mask history.
  const relevant=new Set(pend),candidates=new Map();
- for(const row of await loadMatches({includeEnded:true,limit:4000})){
-  if(relevant.has(Number(row.match_id)))candidates.set(Number(row.match_id),row);
- }
- for(const snapshot of await loadSnapshots(pend)){
-  const id=Number(snapshot.match_id);
-  if(!candidates.has(id))candidates.set(id,snapshot);
- }
- for(const id of pend)if(!candidates.has(id)){
-  const match=await loadMatch(id);
-  if(match)candidates.set(id,match);
- }
- let recorded=0,confirmed=0;
- for(const row of candidates.values()){
+ const consider=row=>{
+  const id=Number(row?.match_id);
+  if(!relevant.has(id))return;
   const candidate=extractConfirmedHalfTimeCandidate(row);
-  if(!candidate)continue;
+  if(!candidate)return;
+  const prior=candidates.get(id);
+  if(!prior||Date.parse(candidate.observedAt)>Date.parse(prior.observedAt))
+   candidates.set(id,candidate);
+ };
+ for(const row of await loadMatches({includeEnded:true,limit:4000}))consider(row);
+ for(const snapshot of await loadSnapshots(pend))consider(snapshot);
+ for(const id of pend)if(!candidates.has(id))consider(await loadMatch(id));
+ let recorded=0,confirmed=0;
+ for(const candidate of candidates.values()){
   try{
    const r=await persistHalfTimeCandidate(candidate,{execute:runQuery});
    if(r.stored)recorded++;
