@@ -7,6 +7,7 @@ import {enrichPrimaryScorerNames} from './aiscore-scorer-enrichment.mjs';
 import {query} from '../db.mjs';
 import {getMatchById} from '../matches.mjs';
 import {teamsMatch} from './adapters.mjs';
+import {fixtureLive,prematchSoon} from './realtime-policy.mjs';
 
 export const FOOTBALL_INFORMATION_SQL=String.raw`
 create table if not exists app_football_information_map (
@@ -226,7 +227,7 @@ export function aiscoreFixtureMatches(payload,mappedId,match){
  return identifier!=null&&String(identifier)===String(mappedId)&&timeCompatible&&
   teamsMatch(name('home'),match?.home)&&teamsMatch(name('away'),match?.away);
 }
-export async function inspectFootballInformation(matchId,{runQuery=query,request=fetch,loadMatch=getMatchById,now=Date.now,needsOverride=null}={}){
+export async function inspectFootballInformation(matchId,{runQuery=query,request=fetch,loadMatch=getMatchById,now=Date.now,needsOverride=null,env=process.env}={}){
  const id=Number(matchId);
  if(!Number.isSafeInteger(id)||id<=0)throw Object.assign(new Error('ID ndeshjeje i pavlefshëm.'),{status:400});
  const row=await loadMatch(id);
@@ -258,15 +259,32 @@ export async function inspectFootballInformation(matchId,{runQuery=query,request
    await enrichPrimaryScorerNames(id,checked.payload,{execute:runQuery});
 
  }
+ const errors=results.filter(s=>!s.ok);
+ const seconds=errors.some(e=>['RATE_LIMITED','AUTH_REQUIRED'].includes(e.error))?300:
+  errors.length?120:env.STATS_REALTIME_ENABLED==='false'?60:
+  fixtureLive(row)?30:prematchSoon(row,now(),env)?300:600;
  await runQuery('update app_football_information_map set last_checked_at=now(),'+
-  'next_check_at=now()+interval \'60 seconds\',last_error=$2 where match_id=$1',
-  [id,results.filter(s=>!s.ok).map(s=>s.source+':'+s.error).join(', ').slice(0,600)||null]);
+  "next_check_at=now()+($3::int * interval '1 second'),last_error=$2 where match_id=$1",
+  [id,errors.map(s=>s.source+':'+s.error).join(', ').slice(0,600)||null,seconds]);
  return {matchId:id,status:'SAMPLE_ONLY_NOT_VERIFIED_FOR_SETTLEMENT',
   mappingStatus:mapped.mapping_status,needs,sources:results,checkedAt:new Date(now()).toISOString()};
 }
 export function createFootballInformationCollector({runQuery=query,request=fetch,loadMatch=getMatchById,
  env=process.env,now=Date.now}={}){
  let busy=false,lastTick=0;
+ const observed=new Map();
+ const observeMatch=row=>{
+  if(!enabled()||env.STATS_REALTIME_ENABLED==='false'||!isFootballFixture(row))return;
+  const id=Number(row.match_id??row.id);
+  if(!Number.isSafeInteger(id)||id<=0)return;
+  if(!fixtureLive(row)&&!prematchSoon(row,now(),env))return;
+  observed.delete(id);observed.set(id,{row,at:now()});
+  if(observed.size>800)observed.delete(observed.keys().next().value);
+ };
+ const observedIds=()=>{
+  for(const [id,entry] of observed)if(now()-entry.at>900000||(!fixtureLive(entry.row)&&!prematchSoon(entry.row,now(),env)))observed.delete(id);
+  return [...observed.keys()];
+ };
  // Only explicitly mapped fixtures are queried. Disable globally with
  // AISCORE_INFO_ENABLED=false; no browser session or proxy bypass is used.
  const enabled=()=>env.AISCORE_INFO_ENABLED!=='false';
@@ -276,7 +294,7 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
   if(!enabled()||!Number.isSafeInteger(id)||id<=0)return Promise.resolve({status:'DISABLED_OR_INVALID'});
   if(warming.has(id))return warming.get(id);
   const at=now();
-  if(at-(lastWarm.get(id)??0)<60000)return Promise.resolve({status:'CACHED'});
+  if(at-(lastWarm.get(id)??0)<(env.STATS_REALTIME_ENABLED==='false'?60000:20000))return Promise.resolve({status:'CACHED'});
   lastWarm.set(id,at);
   if(lastWarm.size>512)lastWarm.delete(lastWarm.keys().next().value);
   const promise=(async()=>{
@@ -286,27 +304,31 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
    if(!rows.length)return {status:'NO_FIXTURE_MAPPING'};
    const due=new Date(rows[0].next_check_at).getTime();
    if(Number.isFinite(due)&&due>now())return {status:'MAPPING_NOT_DUE'};
-   return inspectFootballInformation(id,{runQuery,request,loadMatch,now,needsOverride:['player']});
+   return inspectFootballInformation(id,{runQuery,request,loadMatch,now,needsOverride:['player'],env});
   })().finally(()=>warming.delete(id));
   warming.set(id,promise);
   return promise;
  };
  return {
-  enabled,warm,
+  enabled,warm,observeMatch,
   async tick(){
    if(!enabled()||busy||now()-lastTick<15000)return {enabled:enabled(),scanned:0};
    busy=true;lastTick=now();
    let scanned=0,failures=0;
    try{
-    // Periodic fetch only for mapped football matches WITH current pending
-    // ticket lines whose PRIMARY upstream market was accepted.
+    // Mapped LIVE and imminent PREMATCH fixtures remain eligible without
+    // a ticket. A confirmed match ID is still mandatory for AiScore.
+    const ids=observedIds();
     const {rows}=await runQuery(
-     'select m.match_id from app_football_information_map m where m.next_check_at<=now() '+
-     'and exists(select 1 from app_ticket_line l join app_ticket t on t.id=l.ticket_id '+
-     "where l.match_id=m.match_id and l.status='PENDING' and t.status='PENDING') "+
-     'order by m.next_check_at limit 4');
+     'select m.match_id,exists(select 1 from app_ticket_line l join app_ticket t on t.id=l.ticket_id '+
+     "where l.match_id=m.match_id and l.status='PENDING' and t.status='PENDING') as pending "+
+     'from app_football_information_map m where m.next_check_at<=now() and ('+
+     'm.match_id=any($1::bigint[]) or exists(select 1 from app_ticket_line l '+
+     "join app_ticket t on t.id=l.ticket_id where l.match_id=m.match_id and l.status='PENDING' and t.status='PENDING')) "+
+     'order by m.next_check_at limit 4',[ids]);
     for(const row of rows){
-     try{await inspectFootballInformation(row.match_id,{runQuery,request,loadMatch,now});scanned++;}
+     try{await inspectFootballInformation(row.match_id,{runQuery,request,loadMatch,now,
+      needsOverride:row.pending===true?null:['player'],env});scanned++;}
      catch(error){
       failures++;
       await runQuery('update app_football_information_map set last_error=$2,next_check_at=now()+interval \'2 minutes\' where match_id=$1',
