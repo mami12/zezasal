@@ -428,7 +428,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      const fm = await findFotMobFixture(row.home, row.away, dates,
        row.start_at??row.startAt);
      if (fm && fm.match) {
-      const details = await fetchFotMobDetails(fm.match.id);
+      const details = await fetchFotMobDetails(fm.match.id,{force:urgent.has(id)});
       const parsed = parseFotMobPayload(fm.match, details);
       if(missingPrimaryTimeline&&observesAllScorers(parsed.goalEvents))
        supplementalScorersComplete=true;
