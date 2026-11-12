@@ -40,6 +40,7 @@ import { assertDistinctSelectionMarkets } from './selection-market.mjs';
 import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
+import {nativeZizobetContractRow} from './native-zizobet-contract.mjs';
 import {parsePlayerCardContract,parseEventWindow} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
@@ -97,9 +98,12 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   }
 
   const quotedOffers = await loadOdds(matchId,executor);
-  const row = quotedOffers.find(
+  const selectedRow = quotedOffers.find(
     (o) => o.market_key === parsed.marketKey && String(o.line ?? '') === String(parsed.line ?? '') && o.outcome_key === parsed.outcomeKey,
   );
+  // Use the provider's own parameters for quoted dynamic markets; a translated
+  // display title is not a settlement rule or a reliable interval boundary.
+  const row = selectedRow ? nativeZizobetContractRow(selectedRow) : null;
   if (!row) throw badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.');
   if(isExcludedOfferMarket(row))throw Object.assign(badRequest('Ky treg nuk ofrohet.'),{code:'MARKET_NOT_OFFERED',outcomeId:selection.outcomeId});
   await assertMarketEnabled(row,executor,match);
