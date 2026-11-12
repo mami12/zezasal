@@ -26,7 +26,16 @@ export function hasFinalSettlementRule(offer,{home='Home',away='Away'}={}){
   ...(offer.accepted_contract??{}),
   providerPeriod:offer.period??offer.accepted_contract?.providerPeriod??0
  }};
- for(const [h,a,hh,ha,ch,ca,cdh,cda] of snapshots){
+ const rest=String(offer.market_name).match(
+  /^correct score rest of match\s*\(from\s*(\d{1,2})\s*:\s*(\d{1,2})\)$/i);
+ const base=rest?[Number(rest[1]),Number(rest[2])]:null;
+ const cases=base?[
+  ...snapshots,
+  [base[0],base[1],0,0,0,0,0,0],
+  [base[0]+1,base[1]+1,0,0,0,0,0,0],
+  [base[0]+2,base[1],0,0,0,0,0,0]
+ ]:snapshots;
+ for(const [h,a,hh,ha,ch,ca,cdh,cda] of cases){
   const result={home_team:home,away_team:away,
    home_score:h,away_score:a,half_home_score:hh,half_away_score:ha,
    corners_home:ch,corners_away:ca,cards_home:cdh,cards_away:cda,
