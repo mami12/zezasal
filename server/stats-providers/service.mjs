@@ -282,6 +282,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   if(!enabled()||!row||(!live(row)&&!finished(row)&&!viewed.has(String(row.match_id??row.id))&&!(realtime()&&prematchSoon(row,now(),env))))return;
   let final=finished(row);
   const primary=teamStatisticsFromRow(row),id=String(row.match_id??row.id),identity=identityOf(row),localTtl=refreshFor(row);
+  const dataTtl=urgent.has(id)?0:localTtl;
   const cached=displayCache.get(id);
   const statsReady=entry=>requiredStats.every(field=>['home','away'].every(side=>primary[side]?.[field]!=null||entry.values[field]?.[side]!=null));
   // Check the durable FT archive before reusing a live timer: the catalogue
@@ -360,7 +361,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(final||!statsReady(entry)){
       try{
        const path=provider==='bsd'?'/events/'+m.id+'/stats/':provider==='goalapi'?'/fixtures/'+m.id+'/statistics':provider==='sportapi'?'/fixtures/'+m.id+'/stats':provider==='apifootball'?'/fixtures/statistics?fixture='+m.id:'/get/soccer/'+m.league+'/scoreboard?dates='+String(m.start).slice(0,10).replaceAll('-','');
-       const payload=await api(provider,path,final?0:localTtl),values=displayTeamStatistics(provider,payload,m);
+       const payload=await api(provider,path,final?0:dataTtl),values=displayTeamStatistics(provider,payload,m);
        if(final){if(await finalFixture(provider,m,payload)){
         if(values.yellow&&values.red)values.cards={home:values.yellow.home+values.red.home,away:values.yellow.away+values.red.away};
         observations.push({provider,final:true,values,fixtureId:m.id,observedAt:new Date(now()).toISOString()});
@@ -379,25 +380,25 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(final&&!entry.goalIntervals){
       try{
        let payload;
-       if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',localTtl);
-       else if(provider==='goalapi')payload=await api(provider,'/fixtures/'+m.id+'/events',localTtl);
-       else if(provider==='sportapi')payload=await api(provider,`/fixtures/${m.id}/events`,localTtl);
+       if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',dataTtl);
+       else if(provider==='goalapi')payload=await api(provider,'/fixtures/'+m.id+'/events',dataTtl);
+       else if(provider==='sportapi')payload=await api(provider,`/fixtures/${m.id}/events`,dataTtl);
        else if(provider==='apifootball'){
-        const first=await api(provider,`/fixtures/events?fixture=${m.id}`,localTtl),response=[...(first.response??[])];
+        const first=await api(provider,`/fixtures/events?fixture=${m.id}`,dataTtl),response=[...(first.response??[])];
         const pages=Math.max(1,Number(first.paging?.pages)||1);
         for(let page=2;page<=pages&&page<=20;page++){
-         const next=await api(provider,`/fixtures/events?fixture=${m.id}&page=${page}`,localTtl);
+         const next=await api(provider,`/fixtures/events?fixture=${m.id}&page=${page}`,dataTtl);
          response.push(...(next.response??[]));
         }
         if(pages>20)throw Error('STATS_INCOMPLETE_PAGES');
         payload={...first,response};
        }else{
         const day=String(m.start).slice(0,10).replaceAll('-','');
-        const scoreboard=await api(provider,`/get/soccer/${m.league}/scoreboard?dates=${day}`,localTtl);
+        const scoreboard=await api(provider,`/get/soccer/${m.league}/scoreboard?dates=${day}`,dataTtl);
         if(!scoreboard.events?.some(event=>String(event.id)===String(m.id)))throw Error('STATS_NO_FIXTURE');
         const items=[];let pageCount=null;
         for(let pageIndex=1;pageIndex<=20;pageIndex++){
-         const next=await api(provider,`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`,localTtl);
+         const next=await api(provider,`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`,dataTtl);
          if(!Array.isArray(next.items))throw Error('STATS_INVALID_RESPONSE');
          items.push(...next.items);pageCount=Number(next.pageCount);
          if(Number.isFinite(pageCount)&&pageIndex>=pageCount)break;
