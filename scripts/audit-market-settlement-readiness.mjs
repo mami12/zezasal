@@ -20,6 +20,7 @@ import {eventMarketRequirement} from '../server/ledger/event-market-policy.mjs';
 import {statisticMarketContract,isStatisticMarket} from '../server/ledger/statistic-markets.mjs';
 import {goalTotalContract} from '../server/ledger/goal-total-contract.mjs';
 import {cornerTotalContract} from '../server/ledger/corner-total-contract.mjs';
+import {hasFinalSettlementRule} from '../server/ledger/market-settlement-preflight.mjs';
 import {isResultTotalMarket,isTotalBttsMarket,parseResultTotal,parseTotalBtts} from '../server/ledger/mixed-combos.mjs';
 import {isResultBttsMarket,parseResultBttsOutcome} from '../server/ledger/result-btts.mjs';
 
@@ -33,6 +34,18 @@ const isDC=(v)=>/^(?:1x|12|x2|homeordraw|homeoraway|draworaway)$/.test(fold(v));
 const isYesNo=(v)=>/^(?:yes|no|po|jo)$/.test(fold(v));
 const threshold=r=>r.line!=null&&String(r.line).trim()!==''?Number(String(r.line).replace(',','.')):null;
 const cleanTotal=n=>n!==null&&Number.isFinite(n)&&n>=0&&Number.isInteger(n*2);
+/** Financial rule presence for every native quoted variant (not data completeness). */
+export function settlementRulePath(row,fixture={}){
+ const teams={home:fixture.home??'Home Team',away:fixture.away??'Away Team'};
+ let contract=null;
+ try{contract=liveContract(row,{clock:0,counts:{goal:{home:0,away:0},
+  corner:{home:0,away:0},card:{home:0,away:0},foul:{home:0,away:0}},teams});}catch{}
+ if(contract&&SUPPORTED_FACT_KINDS.has(contract.kind))return {
+  path:'INCIDENT_CONTRACT',rule:contract.kind,event:contract.event??null};
+ if(hasFinalSettlementRule(row,teams))return {
+  path:'FINAL_SCORE_OR_STAT_RULE',rule:'EXISTING_GRADE_LINE',event:null};
+ return {path:'NO_PROVEN_SETTLEMENT_RULE',rule:null,event:null};
+}
 
 export function auditOffer(row){
  const n=fold(row.market_name), v=label(row),line=threshold(row),period=Number(row.period??0);
@@ -100,7 +113,7 @@ export function auditOffer(row){
 const argv=Number(process.argv[2]??30000);
 const limit=Number.isSafeInteger(argv)&&argv>0?Math.min(argv,150000):30000;
 const includeAll=process.argv.includes('--all');
-const groups=new Map(),offers=[];
+const groups=new Map(),rulePaths=new Map(),offers=[];
 try{
  let offset=0;
  while(offset<limit){
@@ -108,15 +121,23 @@ try{
   const {rows}=await query(`select
    coalesce(provider_id,'?') as provider_id,coalesce(native_market_id,'?') as native_market_id,
    market_key,outcome_key,min(native_outcome_id) as native_outcome_id,
-   market_name,outcome_name,period,line,count(*)::int as offers,
+   market_name,outcome_name,period,line,min(match_id) as sample_match_id,count(*)::int as offers,
    count(distinct match_id)::int as fixtures
    from app_provider_offer_current
    group by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
    order by provider_id,native_market_id,market_key,outcome_key,market_name,outcome_name,period,line
    limit $1 offset $2`,[cap,offset]);
+  // Fetch names in one bounded read. A team's native label cannot be
+  // classified against an invented Home Team / Away Team identity.
+  const ids=[...new Set(rows.map(r=>Number(r.sample_match_id)).filter(Number.isSafeInteger))];
+  const fixtures=ids.length?(await query('select match_id,home,away from matches where match_id=any($1::bigint[])',[ids])).rows:[];
+  const byId=new Map(fixtures.map(m=>[Number(m.match_id),m]));
   for(const row of rows){
-   const audit=auditOffer(row),item={...row,...audit};
+   const audit=auditOffer(row);
+   const path=settlementRulePath(row,byId.get(Number(row.sample_match_id))??{});
+   const item={...row,...audit,...path};
    groups.set(audit.category,(groups.get(audit.category)??0)+1);
+   rulePaths.set(path.path,(rulePaths.get(path.path)??0)+1);
    offers.push(item);
   }
   offset+=rows.length;
@@ -133,10 +154,12 @@ try{
  const priorities=['DANGER_WRONG_RESULT','STOPPAGE_TIMELINE_UNVERIFIED','UNSUPPORTED_OR_SPECIAL','UNKNOWN_REVIEW','INCIDENT_EVIDENCE_REQUIRED','STATS_EVIDENCE_REQUIRED','SCORE_GRADEABLE'];
  console.log(JSON.stringify({readOnly:true,scannedDistinctOffers:offers.length,
   partial:offers.length>=limit,limit,counts:Object.fromEntries(priorities.map(k=>[k,groups.get(k)??0])),
+  financialRulePaths:Object.fromEntries([...rulePaths]),
+  noFinancialRule:offers.filter(r=>r.path==='NO_PROVEN_SETTLEMENT_RULE').slice(0,includeAll?offers.length:200),
   riskyOffers:offers.filter(r=>!['SCORE_GRADEABLE'].includes(r.category))
    .sort((a,b)=>priorities.indexOf(a.category)-priorities.indexOf(b.category)||b.fixtures-a.fixtures).slice(0,includeAll?offers.length:200),
   pendingByMarket:pending.filter(r=>r.category!=='SCORE_GRADEABLE').slice(0,includeAll?pending.length:150),
-  important:'RISK LABELS ARE A STATIC AUDIT, not settlement decisions; verify the PRIMARY provider rule and official match facts before money moves.'},null,2));
+  important:'Rule paths prove only that a parser/financial grader exists for the quoted market, not that official match facts are sufficient. NO_PROVEN_SETTLEMENT_RULE means do not accept a new wager until its exact native contract is implemented. Primary/secondary source agreement and FT/HT evidence still determine WIN/LOSS/VOID.'},null,2));
 }catch(error){
  console.error('Read-only settlement market audit failed:',error.message);
  process.exitCode=1;

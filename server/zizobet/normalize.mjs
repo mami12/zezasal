@@ -107,7 +107,7 @@ export function infoOf(row,game,meta){
  const clock=text(game.MatchTimeExtended).match(/^(\d+):(\d{2})$/),minute=Number(game.MatchTime);
  if(clock)info.matchTimeMs=(Number(clock[1])*60+Number(clock[2]))*1000;else if(game.MatchTime!=null&&text(game.MatchTime)!==''&&Number.isFinite(minute))info.matchTimeMs=minute*60000;
  const stats={home:{},away:{}};
- for(const [name,field]of[['Corners','corners'],['YellowCards','yellow'],['RedCards','red']])for(const [i,side]of[[1,'home'],[2,'away']]){const v=game[name+'Team'+i];if(v!=null&&Number.isInteger(Number(v))&&Number(v)>=0)stats[side][field]=Number(v);}
+ for(const [name,field]of[['Corners','corners'],['YellowCards','yellow'],['RedCards','red'],['Fouls','fouls'],['Shots','shots'],['ShotsOnTarget','shotsOnTarget']])for(const [i,side]of[[1,'home'],[2,'away']]){const v=game[name+'Team'+i];if(v!=null&&Number.isInteger(Number(v))&&Number(v)>=0)stats[side][field]=Number(v);}
  if(Object.keys(stats.home).length||Object.keys(stats.away).length)info.stats=stats;
  return info;
 }

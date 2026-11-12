@@ -484,9 +484,13 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  // A partial/corrected frame must not silently reclassify a missing event.
  if(Number(data.home)!==Number(data.count_home)||
     Number(data.away)!==Number(data.count_away))return null;
+ const stats=typeof result?.statistics==='string'?(()=>{
+  try{return JSON.parse(result.statistics);}catch{return null;}
+ })():result?.statistics;
  const totalFor=kind=>kind==='goal'?[result?.home_score,result?.away_score]:
    kind==='corner'?[result?.corners_home,result?.corners_away]:
-   kind==='card'?[result?.cards_home,result?.cards_away]:[null,null];
+   kind==='card'?[result?.cards_home,result?.cards_away]:
+   kind==='foul'?[stats?.fouls?.home,stats?.fouls?.away]:[null,null];
  const expectedTotals=totalFor(c.event);
  const finalCounts=expectedTotals.every(x=>x!=null&&Number.isSafeInteger(Number(x))&&Number(x)>=0);
  const full=!!(result&&data.complete===true&&finalCounts&&
