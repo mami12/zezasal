@@ -41,17 +41,15 @@ export function selectionMarketIdentity(selection) {
   return null;
 }
 
-/** Clicking an active option removes it; another option replaces its market. */
+/** Multiple outcomes from ONE market are separate column alternatives.
+ * Different markets on the SAME match remain combined on one ticket.
+ * Clicking the exact same quoted outcome again removes only that outcome.
+ */
 export function toggleMarketSelection(previous, selection) {
   if (previous.some(pick => pick.outcomeId === selection.outcomeId)) {
     return previous.filter(pick => pick.outcomeId !== selection.outcomeId);
   }
-  const identity = selectionMarketIdentity(selection);
-  // Keep the market in its current position so changing 1/X/2 does not reorder a slip.
-  const index = identity === null ? -1 : previous.findIndex(pick => selectionMarketIdentity(pick) === identity);
-  if (index < 0) return [...previous, selection];
-  return previous.flatMap((pick, position) => position === index ? [selection]
-    : selectionMarketIdentity(pick) === identity ? [] : [pick]);
+  return [...previous, selection];
 }
 
 /** Guard the entire logical slip, including alternatives split into columns. */
