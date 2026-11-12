@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { buildSystemColumns, splitSystemStake, systemColumnPayout, moneyCents, frozenSelectionPrice } from '../server/ledger/system-columns.mjs';
 
 const picks = [
-  { matchId: '1497', outcomeId: 'home', price: 5 },
-  { matchId: '1497', outcomeId: 'over', price: 2.1 },
-  { matchId: '6983', outcomeId: 'saturn', price: 15.18 },
+  { matchId: '1497', outcomeId: 'home', marketKey:'result', price: 5 },
+  { matchId: '1497', outcomeId: 'over', marketKey:'result', price: 2.1 },
+  { matchId: '6983', outcomeId: 'saturn', marketKey:'result', price: 15.18 },
 ];
 const columns = buildSystemColumns(picks);
 assert.deepEqual(columns.map(col => col.map(p => p.outcomeId)), [['home', 'saturn'], ['over', 'saturn']]);
@@ -31,12 +31,16 @@ for (const value of [0, 99.99, NaN, Infinity, -100, 100.001, null, true, {}, '1e
   assert.throws(() => splitSystemStake(value, 2));
 }
 assert.throws(() => buildSystemColumns([picks[0], picks[0]]), /përsëritura/);
-assert.throws(() => buildSystemColumns([picks[0], picks[2]]), /njëjta ndeshje/);
+assert.throws(() => buildSystemColumns([picks[0], picks[2]]), /dy alternativa|njëjti treg/i);
+const sameMatchOtherMarket={matchId:'1497',outcomeId:'total-over',marketKey:'total',price:1.85};
+assert.deepEqual(buildSystemColumns([picks[0],picks[1],sameMatchOtherMarket,picks[2]])
+ .map(col=>col.map(p=>p.outcomeId)),[['home','total-over','saturn'],['over','total-over','saturn']],
+ 'other market on same match stays in each column, not an independent alternative');
 assert.throws(() => buildSystemColumns([null, picks[0]]));
-const many = Array.from({ length: 25 }, (_, i) => ({ matchId: 'a', outcomeId: String(i) }));
+const many = Array.from({ length: 25 }, (_, i) => ({ matchId: 'a', outcomeId: String(i),marketKey:'result' }));
 assert.throws(() => buildSystemColumns(many), /24 kolona/);
-const exact24 = [2, 3, 4].flatMap((count, m) => Array.from({ length: count }, (_, p) => ({ matchId: String(m), outcomeId: `${m}:${p}` })));
+const exact24 = [2, 3, 4].flatMap((count, m) => Array.from({ length: count }, (_, p) => ({ matchId: String(m), outcomeId: `${m}:${p}`,marketKey:'result' })));
 assert.equal(buildSystemColumns(exact24).length, 24);
-const tooManyMatches = [...Array.from({ length: 21 }, (_, i) => ({ matchId: String(i), outcomeId: `a${i}` })), { matchId: '0', outcomeId: 'b0' }];
+const tooManyMatches = [...Array.from({ length: 21 }, (_, i) => ({ matchId: String(i), outcomeId: `a${i}`,marketKey:'result' })), { matchId: '0', outcomeId: 'b0',marketKey:'result' }];
 assert.throws(() => buildSystemColumns(tooManyMatches), /20 ndeshje/);
 console.log('PASS system columns: exact sample payouts, Cartesian grouping, 2,300 cent-conservation cases, half-up rounding, invalid inputs and bounded expansion');
