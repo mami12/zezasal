@@ -23,6 +23,9 @@ assert.equal(projected.events[0].playerName,'First Scorer',
 assert.equal(projected.events[0].minute,10);
 assert.equal(projected.events[0].minuteLabel,'10');
 assert.deepEqual(projected.verifiedKinds,['goal','corner','card']);
+const withPeriods=projectZizobetHistory(8000000000007,{...game('1:0','11:00',[g1]),
+ Match:{...game('1:0','11:00',[g1]).Match,SetScores:['1:0','0:1']}},fixture);
+assert.deepEqual(withPeriods.details.periodScores,[{home:1,away:0},{home:0,away:1}]);
 assert.doesNotMatch(JSON.stringify(projected),/99\.9|88\.8|gmk|hprs/,
  'Never archive coefficients, only sporting facts');
 assert.match(LEDGER_SQL,/app_zizobet_match_incident/);
@@ -93,9 +96,11 @@ const request=async url=>{
  if(url.includes('headerformobilenew'))return {Games:games,Teams:teams,Regions:regions,Championats:champs};
  if(url.includes('sport/getheader/en'))return {EN:{Sports:{1:{Regions:{}}}}};
  const id=Number(url.match(/live\/gamenew\/(\d+)/)?.[1]);
- if(id){detailReads.push(id);return {
-  ...game('0:0','15:00',[]),Match:{...game('0:0','15:00',[]).Match,GameID:id}
- };}
+ if(id){detailReads.push(id);
+  const response={...game('0:0','15:00',[]),Match:{...game('0:0','15:00',[]).Match,GameID:id}};
+  if(id===5)delete response.gmk; // Suspended match still has real history.
+  return response;
+ }
  throw Error('Unexpected provider request '+url);
 };
 const feed=startZizoFeed({
