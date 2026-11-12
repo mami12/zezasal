@@ -45,7 +45,7 @@ export function buildSystemColumns(selections, {
     if (!id || !matchId) fail('Zgjedhja nuk u identifikua.');
     if (seen.has(id)) fail('Zgjedhje të përsëritura.');
     seen.add(id);matches.add(matchId);
-    const identity=marketIdentityOf(selection)??JSON.stringify([matchId,'legacy']);
+    const identity=marketIdentityOf(selection)??JSON.stringify([matchId,'unidentified',id]);
     if (!groups.has(identity)) groups.set(identity, []);
     groups.get(identity).push(selection);
   }
