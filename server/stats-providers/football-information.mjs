@@ -293,10 +293,13 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
  // Only explicitly mapped fixtures are queried. Disable globally with
  // AISCORE_INFO_ENABLED=false; no browser session or proxy bypass is used.
  const enabled=()=>env.AISCORE_INFO_ENABLED!=='false';
- const warming=new Map(),lastWarm=new Map();
+ const warming=new Map(),lastWarm=new Map(),viewedUntil=new Map();
  const warm=matchId=>{
   const id=Number(matchId);
   if(!enabled()||!Number.isSafeInteger(id)||id<=0)return Promise.resolve({status:'DISABLED_OR_INVALID'});
+  // Only an explicitly opened match or a pending ticket may schedule AiScore.
+  viewedUntil.delete(id);viewedUntil.set(id,now()+12*60000);
+  if(viewedUntil.size>512)viewedUntil.delete(viewedUntil.keys().next().value);
   if(now()<sourcePauseUntil)return Promise.resolve({status:'UPSTREAM_PAUSED'});
   if(warming.has(id))return warming.get(id);
   const at=now();
@@ -322,9 +325,14 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
    busy=true;lastTick=now();
    let scanned=0,failures=0;
    try{
-    // Mapped LIVE and imminent PREMATCH fixtures remain eligible without
-    // a ticket. A confirmed match ID is still mandatory for AiScore.
-    const ids=observedIds();
+    // Merely appearing in a LIVE/PREMATCH header never authorizes
+    // secondary API polling. A detail viewer or PENDING bet does.
+    const ids=observedIds().filter(id=>{
+      const until=viewedUntil.get(id);
+      if(until>now())return true;
+      viewedUntil.delete(id);
+      return false;
+    });
     const {rows}=await runQuery(
      'select m.match_id,exists(select 1 from app_ticket_line l join app_ticket t on t.id=l.ticket_id '+
      "where l.match_id=m.match_id and l.status='PENDING' and t.status='PENDING') as pending "+
