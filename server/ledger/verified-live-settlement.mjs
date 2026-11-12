@@ -56,14 +56,21 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  const oldFrame=old?.frame;
  if(!contract||!oldFrame||!current||!old?.contract||
     JSON.stringify(contract)!==JSON.stringify(old.contract))return null;
- // Real payouts without a complete incident archive are limited to the
- // irreversible sequence/race facts proven by accepted and current counters.
- // Minute windows and player identity cannot be inferred from match totals.
- if(!['sequence','race'].includes(contract.kind)||
-    !['goal','corner','card'].includes(contract.event))return null;
- const base=contract.baseline;
+ // Prove ONLY irreversible outcomes by comparing accepted counters with
+ // TWO independent primary observations. Sequence/race uses whole-match
+ // counters. An interval uses its own purchase baseline and must still be
+ // running in BOTH frames. Player identity and a final UNDER/NO win cannot
+ // be decided by a scoreboard delta.
+ const timed=['window','window-total'].includes(contract.kind);
+ if(!['sequence','race','window','window-total'].includes(contract.kind)||
+    !(timed?['goal','corner','card','foul']:['goal','corner','card']).includes(contract.event))return null;
+ const base=timed?contract.entryBaseline:contract.baseline;
  if(!base||!['home','away'].every(side=>
     Number.isSafeInteger(base[side])&&base[side]>=0))return null;
+ if(timed&&(!Number.isFinite(contract.entryClockMinute)||
+    !Number.isFinite(contract.from)||!Number.isFinite(contract.to)||
+    contract.entryClockMinute<contract.from||
+    contract.entryClockMinute>=contract.to+1||contract.cardColor!=null))return null;
  const placed=millis(row.placed_at),first=millis(old.frameAt);
  const stored=millis(row.preview_at),latest=millis(row.frame_at),second=millis(row.second_seen_at);
  if(![placed,first,stored,latest,second,now].every(Number.isFinite))return null;
