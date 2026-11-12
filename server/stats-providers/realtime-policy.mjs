@@ -32,8 +32,10 @@ export function sportingFingerprint(row){
  return JSON.stringify([
   row?.home_score??null,row?.away_score??null,
   row?.feed_status??row?.status??null,
-  raw?.eventTimeline?.length??null,
-  raw?.eventTimeline?.at?.(-1)?.id??null,
+  Array.isArray(raw.eventTimeline)?raw.eventTimeline.map(e=>[
+   e.id??null,e.type??null,e.minute??null,e.addedMinute??null,
+   e.team??null,e.player??null
+  ]):null,
   row?.corners_home??s?.home?.corners??null,
   row?.corners_away??s?.away?.corners??null,
   row?.cards_home??null,row?.cards_away??null
