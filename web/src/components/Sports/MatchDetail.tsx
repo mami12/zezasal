@@ -120,7 +120,7 @@ export default function MatchDetail() {
   const [requestSearch,setRequestSearch]=useState('');
   const [categoryLoading,setCategoryLoading]=useState(false);
   const [categoryTotals,setCategoryTotals]=useState<Record<string,number>>({});
-  const [requestError,setRequestError]=useState<{id:string;notFound:boolean}|null>(null);
+  const [requestError,setRequestError]=useState<{id:string;notFound:boolean;httpStatus:number|null;timedOut:boolean}|null>(null);
   const requestedCategory=requestSearch||activeTab==='favorites'?'all':activeTab;
   const [marketSearch, setMarketSearch] = useState<string>('');
   useEffect(()=>{
@@ -136,7 +136,7 @@ export default function MatchDetail() {
   const { isFavorite, toggleFavorite, isAlertEnabled, toggleAlert } = useFavorites();
   const patch = useLivePatch(id);
   const { lockedMarkets, lockedOutcomes, riskLockedOutcomes, combosEnabled, refreshVersion, acceptMatches } = useLiveFeed();
-  const refreshRef = useRef<(() => void) | null>(null);
+  const refreshRef = useRef<((force?:boolean) => void) | null>(null);
   const lastRefreshVersion = useRef(refreshVersion);
   // The live clock pushes seconds every tick. Only facts relevant to market
   // expiry should rebuild all market groups, not an unrelated second counter.
@@ -148,40 +148,63 @@ export default function MatchDetail() {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    let busy = false;
-    let queued = false;
-    const controller = new AbortController();
-    const refresh = () => {
+    let controller: AbortController | null = null;
+    let sequence = 0;
+    const refresh = (force = false) => {
       if (!active) return;
-      if (busy) {queued = true; return;}
-      busy = true;
-      apiClient.get(`/matches/${id}`, {signal:controller.signal,timeout:15000,params:{category:requestedCategory,_snapshot:Date.now()}}).then(res => {
-        if (!active) return;
-        if(String(res.data?.id)!==id)throw new Error('MATCH_RESPONSE_MISMATCH');
+      // A manual retry cancels the stale request and starts a brand-new HTTP
+      // attempt. Automatic 20s refreshes instead avoid overlapping requests.
+      if (controller) {
+        if (!force) return;
+        controller.abort();
+      }
+      const current = new AbortController();
+      controller = current;
+      const requestId = ++sequence;
+      setCategoryLoading(true);
+      apiClient.get(`/matches/${id}`, {
+        signal: current.signal,
+        timeout: 12000,
+        params: { category: requestedCategory, _snapshot: Date.now() },
+      }).then(res => {
+        if (!active || requestId !== sequence || current.signal.aborted) return;
+        if (String(res.data?.id) !== id) throw new Error('MATCH_RESPONSE_MISMATCH');
         setRequestError(null);
         acceptMatches([res.data]);
         setMatch(res.data);
-        setCategoryTotals(res.data.marketCategories??{});
-        if(requestedCategory==='Popular'&&res.data.marketCategories?.Popular===0){const next=CATEGORY_ORDER.find(category=>res.data.marketCategories[category]>0);if(next)setActiveTab(next);}
+        setCategoryTotals(res.data.marketCategories ?? {});
+        if (requestedCategory === 'Popular' && res.data.marketCategories?.Popular === 0) {
+          const next = CATEGORY_ORDER.find(category => res.data.marketCategories[category] > 0);
+          if (next) setActiveTab(next);
+        }
         setMarkets(res.data?.markets ?? []);
       }).catch(error => {
-        if(active)setRequestError({id,notFound:error.response?.status===404});
+        if (!active || requestId !== sequence || current.signal.aborted ||
+            error?.code === 'ERR_CANCELED') return;
+        const httpStatus = Number(error?.response?.status);
+        setRequestError({
+          id,
+          notFound: httpStatus === 404,
+          httpStatus: Number.isInteger(httpStatus) && httpStatus > 0 ? httpStatus : null,
+          timedOut: error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT',
+        });
       }).finally(() => {
-        busy = false;
-        if(active)setCategoryLoading(false);
-        if(active && queued) {queued=false;refresh();}
+        if (!active || requestId !== sequence) return;
+        if (controller === current) controller = null;
+        setCategoryLoading(false);
       });
     };
-    refreshRef.current=refresh;setCategoryLoading(true);
+    refreshRef.current = refresh;
     refresh();
-    // Opening a fixture boosts its upstream subscription to FULL markets.
-    // The first REST response can predate that push snapshot: re-fetch while open
-    // so extra lines and markets become visible without a manual browser refresh.
-    const timer = window.setInterval(refresh, 20_000);
+    // The first reply may predate the upstream full-market snapshot. Give the
+    // background focus one short opportunity before the regular 20s refresh.
+    const firstFullRefresh = window.setTimeout(() => refresh(), 5000);
+    const timer = window.setInterval(() => refresh(), 20_000);
     return () => {
       active = false;
-        refreshRef.current=null;
-      controller.abort();
+      if (refreshRef.current === refresh) refreshRef.current = null;
+      controller?.abort();
+      window.clearTimeout(firstFullRefresh);
       window.clearInterval(timer);
     };
   }, [id,requestedCategory, acceptMatches]);
@@ -280,8 +303,21 @@ export default function MatchDetail() {
       <p>{requestError.notFound
         ?(lang==='en'?'This match is no longer available.':'Ndeshja nuk është më e disponueshme.')
         :(lang==='en'?'Unable to load this match. Please try again.':'Nuk u ngarkua ndeshja. Provo përsëri.')}</p>
-      <button type="button" onClick={()=>refreshRef.current?.()} className="rounded-lg bg-tertiary px-4 py-2 font-semibold text-white">
-        {lang==='en'?'Try again':'Provo përsëri'}
+      <p className="text-xs" aria-live="polite">
+        {categoryLoading
+          ? (lang==='en'?'Trying again...':'Po provohet përsëri...')
+          : requestError.timedOut
+            ? (lang==='en'?'The server took too long to respond.':'Serveri nuk u përgjigj brenda afatit.')
+            : requestError.httpStatus
+              ? `HTTP ${requestError.httpStatus}`
+              : (lang==='en'?'Connection to the server failed.':'Lidhja me serverin dështoi.')}
+      </p>
+      <button type="button" onClick={()=>refreshRef.current?.(true)}
+        aria-busy={categoryLoading}
+        className="rounded-lg bg-tertiary px-4 py-2 font-semibold text-white">
+        {categoryLoading
+          ? (lang==='en'?'Retrying...':'Duke riprovuar...')
+          : (lang==='en'?'Try again':'Provo përsëri')}
       </button>
     </div>
   ):null;
