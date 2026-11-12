@@ -327,8 +327,13 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
      "join app_ticket t on t.id=l.ticket_id where l.match_id=m.match_id and l.status='PENDING' and t.status='PENDING')) "+
      'order by m.next_check_at limit 4',[ids]);
     for(const row of rows){
-     try{await inspectFootballInformation(row.match_id,{runQuery,request,loadMatch,now,
-      needsOverride:row.pending===true?null:['player'],env});scanned++;}
+     try{
+      const result=await inspectFootballInformation(row.match_id,{runQuery,request,loadMatch,now,
+       needsOverride:row.pending===true?null:['player'],env});
+      if(result.status==='NO_SUPPLEMENTARY_NEEDS')
+       await runQuery("update app_football_information_map set next_check_at=now()+interval '5 minutes' where match_id=$1",[row.match_id]);
+      scanned++;
+     }
      catch(error){
       failures++;
       await runQuery('update app_football_information_map set last_error=$2,next_check_at=now()+interval \'2 minutes\' where match_id=$1',
