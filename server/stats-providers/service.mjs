@@ -313,15 +313,15 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    // Avoid using daily-limited APIs for goal minutes already supplied by
    // Zizobet. For LIVE matches, rotate only if the primary lacks other
    // required statistics. FT independent audit remains unchanged.
-   // At FT compare every configured source for shots/fouls; never import
+   // At FT request only MISSING shots/fouls; the primary archive is authoritative.
    // their goals, corners or cards into the PRIMARY settlement ledger.
-   for(const provider of (final||!statsReady(entry))?
-     await providerOrder('statistics'):[]){
+   for(const provider of (!statsReady(entry)?await providerOrder('statistics'):[])){
+    if(statsReady(entry))break;
     if(specs[provider].env&&!env[specs[provider].env])continue;
     if(final)attempted.push(provider);
     try{
      const m=mapping[provider]??await discover(provider,row);if(!m){if(final)unavailable[provider]='STATS_NO_FIXTURE';continue;}mapping[provider]=m;
-     if(final||!statsReady(entry)){
+     if(!statsReady(entry)){
       try{
        const path=provider==='bsd'?'/events/'+m.id+'/stats/':provider==='goalapi'?'/fixtures/'+m.id+'/statistics':provider==='sportapi'?'/fixtures/'+m.id+'/stats':provider==='apifootball'?'/fixtures/statistics?fixture='+m.id:'/get/soccer/'+m.league+'/scoreboard?dates='+String(m.start).slice(0,10).replaceAll('-','');
        const payload=await api(provider,path,final?0:dataTtl),values=displayTeamStatistics(provider,payload,m);
@@ -339,7 +339,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        }
       }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
      }
-     if(!final&&statsReady(entry))break;
+     if(statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
    if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsAnyActors() || !statsReady(entry)) {
