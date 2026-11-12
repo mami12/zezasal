@@ -4,6 +4,7 @@ import {fixtureLive,prematchSoon,supplementalRefreshMs,sportingFingerprint}
  from '../server/stats-providers/realtime-policy.mjs';
 import {createFootballInformationCollector}
  from '../server/stats-providers/football-information.mjs';
+import {startZizoFeed} from '../server/zizobet-feed.mjs';
 
 const now=Date.parse('2026-11-12T12:15:00Z');
 const live={match_id:7000000000001,home:'A',away:'B',sport_id:18,
@@ -57,4 +58,31 @@ time+=16000;
 assert.equal((await collector.tick()).scanned,1,'Refresh mapped LIVE scorer info after 30 seconds');
 assert.equal(requests,4);
 
-console.log('PASS near-live information cadence, prematch policy and mapped AiScore without bet');
+// Even board-filtered PREMATCH fixtures are registered for information
+// preflight when they are close to kickoff. Odds remain untouched.
+const teams=[{ID:1,Name:'Home',Sport:1},{ID:2,Name:'Away',Sport:1}];
+const regions=[{ID:1,Name:'England'}],champs=[{ID:1,Name:'Premier League'}];
+const next={ID:77,t1:1,t2:2,Region:1,Champ:1,
+ StartTime:'2026-11-12T13:00:00Z'};
+const request=async url=>{
+ if(url.includes('getheader/teams'))return teams;
+ if(url.includes('getlivemarkets'))return {StatusNames:[],PositionNames:[],MarketNames:[]};
+ if(url.includes('getprematchmarketsbysport'))return [
+  Object.fromEntries(Array.from({length:11},(_,i)=>[i+1,{ID:i+1,Name:'Result'}]))];
+ if(url.includes('headerformobilenew'))return {Games:[],Teams:teams,Regions:regions,Championats:champs};
+ if(url.includes('sport/getheader/en'))return {EN:{Sports:{1:{Regions:{1:{
+  ID:1,Name:'England',Champs:{1:{ID:1,Name:'Premier League',GameSmallItems:{77:next}}}
+ }}}}}}};
+ throw Error('Unexpected prematch provider URL '+url);
+};
+const prematch=[],visible=[];
+const feed=startZizoFeed({autoStart:false,now:()=>now,request,selectRows:()=>[],
+ onFixtureDiscovered:row=>prematch.push(row),onMatch:row=>visible.push(row),
+ onOdds:()=>{},onInfo:()=>{},connectMqtt:()=>({stop(){},setLiveIds(){},pause(){},resume(){}})});
+try{
+ await feed.tick();
+ assert.equal(visible.length,0,'Filtered fixtures stay off the betting board');
+ assert.equal(prematch.length,1,'Prematch catalog fixture reaches background information watcher');
+ assert.equal(prematchSoon(prematch[0],now),true);
+}finally{feed.stop();await feed.drain();}
+console.log('PASS near-live information cadence, unselected prematch preflight and mapped AiScore without bet');
