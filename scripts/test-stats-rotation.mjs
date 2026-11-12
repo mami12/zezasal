@@ -75,8 +75,8 @@ try{
   create table app_stats_usage(provider text,period text,calls int,primary key(provider,period));
   create table app_stat_review(match_id bigint primary key,payload jsonb not null,updated_at timestamptz default now());`);
 
- // The deployed provider path passes FINAL independently reconciled
- // goal/corner/card facts to the durable writers, without Zizobet requests.
+ // Secondary API event information must never be written as primary
+ // goal/corner/card facts even when a matching FT result is available.
  {
   const source=[{type:'corner',id:'c1',is_home:true,minute:12,player:{id:'p1',name:'Corner Taker'}},
     {type:'corner',id:'c2',is_home:true,minute:18},
@@ -88,10 +88,9 @@ try{
   await database.query("update app_ticket_line set market_name='Total goals in minutes 1-15' where match_id=101");
   await database.query('insert into app_match_result values(101,0,0)');
   await h.service.tick();
-  assert.ok(h.persistedTimed.some(f=>f.evidence.kind==='corner'&&
-   f.evidence.homeCount===3&&f.evidence.awayCount===1&&f.evidence.events.length===4),
-   'Matched backup FT corner chronology reaches the SQL fact writer');
-  assert.ok(h.persistedGoals.length>=1,'The independent goal fact writer also receives final events');
+  assert.equal(h.persistedTimed.length,0,'External cards/corners cannot become primary facts');
+  assert.equal(h.persistedGoals.length,0,'External goal incidents cannot become primary facts');
+  assert.equal(h.saved.length,0,'External FT incidents cannot replace Zizobet event evidence');
   assert.equal(h.calls.some(call=>call.url.host.includes('zizobet')),false,
    'Supplementary incident collection must not fetch bookmaker odds');
   h.verify();
@@ -142,7 +141,9 @@ try{
   const review=(await database.query('select payload from app_stat_review where match_id=101')).rows[0].payload;
   assert.deepEqual(new Set(review.attempted),new Set(['bsd','worldcup26','sportapi','goalapi','apifootball']),'every configured available provider is checked after FT');
   assert.deepEqual(new Set(review.sources.map(s=>s.provider)),new Set(['primary','bsd','worldcup26','sportapi','goalapi','apifootball']));
-  assert.equal(review.status,'MANUAL_REVIEW');assert.equal(review.conflicts.corners.worldcup26.home,4);assert.equal(review.consensus.fouls.home,7);
+  assert.equal(review.status,'VERIFIED');assert.equal(review.conflicts.corners,undefined,
+   'Foreign corner counts are ignored for Zizobet settlement');
+  assert.equal(review.consensus.fouls.home,7);
   const count=h.calls.length;await h.service.tick();assert.equal(h.calls.length,count,'final review is cached and shared across viewers');h.verify();
  }
  {
@@ -150,7 +151,7 @@ try{
   for(const provider of ['bsd','worldcup26','sportapi','goalapi','apifootball']){
    const offset=h.calls.length,service=h.create();await service.tick();
    assert.ok(h.calls.length>offset);assert.ok(h.calls.slice(offset).every(call=>call.provider===provider),provider+' completes the cycle without unnecessary fallback');
-   assert.equal(h.stats(service).home.shotsOnTarget,4);assert.equal(h.stats(service).away.fouls,11);assert.equal(h.stats(service).home.corners,3);h.advance(tenMinutes);
+   assert.equal(h.stats(service).home.shotsOnTarget,4);assert.equal(h.stats(service).away.fouls,11);assert.ok(h.stats(service).home.corners==null,'Secondary corners are not imported');h.advance(tenMinutes);
   }h.verify();
  }
  {
@@ -158,13 +159,14 @@ try{
   await h.service.tick();assert.deepEqual([...new Set(h.calls.map(c=>c.provider))],['bsd']);
   let offset=h.calls.length;h.advance(tenMinutes);await h.service.tick();assert.ok(h.calls.slice(offset).every(c=>c.provider==='worldcup26'));
   offset=h.calls.length;h.advance(tenMinutes);const restarted=h.create();await restarted.tick();assert.ok(h.calls.slice(offset).every(c=>c.provider==='sportapi'));
-  assert.equal(h.stats(restarted).home.corners,3);assert.equal(h.stats(restarted).away.shots,8);h.verify();
+  assert.ok(h.stats(restarted).home.corners==null,'Primary corners stay unknown if Zizobet omitted them');assert.equal(h.stats(restarted).away.shots,8);h.verify();
  }
  // Fallback fills only absent facts, and does not fetch already complete stats just for missing events.
  {
   const h=await harness({env:{BSD_API_KEY:'test-key'},stats:provider=>provider==='bsd'?{home:{shotsOnTarget:4,fouls:7,shots:10},away:{shotsOnTarget:2,fouls:11,shots:8}}:totals});await h.bet(101);
-  await h.service.tick();assert.equal(h.stats(h.service).home.corners,3,'missing corners also trigger fallback');
-  assert.ok(h.calls.some(c=>c.provider==='worldcup26'));h.verify();
+  await h.service.tick();assert.ok(h.stats(h.service).home.corners==null,'No secondary corner fallback');
+  assert.equal(h.calls.some(c=>c.provider==='worldcup26'),false,
+   'Complete primary-scoped extra stats need no second provider for missing corners');h.verify();
  }
  {
   const h=await harness({env:{BSD_API_KEY:'test-key'},stats:provider=>provider==='bsd'?{home:{shotsOnTarget:4},away:{shotsOnTarget:2}}:totals});await h.bet(101);
@@ -230,7 +232,8 @@ try{
   await database.query("update app_ticket_line set market_name='Total goals in minutes 1-15'");
   await h.service.tick();assert.equal(h.saved.length,0);
   h.matches.get(101).feed_status='FT';await database.query('insert into app_match_result values(101,0,0)');
-  await h.service.tick();assert.equal(h.saved.length,1);assert.equal(h.saved[0].evidence.final,true);h.verify();
+  await h.service.tick();assert.equal(h.saved.length,0,
+   'Final third-party events remain supplementary, not settlement evidence');h.verify();
  }
  // A new timeline is collected every cycle; cards and missed penalties are never goals.
  {
