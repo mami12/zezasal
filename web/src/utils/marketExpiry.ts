@@ -188,6 +188,25 @@ const completedEvent = (m: MatchLike, market: MarketLike): boolean => {
   // an own goal, and participation/scorer evidence is separate from the score.
   if (/\b(?:player|goalscorer|scorer)\b/.test(name)) return false;
   if (isSecondHalf(market)) return false;
+  // Fixed global event numbers become impossible once that numbered event
+  // has occurred. An UNNUMBERED "Next Goal" does not: it always refers to
+  // the next goal after purchase. Never apply this to player-scorer names.
+  const exactOrdinal=name.match(/^next (?:goal|corner|card|booking) (\d{1,3})(?:st|nd|rd|th)?$/)||
+    name.match(/^(?:who|which team) scores (?:the )?(first|second|third|\d{1,3}(?:st|nd|rd|th)?)$/)||
+    name.match(/^who scores (?:the )?(?:goal (\d{1,3})|((?:first|second|third|\d{1,3}(?:st|nd|rd|th)?) goal)) in minutes? \d{1,3}[-–]\d{1,3}/);
+  if(exactOrdinal){
+    const label=String(exactOrdinal[1]??exactOrdinal[2]??'').replace(/ goal$/,'');
+    const ordinal=({first:1,second:2,third:3} as Record<string,number>)[label]??Number(label.match(/^\d+/)?.[0]);
+    if(!Number.isSafeInteger(ordinal)||ordinal<1)return false;
+    const teams=[norm(m.homeTeam),norm(m.awayTeam),'1','2','home','away','home team','away team','x','draw','none','neither','no goal','no corner','no card'];
+    // This short title can also denote a named PLAYER. Only close offers
+    // whose actual outcomes are teams, so an own goal cannot close a
+    // still-unresolved first-player-scorer market.
+    if(!market.outcomes?.length||market.outcomes.some(outcome=>
+      !teams.includes(norm(outcome.name))&&!teams.includes(norm(outcome.code))))return false;
+    const counts=observedCounter(m,market);
+    return !!counts&&counts.home+counts.away>=ordinal;
+  }
   const first = /\b(?:first|1st)\s+(?:team\s+to\s+score|goal|corner|card|booking|goalscorer|scorer)\b/.test(name) ||
     /\b(?:time of|minute of)\s+(?:the\s+)?first\s+goal\b/.test(name) ||
     /\b(?:first|1st)\s+(?:goal|corner|card)\s+(?:time|minute)\b/.test(name);
