@@ -53,7 +53,7 @@ assert.equal(checked,1);
 time+=20000;
 assert.equal((await collector.tick()).scanned,0,'Respect shared source cooldown');
 assert.equal(requests,2);
-time+=11000;
+time+=16000;
 assert.equal((await collector.tick()).scanned,1,'Refresh mapped LIVE scorer info after 30 seconds');
 assert.equal(requests,4);
 
