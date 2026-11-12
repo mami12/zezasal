@@ -139,8 +139,8 @@ try{
    stats:provider=>provider==='worldcup26'?{...totals,home:{...totals.home,corners:4}}:totals});
   await h.bet(101);await database.query('insert into app_match_result values(101,0,0)');await h.service.tick();
   const review=(await database.query('select payload from app_stat_review where match_id=101')).rows[0].payload;
-  assert.deepEqual(new Set(review.attempted),new Set(['bsd','worldcup26','sportapi','goalapi','apifootball']),'every configured available provider is checked after FT');
-  assert.deepEqual(new Set(review.sources.map(s=>s.provider)),new Set(['primary','bsd','worldcup26','sportapi','goalapi','apifootball']));
+  assert.deepEqual(new Set(review.attempted),new Set(['bsd']),'Stop after first provider fills missing FT statistics');
+  assert.deepEqual(new Set(review.sources.map(s=>s.provider)),new Set(['primary','bsd']));
   assert.equal(review.status,'VERIFIED');assert.equal(review.conflicts.corners,undefined,
    'Foreign corner counts are ignored for Zizobet settlement');
   assert.equal(review.consensus.fouls.home,7);
