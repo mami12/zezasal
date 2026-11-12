@@ -7,17 +7,17 @@ for (const key of ['g6257', 'gBothScore', 'gCorrectScore', 'gGoalTime', 'gCorner
   const other = pick('101|g6257||1');
   let slip = [home, other];
   slip = toggleMarketSelection(slip, away);
-  assert.deepEqual(slip, [away, other], `${key}: second option replaces first in place`);
+  assert.deepEqual(slip, [home, other, away], `${key}: second outcome is another alternative in the same market`);
   slip = toggleMarketSelection(slip, draw);
-  assert.deepEqual(slip, [draw, other], `${key}: rapid 1→2→X keeps only the latest option`);
-  assert.deepEqual(toggleMarketSelection(slip, draw), [other], 'clicking the selected option removes it');
+  assert.deepEqual(slip, [home, other, away, draw], `${key}: third outcome remains a separate market alternative`);
+  assert.deepEqual(toggleMarketSelection(slip, draw), [home, other, away], 'clicking the selected option removes only that outcome');
   assert.throws(() => assertDistinctSelectionMarkets([home, away]), error => error.status === 400 && error.code === 'DUPLICATE_MARKET');
 }
 
 const over = pick('100|g6379|2.5|Over'), under = pick('100|g6379|2.5|Under');
 const differentLine = pick('100|g6379|3.5|Under');
 const differentPeriod = pick('100|g6379p1|2.5|Under');
-assert.deepEqual(toggleMarketSelection([over, differentLine, differentPeriod], under), [under, differentLine, differentPeriod]);
+assert.deepEqual(toggleMarketSelection([over, differentLine, differentPeriod], under), [over, differentLine, differentPeriod, under]);
 assert.doesNotThrow(() => assertDistinctSelectionMarkets([under, differentLine, differentPeriod]));
 assert.notEqual(selectionMarketIdentity(over), selectionMarketIdentity(differentLine));
 assert.notEqual(selectionMarketIdentity(over), selectionMarketIdentity(differentPeriod));
@@ -52,7 +52,7 @@ const noUnder={...builderOption('template-no-under'),builderLegs:[
   {marketId:'100|gBtts|',outcomeId:'100|gBtts||No'},
 ]};
 assert.equal(selectionMarketIdentity(yesOver),selectionMarketIdentity(noUnder),'builder pair identity ignores selection outcomes and constituent order');
-assert.deepEqual(toggleMarketSelection([yesOver],noUnder),[noUnder],'another option of a grouped builder market replaces the first');
+assert.deepEqual(toggleMarketSelection([yesOver],noUnder),[yesOver,noUnder],'another option of one grouped builder market adds a system alternative');
 assert.throws(()=>assertDistinctSelectionMarkets([yesOver,noUnder]),error=>error.code==='DUPLICATE_MARKET');
 const resolvedBuilder={matchId:'100',marketKey:'BB:saved-template',line:'',builderLegs:[
   {match_id:100,market_key:'gBtts',line:'',outcome_key:'No'},
@@ -68,6 +68,7 @@ assert.doesNotThrow(()=>assertDistinctSelectionMarkets([yesOver,resultTotal,pick
 assert.deepEqual(toggleMarketSelection([
   { outcomeId: 'one', matchId: '100', marketId: 'opaque', marketLine: '', period: 0 },
 ], { outcomeId: 'two', matchId: '100', marketId: 'opaque', period: 0 }), [
+  { outcomeId: 'one', matchId: '100', marketId: 'opaque', marketLine: '', period: 0 },
   { outcomeId: 'two', matchId: '100', marketId: 'opaque', period: 0 },
 ]);
-console.log('PASS one selection per exact market: all outcome types replace, repeated clicks toggle, identities ignore labels/forged metadata, lines/periods/provider groups stay distinct');
+console.log('PASS outcome alternatives kept for SYSTEM columns, repeated clicks remove exact pick, duplicate market identities rejected inside a single ticket, distinct match markets stay combined');
