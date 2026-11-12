@@ -95,8 +95,9 @@ export function parseNumberedGoalWindow(line){
  const spoken={first:1,second:2,third:3};
  const marker=m[1]??m[2].replace(/ goal$/,'');
  const target=spoken[marker]??Number(String(marker).match(/^\d+/)?.[0]);
- const from=Number(m[3]),to=Number(m[4]);
+ const from=Number(m[3]),quotedEnd=Number(m[4]);
  const width=m[5]==null?null:Number(m[5]);
+ const to=width!==null&&quotedEnd-from===width?quotedEnd-1:quotedEnd;
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!side||!Number.isInteger(target)||target<1||target>100||
     !Number.isInteger(from)||from<0||!Number.isInteger(to)||to<from||to>130||
@@ -194,6 +195,14 @@ export function parseEventWindow(line,clock=null) {
   if(current===null||current<0||current>=130)return null;
   start=current;end=current+Number(rolling[1]);
  }else return null;
+ // Zizobet uses both inclusive 6-10 (5-minute) and end-exclusive
+ // 30-45 (15-minute) bands. Never count the start of the next band.
+ const bandWidth=fixed?name.match(/\((\d{1,2})-minute interval\)$/)?.[1]:null;
+ if(bandWidth!=null){
+  const width=Number(bandWidth);
+  if(end-start===width)end--;
+  else if(end-start+1!==width)return null;
+ }
  if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||
     ((exactMinute||first)?start>end:start>=end)||end>130)return null;
  // Freeze the window at selection acceptance. No later moving reference clocks.
@@ -207,9 +216,10 @@ export function parseIntervalLeader(line) {
  const name=norm(line.market_name??line.marketName??line.name);
  const m=name.match(/^who\s+(scores\s+most\s+goals|takes\s+most\s+corners|(?:gets|receives)\s+most\s+cards|commits\s+most\s+fouls)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})\s*(?:\((\d{1,2})-minute interval\))?$/);
  if(!m)return null;
- const from=Number(m[2]),to=Number(m[3]),width=m[4]==null?null:Number(m[4]);
+ const from=Number(m[2]),quotedEnd=Number(m[3]),width=m[4]==null?null:Number(m[4]);
+ const to=width!==null&&quotedEnd-from===width?quotedEnd-1:quotedEnd;
  if(from<0||to<from||to>130||
-    (width!==null&&width!==to-from+1&&width!==to-from))return null;
+    (width!==null&&width!==to-from+1))return null;
  const event=/corners/.test(m[1])?'corner':/cards/.test(m[1])?'card':
   /fouls/.test(m[1])?'foul':'goal';
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
