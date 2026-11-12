@@ -81,3 +81,28 @@ export function matchedSupplementalScorers(primaryFacts,candidates){
  }
  return [...proposed.values()].filter(Boolean);
 }
+
+/** FotMob is supplementary identity information, never the source of a new
+ * Zizobet goal or a betting decision. Use a nominated scorer on the UI only
+ * when BOTH scoreboards and each team's exact goal incident counts agree,
+ * and the provider minute/team pair identifies one primary incident.
+ */
+export function displayOnlyFotMobScorers(row,fotmob){
+ const home=validCount(row?.home_score),away=validCount(row?.away_score);
+ if(home===null||away===null||home!==validCount(fotmob?.homeScore)||
+    away!==validCount(fotmob?.awayScore))return [];
+ const existing=row?.raw?.eventTimeline;
+ const secondary=fotmob?.goalEvents;
+ if(!Array.isArray(existing)||!Array.isArray(secondary))return [];
+ const goals=existing.filter(e=>e?.type==='goal');
+ const otherGoals=secondary.filter(e=>e?.type==='goal');
+ if(![goals,otherGoals].every(list=>
+    list.filter(e=>e?.team==='home').length===home&&
+    list.filter(e=>e?.team==='away').length===away))return [];
+ if(goals.some(e=>!Number.isInteger(Number(e.minute))||
+    !Number.isFinite(Number(e.minute))))return [];
+ // Never turn an independently reported goal into a new primary event.
+ // Matched source names are advisory labels only, never financial facts.
+ return matchedSupplementalScorers(goals,otherGoals)
+   .map(s=>({...s,source:'fotmob'}));
+}
