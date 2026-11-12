@@ -78,7 +78,7 @@ export function parsePlayerGoalContract(line){
  if(/^(?:anytime|any time) goalscorers?$|^(?:anytime\s+)?player to score(?: a goal)?$/i.test(name)&&choice&&
    !['no goalscorer','none','no goal'].includes(choice)){
   const player=String(line.outcome_name??line.outcomeName??'').trim();
-  if(!player||/^(yes|no|po|jo|over|under)$/i.test(player))return null;
+  if(!player||/^(?:yes|no|po|jo|over|under|none|neither|no goalscorer|1|2|x|draw|home|away|home team|away team)$/i.test(player))return null;
   return {version:1,kind:'player-goal',event:'goal',playerName:player,choice:true};
  }
  return null;
