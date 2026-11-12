@@ -43,7 +43,7 @@ import {frozenLiveContract} from './live-contract-context.mjs';
 import {verifyLiveIntervalAcceptance} from './live-interval-acceptance.mjs';
 import {primaryLiveCounters} from './primary-live-counters.mjs';
 import {nativeZizobetContractRow} from './native-zizobet-contract.mjs';
-import {parsePlayerCardContract,parsePlayerGoalContract,parseEventWindow} from './live-contract-rules.mjs';
+import {parsePlayerCardContract,parsePlayerGoalContract,parseEventWindow,parseSequenceBet} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
@@ -338,9 +338,15 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     correctScoreGrid=grid;
   }
 
-  const isRace=/\brace to \d+ (?:goals?|corners?|cards?)\b|\b(?:reaches|gets|takes|scores|receives) \d+ (?:goals?|corners?|cards?) first\b/i.test(raceName);
-  const isSequenceMarket=!isRace&&
-    /\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+(?:goals?|corners?|cards?|bookings?)\b|\b(?:goals?|corners?|cards?|bookings?)\s+\d+\b/i.test(raceName);
+  // Use the SAME grammar for 1/X/2 sibling-offer detection that will
+  // later be frozen on the ticket. Regex-only detection missed Zizobet's
+  // "Who scores first / second / third" aliases: a quoted third "None"
+  // was then treated as a refundable two-way market at settlement.
+  const sequenceProbe=parseSequenceBet({...row,market_name:raceName,
+    outcome_name:'1',outcomeName:'1',outcome_key:'1',outcomeKey:'1'},
+    {goal:{home:0,away:0},corner:{home:0,away:0},card:{home:0,away:0}});
+  const isRace=sequenceProbe?.kind==='race';
+  const isSequenceMarket=sequenceProbe?.kind==='sequence';
   const isCardSequence=isSequenceMarket&&/\b(?:cards?|bookings?)\b/i.test(raceName);
   const sequenceNoneOffered=isSequenceMarket&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
