@@ -8,7 +8,7 @@ import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
 import {supportedContract} from '../ledger/event-evidence.mjs';
 import {canonical,uniqueFixture,teamsMatch,goalCapabilities,normalizeBsd,normalizeApiFootball,normalizeSportApi,normalizeWorld,normalizeGoalApi} from './adapters.mjs';
-import {findFotMobFixture,fetchFotMobDetails,parseFotMobPayload,candidateDateStrings} from './match-recovery.mjs';
+import {findFotMobFixture,fetchFotMobDetails,parseFotMobPayload,candidateDateStrings,fotMobTransportStatus} from './match-recovery.mjs';
 import {apiFootballTimedIncidents,bsdTimedIncidents,sportApiTimedIncidents,goalApiTimedIncidents} from './historical-incidents.mjs';
 import {supplementalRefreshMs,fixtureLive,prematchSoon,sportingFingerprint} from './realtime-policy.mjs';
 const query=async(...a)=>(await import('../db.mjs')).query(...a);
@@ -356,8 +356,17 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      const dates = candidateDateStrings(targetDate);
      const fm = await findFotMobFixture(row.home, row.away, dates,
        row.start_at??row.startAt);
-     if (fm && fm.match) {
+     if (!fm?.match) {
+      // An unmatched fixture is a real integration status, not "FotMob has
+      // no data". Keep transport failures distinct from name/kickoff ambiguity.
+      health.providers.fotmob={...health.providers.fotmob,
+       lastError:fotMobTransportStatus().lastError??'FOTMOB_FIXTURE_NOT_UNIQUELY_MATCHED'};
+     }else{
       const details = await fetchFotMobDetails(fm.match.id,{force:urgent.has(id)});
+      health.providers.fotmob={...health.providers.fotmob,
+       lastFixtureId:String(fm.match.id),
+       lastError:details?null:(fotMobTransportStatus().lastError??'FOTMOB_DETAILS_UNAVAILABLE'),
+       ...(details?{lastSuccessAt:new Date(now()).toISOString()}:{})};
       const parsed = parseFotMobPayload(fm.match, details);
       if(details){
        try{
@@ -411,7 +420,11 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        });
       }
      }
-    } catch {}
+    } catch(error) {
+      health.providers.fotmob={...health.providers.fotmob,
+       lastError:'FOTMOB_ENRICHMENT_ERROR'};
+      console.warn('[fotmob] verified fixture enrichment failed:',String(error?.message??error));
+    }
    }
    // Identity rotation: FotMob first (above), then a confirmed AiScore mapping,
    // then the configured daily-quota providers. Stop once known primary actors
@@ -602,7 +615,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    }
   }catch{health.lastError='STATS_UNAVAILABLE';}finally{busy=false;}
  }
- return {warm,observeMatch,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,recoverHistoricalMatch,update,tick,enabled,health:()=>({...health,enabled:enabled(),observedMatches:observed.size,urgentMatches:urgent.size,cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:realtime()?Number(env.STATS_LIVE_REFRESH_MS)||30000:refreshMs}),allows(id,market){
+ return {warm,observeMatch,warmStatistics,displayStatistics,displayGoalIntervalStats,displayScorers,recoverHistoricalMatch,update,tick,enabled,health:()=>({...health,providers:{...health.providers,fotmob:{...health.providers.fotmob,transport:fotMobTransportStatus()}},enabled:enabled(),observedMatches:observed.size,urgentMatches:urgent.size,cachedMatches:offers.size,cachedStatistics:displayCache.size,refreshIntervalMs:realtime()?Number(env.STATS_LIVE_REFRESH_MS)||30000:refreshMs}),allows(id,market){
   if(!enabled())return false;const s=offers.get(String(id));if(!s?.offer||s.expires<=now())return false;
   const name=String(market.market_name??market.name??'');
   if(!supportedContract(market)||!eventSelectionSupported(market))return false;
