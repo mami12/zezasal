@@ -27,9 +27,18 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   if(!enabled()||!realtime()||!row)return false;
   const id=String(row.match_id??row.id??'');
   if(!/^\d+$/.test(id)||(!fixtureLive(row)&&!prematchSoon(row,now(),env)))return false;
-  const fingerprint=sportingFingerprint(row),old=observed.get(id);
+  const old=observed.get(id);
+  // Lightweight Zizobet board rows may omit score/stats. Preserve the most
+  // recent explicit fact; otherwise header/detail alternation looks like a
+  // new goal every 15 seconds and pounds the secondary APIs.
+  const combined=old?{...old.row,...row,
+   raw:{...(old.row.raw??{}),...(row.raw??{})},
+   home_score:row.home_score??old.row.home_score,
+   away_score:row.away_score??old.row.away_score,
+   stats:row.stats??old.row.stats}:row;
+  const fingerprint=sportingFingerprint(combined);
   const changed=old!=null&&old.fingerprint!==fingerprint;
-  observed.delete(id);observed.set(id,{row,fingerprint,at:now()});
+  observed.delete(id);observed.set(id,{row:combined,fingerprint,at:now()});
   if(changed){urgent.add(id);displayCache.delete(id);}
   if(observed.size>1000){const first=observed.keys().next().value;observed.delete(first);urgent.delete(first);}
   return changed;
