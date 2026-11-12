@@ -208,10 +208,8 @@ export async function getResult(matchId,{execute=query,readEvidence=loadEventEvi
       const pair=result.statistics[field]??{},verified=review.consensus[field];
       result.statistics[field]={home:pair.home??verified.home,away:pair.away??verified.away};
     }
-    for(const [field,prefix]of [['corners','corners'],['cards','cards']])if(review.consensus?.[field]&&!review.conflicts?.[field]){
-      result[prefix+'_home']??=review.consensus[field].home;
-      result[prefix+'_away']??=review.consensus[field].away;
-    }
+    // Secondary source consensus may help admin review, but must not
+    // manufacture a Zizobet corner/card total for financial settlement.
   }
   // Optional timeline storage must not stop ordinary result/statistics tickets.
   try{result.event_evidence=await readEvidence(matchId);}catch(error){
