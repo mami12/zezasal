@@ -433,7 +433,7 @@ ledgerRouter.get(
     if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
     decoratedAt=Date.now();
     const category=CATEGORIES.includes(req.query.category)?req.query.category:'all';
-    return res.json(detailProjection(match,category));
+    return res.json({...detailProjection(match,category),fullMarketsReady:req.app.locals.matchMarketsReady?.(matchId)??true});
   }),
 );
 
