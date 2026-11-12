@@ -80,4 +80,33 @@ const c=liveContract(select('Player Total Goals · Yasin Zor','Over 1.5'));
 assert.equal(await gradeStoredEventContract({
  id:'00000000-0000-4000-8000-000000000501',match_id:250,live_contract:c
 },{home_score:2,away_score:1},{execute}),'WON');
+
+ // Reconfirmed LIVE facts settle irreversibly achieved player targets now,
+ // rather than waiting for FT; reversible negatives must stay PENDING.
+ const earlyExecute=async(sql)=>{
+   if(sql.startsWith('with covered as'))return {rows:[{
+     home:2,away:1,total:3,count_home:2,count_away:1,
+     through_minute:61,complete:false,open_recovery_gap:false,
+     confirmed_at:stamp,observed_at:stamp,second_poll_at:stamp
+   }]};
+   if(sql.includes('select minute,seconds,team,phase,player_id'))return {rows:facts};
+   throw Error('Unexpected LIVE SQL '+sql.slice(0,120));
+ };
+ const wager=(title,choice)=>({
+   id:'00000000-0000-4000-8000-000000000502',
+   match_id:250,live_contract:liveContract(select(title,choice))
+ });
+ assert.equal(await gradeStoredEventContract(wager(
+   'Player to Score 2 or More Goals · Yasin Zor','Yes'),null,{execute:earlyExecute}),
+   'WON','2+ achieved goals settle immediately with reconfirmed scorer facts');
+ assert.equal(await gradeStoredEventContract(wager(
+   'Player to Score 3+ Goals · Yasin Zor','Yes'),null,{execute:earlyExecute}),
+   null,'3+ is not LOST at two goals; a third is still possible');
+ assert.equal(await gradeStoredEventContract(wager(
+   'Player Total Goals · Yasin Zor','Under 1.5'),null,{execute:earlyExecute}),
+   'LOST','Under threshold passed cannot recover');
+ assert.equal(await gradeStoredEventContract(wager(
+   'Player Total Goals · Yasin Zor','Under 2.5'),null,{execute:earlyExecute}),
+   null,'Under 2.5 is not WON before FT');
+ 
 console.log('PASS player goals 2+/hat trick/total Over Under/exact/each half and confirmed SQL scorer facts');
