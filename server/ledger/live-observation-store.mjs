@@ -19,6 +19,7 @@ export function normalizeLiveFrame(data){
  const game=data?.Match??{};
  const clock=asClock(game),goals=score(game);
  const corners={home:whole(game.CornersTeam1),away:whole(game.CornersTeam2)};
+ const fouls={home:whole(game.FoulsTeam1),away:whole(game.FoulsTeam2)};
  const yellows={home:whole(game.YellowCardsTeam1),away:whole(game.YellowCardsTeam2)};
  const reds={home:whole(game.RedCardsTeam1),away:whole(game.RedCardsTeam2)};
  const cards=yellows.home==null||yellows.away==null||reds.home==null||reds.away==null?null:
@@ -41,7 +42,7 @@ export function normalizeLiveFrame(data){
      filtered.filter(e=>e.team==='away').length!==counters.away)return;
   coverage[kind+'Through']=clock;
  };
- verify('goal',goals);verify('corner',corners);verify('card',cards);
+ verify('goal',goals);verify('corner',corners);verify('card',cards);verify('foul',fouls);
  // A generic `card` marker is not proof of its colour. Reconcile the
  // separately reported provider totals with every explicitly coloured event.
  const cardEvents=events?.filter(e=>e.type==='card')??[];
@@ -55,8 +56,8 @@ export function normalizeLiveFrame(data){
    goal:goals?goals.home+goals.away:null,
    corner:count(corners.home,corners.away),
    card:cards?cards.home+cards.away:null,
-   foul:null
-  },teams:{goal:goals,corner:corners,card:cards,
+   foul:count(fouls.home,fouls.away)
+  },teams:{goal:goals,corner:corners,card:cards,foul:fouls,
     yellowCard:yellows,redCard:reds},cardColorsVerified,events:events??[],
   coverage,ended:Number(game.EventStatus??game.MatchStatusID)===40,
   eventListAvailable:!!events,rawTimeline,rawTimelineTruncated};
