@@ -7,7 +7,7 @@ import {gradePlayerGoalSpecial} from './player-goal-specials.mjs';
 const num=value=>value!=null&&value!==''&&Number.isSafeInteger(Number(value))&&
  Number(value)>=0?Number(value):null;
 export function playerGoalLiveGuard(contract,coverage,events,match,{now=Date.now()}={}){
- if(contract?.kind!=='player-goal-special'||!match)
+ if(!['player-goal','player-goal-special'].includes(contract?.kind)||!match)
   return {allowed:false,reason:'MISSING_SCORER_EVIDENCE'};
  const clockMs=match.match_time_ms;
  const minute=clockMs!=null&&Number.isFinite(Number(clockMs))?Number(clockMs)/60000:null;
@@ -38,7 +38,9 @@ export function playerGoalLiveGuard(contract,coverage,events,match,{now=Date.now
  // status unknowable. No one may bet from a possibly decided old quote.
  if(events.some(e=>e.own_goal==null&&e.aiscore_verified!==true))
   return {allowed:false,reason:'UNVERIFIED_PLAYER_GOAL_CLASSIFICATION'};
- const decided=gradePlayerGoalSpecial(contract,events,{complete:false});
+ const actual=contract.kind==='player-goal'?
+  {...contract,kind:'player-goal-special',mode:'count',threshold:1}:contract;
+ const decided=gradePlayerGoalSpecial(actual,events,{complete:false});
  if(decided==='WON'||decided==='LOST')
   return {allowed:false,reason:'PLAYER_GOAL_MARKET_ALREADY_DECIDED',status:decided};
  return {allowed:true};
