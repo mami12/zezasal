@@ -1,4 +1,5 @@
 /** Pure system-ticket arithmetic. No database, feed, or browser state. */
+import {selectionMarketIdentity} from './selection-market.mjs';
 export const MAX_SYSTEM_COLUMNS = 24;
 export const MAX_SYSTEM_MATCHES = 20;
 export const MIN_SYSTEM_STAKE = 100;
@@ -31,29 +32,31 @@ export function splitSystemStake(totalStake, columnCount) {
 export function buildSystemColumns(selections, {
   matchIdOf = selection => selection?.matchId,
   selectionIdOf = selection => selection?.outcomeId,
+  marketIdentityOf = selection => selectionMarketIdentity(selection),
   maxColumns = MAX_SYSTEM_COLUMNS,
   maxMatches = MAX_SYSTEM_MATCHES,
 } = {}) {
   if (!Array.isArray(selections) || selections.length < 2 || selections.length > MAX_SYSTEM_COLUMNS * MAX_SYSTEM_MATCHES) {
     fail('Bileta e sistemit ka zgjedhje të pavlefshme.');
   }
-  const groups = new Map(), seen = new Set();
+  const groups = new Map(), seen = new Set(), matches = new Set();
   for (const selection of selections) {
     const matchId = String(matchIdOf(selection) ?? ''), id = String(selectionIdOf(selection) ?? '');
     if (!id || !matchId) fail('Zgjedhja nuk u identifikua.');
     if (seen.has(id)) fail('Zgjedhje të përsëritura.');
-    seen.add(id);
-    if (!groups.has(matchId)) groups.set(matchId, []);
-    groups.get(matchId).push(selection);
+    seen.add(id);matches.add(matchId);
+    const identity=marketIdentityOf(selection)??JSON.stringify([matchId,'legacy']);
+    if (!groups.has(identity)) groups.set(identity, []);
+    groups.get(identity).push(selection);
   }
-  if (groups.size > maxMatches) fail(`Lejohen maksimumi ${maxMatches} ndeshje për kolonë.`);
+  if (matches.size > maxMatches) fail(`Lejohen maksimumi ${maxMatches} ndeshje për kolonë.`);
   let count = 1;
   for (const group of groups.values()) {
     count *= group.length;
     // Reject before allocating any Cartesian product.
     if (count > maxColumns) fail(`Lejohen maksimumi ${maxColumns} kolona.`);
   }
-  if (count < 2) fail('Sistemi kërkon të paktën dy zgjedhje nga e njëjta ndeshje.');
+  if (count < 2) fail('Sistemi kërkon të paktën dy alternativa nga i njëjti treg.');
   let columns = [[]];
   for (const group of groups.values()) columns = columns.flatMap(column => group.map(selection => [...column, selection]));
   return columns;
