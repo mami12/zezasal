@@ -11,8 +11,10 @@ export const LIVE_PREVIEW_ROWS_SQL=
  "where l.status='PENDING' and t.status='PENDING' and l.live_contract is not null "+
  'and not exists(select 1 from app_settlement_override o where o.line_id=l.id) '+
  'order by l.match_id,l.id limit $1';
-/** Preview only. This MUST NOT update app_ticket_line, app_ticket or wallets.
- * Administrator can verify results before explicitly enabling any real payout.
+/** Preview only: no financial writes happen in this function.
+ * A separate verified writer may promote ONLY first/next/race counter proofs
+ * after a second independent Zizobet observation; all other proposals are
+ * diagnostic and still require their own confirmed incident history.
  */
 export async function createLiveSettlementPreviews({
  runQuery=query,now=Date.now,limit=400
@@ -36,7 +38,7 @@ export async function createLiveSettlementPreviews({
   if(!['WON','LOST','VOID'].includes(status)){await clear(row.line_id);held++;continue;}
   const evidence={contract,frame:{source:frame.source,clock:frame.clock,counts:frame.counts,
     teams:frame.teams,coverage:frame.coverage,ended:frame.ended,events:frame.events},frameAt:row.frame_at,
-    recoveriesOpen:0,decision:'TEST_ONLY_NO_WALLET_WRITE'};
+    recoveriesOpen:0,decision:'PREVIEW_REQUIRES_SECOND_PRIMARY_POLL'};
   await runQuery(
    'insert into app_live_settlement_preview(line_id,match_id,proposed_status,payload,updated_at) '+
    'values($1,$2,$3,$4::jsonb,now()) '+
