@@ -350,7 +350,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   const isCardSequence=isSequenceMarket&&/\b(?:cards?|bookings?)\b/i.test(raceName);
   const sequenceNoneOffered=isSequenceMarket&&quotedOffers.some(o=>
     o.market_key===row.market_key&&String(o.line??'')===String(row.line??'')&&
-    /^(?:none|neither|no team|no one|no goal|no more goals?|no corner|no more corners?|no cards?|no more cards?|no bookings?|x|draw)$/i.test(
+    /^(?:none|neither|no team|no one|asnj[eë]ra|asnje skuader|no goal|no more goals?|no corner|no more corners?|no card|no cards?|no more cards?|no booking|no bookings?|x|draw)$/i.test(
       String(o.outcome_name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()));
   // Two-way First/Last (half) incident bets refund on no event. A real
   // third "Neither" outcome means the team choices LOSE instead. Snapshot
