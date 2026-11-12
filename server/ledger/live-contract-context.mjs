@@ -1,5 +1,6 @@
 import {liveContract} from './live-contract-rules.mjs';
 import {teamStatisticsFromRow} from '../match-statistics.mjs';
+import {primaryLiveCounters} from './primary-live-counters.mjs';
 const safe=v=>v!=null&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0?Number(v):null;
 const time=v=>v!=null&&Number.isFinite(new Date(v).getTime())?new Date(v).getTime():null;
 const fail=message=>Object.assign(new Error(message),{status:400,code:'MARKET_EVIDENCE_UNSUPPORTED'});
@@ -19,8 +20,9 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const clock=scheduled?null:Number.isFinite(Number(clockMs))&&clockMs!=null?Number(clockMs)/60000:null;
  const goals={home:scheduled?0:safe(match.home_score),away:scheduled?0:safe(match.away_score)};
  const cornerArchive=line.raceCornerSnapshot;
- const corners={home:scheduled?0:safe(teams.home?.corners??cornerArchive?.count_home),
-  away:scheduled?0:safe(teams.away?.corners??cornerArchive?.count_away)};
+ const primaryCorners=primaryLiveCounters(match,'corner',{at});
+ const corners={home:scheduled?0:safe(primaryCorners?.home??cornerArchive?.count_home),
+  away:scheduled?0:safe(primaryCorners?.away??cornerArchive?.count_away)};
  // Resolve team-name outcomes against this exact fixture, never by fuzzy
  // prefixes or a team's position in another match.
  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -38,9 +40,10 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  // Numbered/next card bets require the same accepted card counters that
  // Race-to-Cards already uses. PREMATCH baseline is verified zero.
  const cardSnapshot=line.raceCardSnapshot;
- const verifiedCards=scheduled?{home:0,away:0}:cardSnapshot?{
-  home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)
- }:null;
+ const primaryCards=primaryLiveCounters(match,'card',{at});
+ const verifiedCards=scheduled?{home:0,away:0}:primaryCards?{
+  home:primaryCards.home,away:primaryCards.away
+ }:cardSnapshot?{home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)}:null;
  const contract=liveContract(prepared,{clock,counts:{goal:goals,corner:corners,card:verifiedCards},teams:match});
  const name=String(line.market_name??line.marketName??'');
  if(service==='PREMATCH'&&!scheduled)throw fail('Ndeshja prematch nuk ka fillim të ardhshëm të verifikuar.');
@@ -57,9 +60,10 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  if(live&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
   const observedAt=time(match.score_at);
   const clockAt=time(match.clock_at);
-  if((contract.event==='goal'&&(goals.home==null||goals.away==null||observedAt===null))||
-      clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000||
-      (observedAt!==null&&(at-observedAt>90000||observedAt-at>5000)))throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
+  if((contract.event==='goal'&&(goals.home==null||goals.away==null||observedAt===null||
+       at-observedAt>90000||observedAt-at>5000))||
+      clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000)
+    throw fail('Të dhënat live nuk janë mjaftueshëm të freskëta.');
  }
  if(live&&contract.kind==='player-ordinal-goal'){
   const scoreAt=time(match.score_at),clockAt=time(match.clock_at);
@@ -84,17 +88,18 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       status:400,code:'MARKET_DECIDED'});
  }
  if(live&&(contract.kind==='race'||contract.kind==='sequence')){
-  if(contract.event==='card'){
+  if(contract.event==='card'&&!primaryCards){
    const observed=time(cardSnapshot?.observed_at);
    const confirmed=time(cardSnapshot?.confirmed_at);
    const through=cardSnapshot?.through_minute==null?null:Number(cardSnapshot.through_minute);
-   // Never sell an already-decided card race from stale/missing aggregates.
+   // Fresh Zizobet cumulative yellow/red counters are enough to freeze a
+   // LIVE race, including at minute 0/1. The incident archive is a fallback.
    if(!current||current.home===null||current.away===null||
       observed===null||confirmed===null||confirmed>observed||
       at-observed>45000||observed-at>5000||
       through===null||!Number.isFinite(through)||clock===null||
       through<Math.floor(clock))
-     throw fail('Mungon historiku i freskët dhe i konfirmuar i kartonëve për këtë garë LIVE.');
+     throw fail('Mungojnë numëruesit e konfirmuar të kartonëve LIVE.');
   }
   if(current?.home==null||current?.away==null)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
