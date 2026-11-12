@@ -92,6 +92,21 @@ try{
  held.delete('108');modes.set('108','hold');await retry();const retryResponse=await waitForHeld('108');
  await absent('108');assert.ok(await page.$('[role="alert"]'),'a retry does not temporarily reopen unavailable quotes');
  modes.delete('108');retryResponse.json(fixture('108'));await loaded('108');
+
+ // A second manual Retry must cancel a still-pending retry and issue an
+ // independent request. The button is never a no-op while the server stalls.
+ modes.set('109','error');await navigate('109');
+ await page.waitForSelector('[role="alert"]');
+ modes.set('109','hold');await retry();
+ const firstRetry=await waitForHeld('109');
+ await page.waitForFunction(()=>document.querySelector('[role="alert"]')?.textContent?.includes('Retrying...'));
+ await retry();
+ const end=Date.now()+5000;
+ while(held.get('109')===firstRetry&&Date.now()<end)await new Promise(resolve=>setTimeout(resolve,20));
+ assert.notEqual(held.get('109'),firstRetry,'manual Retry aborts previous HTTP and starts another request');
+ modes.delete('109');held.get('109').json(fixture('109'));await loaded('109');
+ await navigate('108');await loaded('108');
+
  await page.evaluate(()=>window.favorites.toggleFavorite('108'));
  await page.waitForFunction(()=>window.favorites.isFavorite('108')&&window.favorites.isAlertEnabled('108'));
  await page.evaluate(()=>window.favorites.toggleFavorite('108'));
