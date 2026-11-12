@@ -7,7 +7,7 @@ import {
  gradeLine,hasRequiredSettlementEvidence,settleMatch,recalcTicket,createPendingLineScanner,
  settleVerifiedHalftimes
 } from '../server/ledger/settler.mjs';
-import {captureHalfTimeResults} from '../server/ledger/halftime-results.mjs';
+import {captureHalfTimeResults,persistHalfTimeCandidate} from '../server/ledger/halftime-results.mjs';
 
 const ft={home_team:'Home',away_team:'Away',home_score:2,away_score:1,
  half_home_score:1,half_away_score:0,corners_home:4,corners_away:5,cards_home:2,cards_away:2,
@@ -122,6 +122,29 @@ try{
  assert.equal(captured.recorded,1,'Persist a valid HT snapshot even when the active board has no SetScores');
  const half=(await q('select half_home_score,half_away_score from app_match_half_result where match_id=99001')).rows[0];
  assert.deepEqual([Number(half.half_home_score),Number(half.half_away_score)],[1,0]);
+
+ // Two independent HT observations allow payout before full-time, even when
+ // the FT result has never been recorded. No repeat can pay the player twice.
+ const htTicket=await mk({items:[{id:99001,market:'1st half - Result',choice:'1'}]});
+ await q("update app_ticket set placed_at=now()-interval '20 minutes' where id=$1",[htTicket]);
+ await q("update app_match_half_result set first_seen_at=now()-interval '10 seconds', observed_at=now()-interval '5 seconds' where match_id=99001");
+ const candidate={
+  matchId:99001,homeTeam:'Home',awayTeam:'Away',home:1,away:0,
+  signature:JSON.stringify(['Home','Away',1,0]),observedAt:new Date().toISOString()
+ };
+ assert.equal((await persistHalfTimeCandidate(candidate,{execute:q})).confirmed,true);
+ const early=await settleVerifiedHalftimes({runQuery:q,
+  update:async(id,status,tid)=>{
+   const {updatePendingLine}=await import('../server/ledger/settler.mjs');
+   return updatePendingLine(id,status,tid,{database:pool});
+  },recalc:id=>recalcTicket(id,{database:pool})});
+ assert.ok(early.graded>=1,'Verified HT should grade before FT exists');
+ assert.equal((await read(htTicket)).status,'WON');
+ const paid=(await q('select balance from app_user where id=$1',[player])).rows[0].balance;
+ const retried=await settleVerifiedHalftimes({runQuery:q,recalc:id=>recalcTicket(id,{database:pool})});
+ assert.equal(retried.graded,0);
+ assert.equal(Number((await q('select balance from app_user where id=$1',[player])).rows[0].balance),Number(paid));
+ assert.equal((await q("select count(*)::int as n from app_transaction where type='BET_WON' and reference_id=$1",[htTicket])).rows[0].n,1);
 
  console.log('PASS elementary markets FT/HT, two-way pushes, two-match combos, pending safety, payout idempotency, rotating queue and saved HT recovery');
 }finally{
