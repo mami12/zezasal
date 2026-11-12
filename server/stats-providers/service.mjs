@@ -641,7 +641,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     error.message:'STATS_UNAVAILABLE';
   });
  }
- let cursor=0;
+ let cursor=0,priorityCursor=0;
  async function tick(){
   if(!enabled()||busy)return;busy=true;health.lastRunAt=new Date(now()).toISOString();
   try{
@@ -649,11 +649,18 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    health.watchedMatches=ids.size;health.lastError=null;
    const all=[...ids],prioritized=all.filter(id=>urgent.has(id)||events.has(id));
    const rest=all.filter(id=>!urgent.has(id)&&!events.has(id));
-   const priorityCap=Math.max(1,fastPollBatch()-1);
-   const selected=realtime()?[...prioritized.slice(0,priorityCap),
-    ...Array.from({length:Math.max(0,fastPollBatch()-Math.min(priorityCap,prioritized.length))},
-     (_,i)=>rest.length?rest[(cursor+i)%rest.length]:null).filter(Boolean)]:all;
-   if(realtime()&&rest.length)cursor=(cursor+Math.max(1,selected.length-Math.min(priorityCap,prioritized.length)))%rest.length;
+   // Reserve at least one slot for unbet matches, but rotate urgent/pending
+   // bets as well so a constant first subset cannot starve other tickets.
+   const size=fastPollBatch(),priorityCap=rest.length?Math.max(1,size-1):size;
+   const number=Math.min(priorityCap,prioritized.length);
+   const important=Array.from({length:number},
+    (_,i)=>prioritized[(priorityCursor+i)%prioritized.length]);
+   if(prioritized.length)priorityCursor=(priorityCursor+number)%prioritized.length;
+   const normalSlots=Math.max(0,size-number);
+   const ordinary=Array.from({length:Math.min(normalSlots,rest.length)},
+    (_,i)=>rest[(cursor+i)%rest.length]);
+   if(rest.length)cursor=(cursor+ordinary.length)%rest.length;
+   const selected=realtime()?[...important,...ordinary]:all;
    for(const id of selected){
     try{
      const row=observed.get(id)?.row??await loadMatch?.(Number(id))??(await loadSnapshots?.([Number(id)]))?.[0];
