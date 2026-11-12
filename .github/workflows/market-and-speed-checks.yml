@@ -80,6 +80,15 @@ jobs:
       - name: Primary Next/First/Nth/2+ and 3+ scorer market family coverage
         if: always()
         run: node scripts/test-event-family-coverage.mjs
+      - name: Two independently verified LIVE payout decisions
+        if: always()
+        run: node scripts/test-verified-live-settlement.mjs
+      - name: Real SQL ticket-and-wallet flow for LIVE and PREMATCH accumulator
+        if: always()
+        run: node scripts/test-live-settlement-money-flow.mjs
+      - name: Financial safety of timed incidents and player identity
+        if: always()
+        run: node scripts/test-live-financial-safety.mjs
       - name: Market 05 - player ordinal scorers
         if: always()
         run: node scripts/test-player-ordinal-scorers.mjs
