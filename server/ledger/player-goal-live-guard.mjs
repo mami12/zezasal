@@ -17,11 +17,27 @@ export function playerGoalLiveGuard(contract,coverage,events,match,{now=Date.now
  // A fresh primary 0-0 scoreboard mathematically proves there is no
  // prior scorer. Never demand an incident list for events that did not occur.
  // After the first goal, retain the stricter full actor history validation.
- if(home===0&&away===0&&Number.isFinite(minute)&&minute>=0&&
+ const freshScore=home!==null&&away!==null&&Number.isFinite(minute)&&minute>=0&&
     [scoreAt,clockAt].every(Number.isFinite)&&
     [scoreAt,clockAt].every(t=>t<=now+5000)&&
-    now-scoreAt<=90000&&now-clockAt<=45000)
+    now-scoreAt<=90000&&now-clockAt<=45000;
+ if(freshScore&&home+away===0)
   return {allowed:true,source:'confirmed-zero-goal-score'};
+ // Pure upper bound: no named player can have scored N goals if ALL teams
+ // together have scored fewer than N. This applies to 2+/3+/over/exact
+ // player-count markets, regardless of the lack of a scorer timeline.
+ // As soon as that upper bound is reachable, demand reconciled actor facts
+ // before selling a potentially already-decided LIVE selection.
+ if(freshScore&&contract.kind==='player-goal-special'&&
+    contract.mode==='count'&&contract.half==null&&
+    Number.isFinite(contract.threshold)&&contract.threshold>0&&
+    (typeof contract.choice==='boolean'||
+      ['over','under','exact'].includes(contract.choice))){
+   const irreversible=typeof contract.choice==='boolean'?
+     Math.ceil(contract.threshold):Math.floor(contract.threshold)+1;
+   if(home+away<irreversible)
+    return {allowed:true,source:'confirmed-global-goal-upper-bound'};
+ }
  if(!Array.isArray(events))return {allowed:false,reason:'MISSING_SCORER_EVIDENCE'};
  const observed=coverage?.observed_at==null?null:Date.parse(coverage.observed_at);
  const confirmed=coverage?.confirmed_at==null?null:Date.parse(coverage.confirmed_at);
