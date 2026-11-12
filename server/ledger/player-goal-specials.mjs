@@ -36,7 +36,11 @@ function quotedActor(line,title,choice,kind){
  // outcome itself, with no `pl` parameter. The market title fixes the
  // numeric threshold, so the outcome names the actor, not a wager line.
  const isSelectionName=(kind==='named'||kind==='count-named')&&!player&&
-  label&&!/^(?:yes|no|po|jo|over|under|none|exact|1|2|x)$/i.test(label);
+  label&&!/^(?:yes|no|po|jo|over|under|none|exact|\d+(?:[.,]\d+)?|x|draw|home|away|home team|away team)$/i.test(label);
+ // A provider player ID/name cannot silently be paired with a different
+ // named selection; otherwise the wrong player's goals could settle a wager.
+ if(player&&label&&!/^(?:yes|no|po|jo)$/i.test(label)&&
+    kind==='count-named'&&canonical(player)!==canonical(label))return null;
  const actor=isSelectionName?label:player;
  if(!actor||!canonical(actor)||actor.length>200)return null;
  return {playerName:actor, ...(id?{playerId:id}:{})};
@@ -64,11 +68,19 @@ export function parsePlayerGoalSpecial(line){
   if((half==='both'&&period!==0)||
      (half!=='both'&&period&&period!==half))return null;
   choice=yes(rawLabel);
-  if(choice===null)choice=true;
+  if(choice===null){
+   if(!/^[a-z][\p{L}\p{M} .,'-]{1,199}$/iu.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
+    return null;
+   choice=true;
+  }
  }else if(atLeast||hat){
   mode='count';threshold=hat?3:Number(atLeast[1]);
   choice=yes(rawLabel);
-  if(choice===null)choice=true;
+  if(choice===null){
+   if(!/^[a-z][\p{L}\p{M} .,'-]{1,199}$/iu.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
+    return null;
+   choice=true;
+  }
  }else if(/^(?:player (?:total )?goals?|player goals? total)$/.test(name)){
   mode='count';
   const over=label.match(/^over\s+(\d+(?:[.,]\d+)?)$/);
