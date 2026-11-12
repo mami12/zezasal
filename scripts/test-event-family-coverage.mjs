@@ -107,11 +107,29 @@ count+=3;
 
 const early=playerGoalLiveGuard(two,null,null,live(0),{now});
 assert.equal(early.allowed,true,'0-0 has no possible existing scorer');
-assert.equal(playerGoalLiveGuard(two,null,null,live(6,1,0),{now}).allowed,false,
- 'With existing goals, the entire scorer list must reconcile');
+assert.equal(playerGoalLiveGuard(two,null,null,live(6,1,0),{now}).allowed,true,
+ '1 total goal cannot complete ANY nominated player 2+ target');
+assert.equal(playerGoalLiveGuard(three,null,null,live(6,2,0),{now}).allowed,true,
+ '2 total goals cannot complete ANY nominated player 3+ target');
+assert.equal(playerGoalLiveGuard(two,null,null,live(6,2,0),{now}).allowed,false,
+ '2 total goals can already belong to one player, so require scorer facts');
+assert.equal(playerGoalLiveGuard(three,null,null,live(6,3,0),{now}).allowed,false,
+ '3 total goals may already have completed an actor hat trick');
+assert.equal(playerGoalLiveGuard({
+ ...two,choice:'over',threshold:1.5
+},null,null,live(6,1,0),{now}).allowed,true);
+assert.equal(playerGoalLiveGuard({
+ ...two,choice:'under',threshold:2.5
+},null,null,live(6,2,0),{now}).allowed,true);
+assert.equal(playerGoalLiveGuard({
+ ...two,choice:'exact',threshold:2
+},null,null,live(6,2,0),{now}).allowed,true);
+assert.equal(playerGoalLiveGuard({
+ ...two,choice:'exact',threshold:2
+},null,null,live(6,3,0),{now}).allowed,false);
 assert.equal(playerGoalLiveGuard(two,null,null,{...live(0),
  score_at:new Date(now-120000)},{now}).allowed,false,'stale zero cannot be trusted');
-count+=3;
+count+=10;
 
 const timed=check('Total goals in minutes 1-10 (10-minute interval)','Over','window-total',{line:'0.5'});
 const accepted=await verifyLiveIntervalAcceptance(timed,live(6,1,0),{at:now,
