@@ -58,12 +58,12 @@ export async function fetchFotMobDate(dateStr) {
 /**
  * Fetch detailed match facts (corners, cards, fouls, shots, goalscorers) from FotMob.
  */
-export async function fetchFotMobDetails(matchId) {
+export async function fetchFotMobDetails(matchId,{force=false}={}) {
  const id=String(matchId??'').trim();
  if(!/^\d+$/.test(id))return null;
  if(blocked())return fotmobDetailsCache.get(id)?.data??null;
  const cached=fotmobDetailsCache.get(id);
- if(cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
+ if(!force&&cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
  if(fotmobDetailFlights.has(id))return fotmobDetailFlights.get(id);
  const flight=(async()=>{
   try {
