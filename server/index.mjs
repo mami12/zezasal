@@ -1066,6 +1066,12 @@ async function boot() {
         return upsertMatches([row]);
       },
       onOdds:rows=>{oddsBuffer.push(...rows);},
+      onFixtureDiscovered:row=>{
+        if(config.sportsProvider==='zizobet'){
+          statsProviders.observeMatch(row);
+          footballInformation.observeMatch(row);
+        }
+      },
       onMarketDefinitions:definitions=>{
         if(!ledgerReady||config.sportsProvider!=='zizobet')return;
         // Never block the provider refresh on a slow/offline database.
