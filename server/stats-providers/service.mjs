@@ -665,8 +665,14 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
     try{
      const row=observed.get(id)?.row??await loadMatch?.(Number(id))??(await loadSnapshots?.([Number(id)]))?.[0];
      if(!row)continue;
-     await warmStatistics(row);
-     if(events.has(id)||realtime()&&prematchSoon(row,now(),env))await update(row,events.has(id));
+     if(realtime()&&prematchSoon(row,now(),env)&&!viewed.has(id)&&!events.has(id)){
+      // Before kickoff, goal/corner/foul counters do not exist. Only check
+      // fixture, player/lineup availability instead of burning five stat APIs.
+      await update(row,false);
+     }else{
+      await warmStatistics(row);
+      if(events.has(id)||realtime()&&prematchSoon(row,now(),env))await update(row,events.has(id));
+     }
      urgent.delete(id);
     }catch{health.lastError='STATS_UNAVAILABLE';}
    }
