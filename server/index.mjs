@@ -53,7 +53,7 @@ import { refreshLiveRiskSettings } from './ledger/live-risk-store.mjs';
 import { createIdleMonitor, getFeedMode, feedIsStopped } from './idle-mode.mjs';
 import {quoteValidUntil} from './ledger/quote-validity.mjs';
 import {projectOddsDelta} from './ledger/odds-delta.mjs';
-import {refreshMarketCatalog,onMarketPolicy} from './ledger/market-catalog-store.mjs';
+import {refreshMarketCatalog,seedNativeMarketCatalog,onMarketPolicy} from './ledger/market-catalog-store.mjs';
 import {emitScopedOdds,setSocketScope,detailProjection,offeredMarket} from './market-delivery.mjs';
 import {isBoardOddsRow,projectClientBoardMatches} from './ledger/board-projection.mjs';
 import {catalogRows,categoryPolicies,scopeBlockRows} from './market-catalog.mjs';
@@ -181,6 +181,7 @@ async function ensureLedgerSchema() {
     await refreshLiveRiskSettings({ initialize: true });
     await refreshBoardSettings();
     await refreshMarketCatalog({initialize:true});
+    await seedNativeMarketCatalog();
     await importDatabaseSeedIfEmpty();
     await ensureDefaultAccounts();
     // admin overrides live in the database and are read through a snapshot: warm it now so a
@@ -1087,6 +1088,7 @@ async function boot() {
         if(!ledgerReady||config.sportsProvider!=='zizobet')return;
         // Never block the provider refresh on a slow/offline database.
         trackBackground(persistProviderMarketDefinitions(definitions,{execute:query})
+          .then(()=>seedNativeMarketCatalog())
           .catch(error=>console.warn('[market archive] dictionary:',error.message)));
       },
       onInfo:info=>{if(info.homeScore==null&&info.matchTimeMs==null)return applyMatchInfo(info);infoBuffer.set(info.matchId,mergeInfo(infoBuffer.get(info.matchId),info));},
