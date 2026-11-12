@@ -22,6 +22,15 @@ const supplementalSnapshot=values=>Object.fromEntries(supplementalStats
  .filter(field=>values?.[field]!=null).map(field=>[field,values[field]]));
 const finished=row=>row.final===true||[row.status,row.service,row.feed_status].some(value=>/^(?:ft|full.?time|finished|ended|cancelled|canceled|after (?:match|penalt(?:y|ies)))(?:\b|$)/i.test(String(value??'')));
 const live=row=>!finished(row)&&String(row.service??row.status).toUpperCase()==='LIVE';
+/** Score-only Zizobet LIVE goals also need a source-matched scorer name on
+ * opened fixtures when the independent primary incident archive lags.
+ */
+export function needsFotMobScorerLookup(row,primaryGoal){
+ if(row?.home_score==null||row?.away_score==null)return false;
+ const h=Number(row.home_score),a=Number(row.away_score);
+ return Number.isSafeInteger(h)&&Number.isSafeInteger(a)&&h>=0&&a>=0&&
+    h+a>0&&(!primaryGoal?.hasGoals||primaryGoal.missingScorers===true);
+}
 export const providerUrls=Object.fromEntries(Object.entries(specs).map(([k,v])=>[k,v.base]));
 export function createStatsService({runQuery=query,env=process.env,request=fetch,now=Date.now,saveEvidence,persistGoalFacts,persistTimedFacts,loadMatch,loadSnapshots,getWatchIds,getEventWatchIds}={}){
  let initFlight,busy=false,active=0;const offers=new Map(),inflight=new Map();
@@ -352,11 +361,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    }
    // If the primary score has goals but the SQL event timeline is missing,
    // a detail viewer still needs an advisory FotMob scorer lookup.
-   const scoreH=Number(row.home_score),scoreA=Number(row.away_score);
-   const missingGoalActors=row.home_score!=null&&row.away_score!=null&&
-     Number.isSafeInteger(scoreH)&&Number.isSafeInteger(scoreA)&&
-     scoreH>=0&&scoreA>=0&&scoreH+scoreA>0&&
-     (!primaryGoal?.hasGoals||primaryGoal.missingScorers);
+   const missingGoalActors=needsFotMobScorerLookup(row,primaryGoal);
    if (missingGoalActors || needsAnyActors() || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
@@ -575,7 +580,8 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  }
  function displayScorers(row){
    const entry=displayCache.get(String(row.match_id??row.id));
-   return entry?.scorers ?? [];
+   return entry?.identity===identityOf(row)&&now()-entry.at<=refreshFor(row)*2?
+     entry.scorers??[]:[];
   }
   function displayGoalIntervalStats(row){
   const entry=displayCache.get(String(row.match_id??row.id));
