@@ -208,18 +208,24 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
     if(String(match.service??'').toUpperCase()==='LIVE'){
       const observed=Date.now();
-      const coverage=(await executor(`select count_home,count_away,through_minute,
-        observed_at,confirmed_at from app_match_event_coverage
-        where match_id=$1 and provider='zizobet' and kind='goal' limit 1`,
-        [matchId])).rows[0]??null;
-      const facts=(await executor(`select minute,phase,team,player_id,player_name,
-        aiscore_player_id,aiscore_player_name,aiscore_verified,
-        fotmob_player_name,fotmob_verified,supplemental_player_name,
-        supplemental_verified,own_goal
-        from app_match_event_fact where match_id=$1 and provider='zizobet'
-          and kind='goal' and active=true order by minute,provider_event_id limit 250`,
-        [matchId])).rows;
-      const verified=playerGoalLiveGuard(playerGoalSpecial,coverage,facts,match,{now:observed});
+      // A fresh 0-0 Zizobet score proves there cannot be a previously scored
+      // player goal. Avoid unnecessary event-history SQL for the first quote.
+      // With a nonzero score, use the confirmed scorer history as before.
+      let verified=playerGoalLiveGuard(playerGoalSpecial,null,null,match,{now:observed});
+      if(!verified.allowed){
+        const coverage=(await executor(`select count_home,count_away,through_minute,
+          observed_at,confirmed_at from app_match_event_coverage
+          where match_id=$1 and provider='zizobet' and kind='goal' limit 1`,
+          [matchId])).rows[0]??null;
+        const facts=(await executor(`select minute,phase,team,player_id,player_name,
+          aiscore_player_id,aiscore_player_name,aiscore_verified,
+          fotmob_player_name,fotmob_verified,supplemental_player_name,
+          supplemental_verified,own_goal
+          from app_match_event_fact where match_id=$1 and provider='zizobet'
+            and kind='goal' and active=true order by minute,provider_event_id limit 250`,
+          [matchId])).rows;
+        verified=playerGoalLiveGuard(playerGoalSpecial,coverage,facts,match,{now:observed});
+      }
       if(!verified.allowed)
         throw Object.assign(badRequest('Golashënuesi LIVE nuk ka kronologji të freskët ose tregu ka përfunduar.'),{
           code:verified.reason==='PLAYER_GOAL_MARKET_ALREADY_DECIDED'?
