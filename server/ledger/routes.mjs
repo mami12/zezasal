@@ -30,7 +30,7 @@ import {recentFinishedFavorites} from './favorite-history.mjs';
 import {publishedBoard,filterPublishedRows,refreshBoardSettings,saveBoardSettings} from './board-settings-store.mjs';
 import {DEFAULT_BOARD_SETTINGS} from '../board-settings.mjs';
 
-import {catalogRows,categoryPolicies,marketFamily,scopeBlockRows} from '../market-catalog.mjs';
+import {catalogRows,categoryPolicies,marketFamily,nativeMarketPolicyKeys,scopeBlockRows} from '../market-catalog.mjs';
 import {refreshMarketCatalog,saveMarketPolicy,saveScopePolicy} from './market-catalog-store.mjs';
 import {providerMarketCoverage} from './market-coverage.mjs';
 export const ledgerRouter = express.Router();
@@ -330,7 +330,7 @@ ledgerRouter.get('/admin/market-catalog/matches',requireLedger,requireAuth,requi
  const matches=[];
  for(const row of serialized){
   const match=toClientMatch(row);
-  const hits=(match.markets??[]).filter(m=>marketFamily(m)?.key===family);
+  const hits=(match.markets??[]).filter(m=>marketFamily(m)?.key===family||nativeMarketPolicyKeys(m,match).includes(family));
   if(!hits.length)continue;
   matches.push({id:match.id,home:match.home?.name??'',away:match.away?.name??'',league:match.tournament?.name??'',country:match.tournament?.category?.name??'',startTime:match.startTime??null,live:match.status==='LIVE',markets:hits.length,outcomes:hits.reduce((n,m)=>n+(m.outcomes??[]).length,0)});
  }
