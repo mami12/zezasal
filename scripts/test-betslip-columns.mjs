@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { buildSystemColumns, frozenSelectionPrice, moneyCents, splitSystemStake, systemColumnPayout } from '../server/ledger/system-columns.mjs';
+import {selectionMarketIdentity} from '../server/ledger/selection-market.mjs';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
@@ -12,10 +13,10 @@ const compiled = ts.transpileModule(source, {
 const module = { exports: {} };
 new Function('exports', 'require', 'module', compiled)(module.exports, () => ({
   systemColumnPayout,
-  frozenSelectionPrice,
+  frozenSelectionPrice,selectionMarketIdentity,
 }), module);
 const { stakeToCents, splitStakeCents, buildBetslipColumns, previewColumnPayouts } = module.exports;
-const pick = (matchId, outcomeId, odds = 2) => ({ matchId, outcomeId, odds });
+const pick = (matchId, outcomeId, odds = 2, marketKey = 'result') => ({ matchId, outcomeId, marketKey, odds });
 
 for (const value of ['100', '100.00', '100.01', '100.1', '0', '9999999.99']) {
   assert.equal(stakeToCents(value), moneyCents(value));
@@ -24,7 +25,7 @@ for (const value of ['', '-1', '100.001', '1e2', '100cats', 'NaN', 'Infinity', '
   assert.equal(stakeToCents(value), null, value);
 }
 
-const example = [pick('A', 'A1', 5), pick('A', 'Aover', 2.1), pick('B', 'B1', 15.18)];
+const example = [pick('A', 'A1', 5), pick('A', 'AX', 2.1), pick('B', 'B1', 15.18)];
 const preview = buildBetslipColumns(example);
 assert.equal(preview.automaticSystem, true);
 assert.deepEqual(preview.columns, buildSystemColumns(example));
@@ -33,6 +34,17 @@ assert.deepEqual(previewColumnPayouts(preview.columns, [5000, 5000]).map(column 
 assert.equal(buildBetslipColumns([]).columnCount, 0);
 assert.equal(buildBetslipColumns(example.slice(0, 1)).automaticSystem, false);
 assert.equal(buildBetslipColumns([example[0], example[2]]).automaticSystem, false);
+const sameFixtureDifferentMarkets=[pick('A','result-home',2,'result'),pick('A','over',1.9,'total'),pick('B','draw',3,'result')];
+const regular=buildBetslipColumns(sameFixtureDifferentMarkets);
+assert.equal(regular.automaticSystem,false,'different markets of one fixture do not create SYSTEM columns');
+assert.deepEqual(regular.columns,[sameFixtureDifferentMarkets]);
+const combinedSameFixture=[...example.slice(0,2),pick('A','over',1.9,'total'),example[2]];
+const grouped=buildBetslipColumns(combinedSameFixture);
+assert.equal(grouped.columnCount,2);
+assert.deepEqual(grouped.columns.map(column=>column.map(p=>p.outcomeId)),[['A1','over','B1'],['AX','over','B1']]);
+assert.deepEqual(grouped.columns,buildSystemColumns(combinedSameFixture));
+const unidentified=[{matchId:'A',outcomeId:'raw-a',odds:2},{matchId:'A',outcomeId:'raw-b',odds:3}];
+assert.equal(buildBetslipColumns(unidentified).automaticSystem,false,'unknown markets never become alternatives just by sharing a fixture');
 
 // Cover every accepted column count and cent remainder, checking server parity.
 for (let count = 2; count <= 24; count++) {
@@ -57,7 +69,7 @@ const combinedPreview = buildBetslipColumns(combined);
 assert.equal(combinedPreview.columnCount, 6);
 assert.deepEqual(combinedPreview.columns, buildSystemColumns(combined));
 assert.equal(new Set(combinedPreview.columns.map(column => column.map(selection => selection.outcomeId).join('|'))).size, 6);
-for (const column of combinedPreview.columns) assert.equal(new Set(column.map(selection => selection.matchId)).size, column.length);
+for (const column of combinedPreview.columns) assert.equal(new Set(column.map(selection=>selectionMarketIdentity(selection))).size,column.length);
 
 // 2^100 alternatives must be rejected without expanding the product.
 const explosive = Array.from({ length: 100 }, (_, index) => [pick(String(index), `${index}1`), pick(String(index), `${index}2`)]).flat();
