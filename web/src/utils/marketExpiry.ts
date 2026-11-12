@@ -203,7 +203,7 @@ const completedEvent = (m: MatchLike, market: MarketLike): boolean => {
     // whose actual outcomes are teams, so an own goal cannot close a
     // still-unresolved first-player-scorer market.
     if(!market.outcomes?.length||market.outcomes.some(outcome=>
-      !teams.includes(norm(outcome.name))&&!teams.includes(norm(outcome.code))))return false;
+      !teams.includes(norm(outcome.name??outcome.code))))return false;
     const counts=observedCounter(m,market);
     return !!counts&&counts.home+counts.away>=ordinal;
   }
