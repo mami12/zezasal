@@ -42,13 +42,11 @@ const live=(minute,event='goal',home=0,away=0)=>{
 const contract=liveContract({market_name:'Total goals in minutes 1-10 (10-minute interval)',
   outcome_name:'Over',line:'0.5'});
 assert.equal(contract.kind,'window-total');
-assert.equal(assessInterval(contract,{clock:6,windowHome:0,windowAway:0}),'OPEN');
-assert.equal(assessInterval(contract,{clock:6,windowHome:1,windowAway:0}),'DECIDED');
-assert.equal(assessInterval({...contract,threshold:2.5},{clock:6,windowHome:2,windowAway:0}),'OPEN');
-assert.equal(assessInterval({...contract,threshold:2.5},{clock:6,windowHome:3,windowAway:0}),'DECIDED');
-assert.equal(assessInterval({...contract,from:80,to:90},{clock:60,windowHome:100,windowAway:0}),'OPEN',
+assert.equal(assessInterval(contract,{clock:6}),'OPEN');
+assert.equal(assessInterval({...contract,threshold:2.5},{clock:6}),'OPEN');
+assert.equal(assessInterval({...contract,from:80,to:90},{clock:60}),'OPEN',
  '100-0 before a later interval cannot decide that later interval');
-assert.equal(assessInterval({...contract,from:1,to:10},{clock:11,windowHome:0,windowAway:0}),'DECIDED');
+assert.equal(assessInterval({...contract,from:1,to:10},{clock:11}),'DECIDED');
 
 for(const [event,market] of [
  ['goal','Total goals in minutes 1-10 (10-minute interval)'],
@@ -56,26 +54,54 @@ for(const [event,market] of [
  ['card','Total cards in minutes 1-10 (10-minute interval)'],
  ['foul','Total fouls in minutes 1-10 (10-minute interval)'],
 ]){
- const frame=live(6,event);
  const c=liveContract({market_name:market,outcome_name:'Over',line:'0.5'});
  assert.equal(c?.event,event);
- assert.deepEqual(primaryLiveCounters(frame,event,{at})?.home,0);
- await verifyLiveIntervalAcceptance(c,frame,{at,execute:()=>{throw Error('Must not require history for confirmed zero')}});
+ const zero=live(6,event);
+ assert.equal(primaryLiveCounters(zero,event,{at})?.home,0);
+ const frozenZero=await verifyLiveIntervalAcceptance(c,zero,{at,execute:()=>{throw Error('No history allowed')}});
+ assert.deepEqual(frozenZero.entryBaseline,{home:0,away:0});
+ assert.equal(frozenZero.entryClockMinute,6);
 
+ // Any already-scored goals/corners/cards/fouls are the PRE-PURCHASE
+ // baseline, not an automatic win or an automatic rejection.
  const before=live(6,event,1,0);
- assert.equal(primaryLiveCounters(before,event,{at})?.home,1);
- const snapshot={count_home:1,count_away:0,total_home:1,total_away:0,
-    interval_home:1,interval_away:0,color_interval_home:0,color_interval_away:0,
-    through_minute:6,observed_at:new Date(at),confirmed_at:new Date(at-1000),
-    card_colors_verified:true};
- await assert.rejects(()=>verifyLiveIntervalAcceptance(c,before,{
-   at,execute:async()=>({rows:[snapshot]})
-  }),error=>error.code==='MARKET_DECIDED',event+' accepted already-hit over threshold');
+ const frozen=await verifyLiveIntervalAcceptance(c,before,{at,execute:()=>{throw Error('No history allowed')}});
+ assert.deepEqual(frozen.entryBaseline,{home:1,away:0},market);
+ assert.equal(frozen.kind,'window-total');
 }
-// No incident archive may be silently converted into zero after a nonzero counter.
-await assert.rejects(()=>verifyLiveIntervalAcceptance(contract,live(6,'goal',1,0),{
+const futureContract={...contract,from:80,to:90};
+const highScore=await verifyLiveIntervalAcceptance(futureContract,live(60,'goal',90,0),{at});
+assert.deepEqual(highScore.entryBaseline,{home:90,away:0},'90-0 before a new minute window does not decide it');
+const noStats={...live(6,'corner',0,0),stats:null};
+const snapshot={count_home:2,count_away:1,through_minute:6,
+ observed_at:new Date(at),confirmed_at:new Date(at-1000)};
+const fallback=await verifyLiveIntervalAcceptance(liveContract({
+ market_name:'Total corners in minutes 1-10 (10-minute interval)',outcome_name:'Over',line:'0.5'
+}),noStats,{at,execute:async(sql,params)=>{
+ assert.match(sql,/app_match_event_coverage/);
+ assert.doesNotMatch(sql,/app_match_event_fact/);
+ assert.deepEqual(params,[1001,'corner']);
+ return {rows:[snapshot]};
+}});
+assert.deepEqual(fallback.entryBaseline,{home:2,away:1},
+ 'fallback uses CURRENT confirmed counters only, not incident history');
+await assert.rejects(()=>verifyLiveIntervalAcceptance(contract,
+ {...live(6,'goal',0,0),score_at:null,stats:null},{
  at,execute:async()=>({rows:[]})
-}),error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED');
+}),error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED',
+ 'missing score and missing confirmed counters cannot be invented as zero');
+
+const race=frozenLiveContract({market_name:'Race to 7 Corners',outcome_name:'1'},
+ live(6,'corner',1,0),at);
+assert.equal(race.kind,'race');
+assert.deepEqual(race.baseline,{home:1,away:0},
+ 'Race to X continues from the actual primary cumulative counts');
+const later=frozenLiveContract({market_name:'Race to 7 Corners',outcome_name:'1'},
+ live(60,'corner',6,1),at);
+assert.equal(later.kind,'race');
+assert.deepEqual(later.baseline,{home:6,away:1});
+assert.throws(()=>frozenLiveContract({market_name:'Race to 7 Corners',outcome_name:'1'},
+ live(60,'corner',7,0),at),/përfunduar/i);
 const firstGoal={version:1,kind:'nth-time',event:'goal',target:1,side:'home',
  choice:'team-window',from:6,to:10};
 assert.equal(assessInterval(firstGoal,{clock:0,goalTotal:0}),'OPEN');
