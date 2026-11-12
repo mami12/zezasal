@@ -75,7 +75,7 @@ export function parsePlayerGoalContract(line){
   return {version:1,kind:'player-goal',event:'goal',playerName:quotedPlayer,
    choice:['yes','po'].includes(choice)};
  }
- if(/^(?:anytime|any time) goalscorers?$/i.test(name)&&choice&&
+ if(/^(?:anytime|any time) goalscorers?$|^(?:anytime\s+)?player to score(?: a goal)?$/i.test(name)&&choice&&
    !['no goalscorer','none','no goal'].includes(choice)){
   const player=String(line.outcome_name??line.outcomeName??'').trim();
   if(!player||/^(yes|no|po|jo|over|under)$/i.test(player))return null;
@@ -90,10 +90,13 @@ export function parsePlayerGoalContract(line){
  */
 export function parseNumberedGoalWindow(line){
  const title=norm(line.market_name??line.marketName??line.name);
- const m=title.match(/^who scores (?:the )?goal (\d{1,3}) in minutes? (\d{1,3})\s*[-–]\s*(\d{1,3})(?: \((\d{1,2})-minute interval\))?$/);
+ const m=title.match(/^who scores (?:the )?(?:goal (\d{1,3})|((?:\d{1,3}(?:st|nd|rd|th)?|first|second|third) goal)) in minutes? (\d{1,3})\s*[-–]\s*(\d{1,3})(?: \((\d{1,2})-minute interval\))?$/);
  if(!m)return null;
- const target=Number(m[1]),from=Number(m[2]),to=Number(m[3]);
- const width=m[4]==null?null:Number(m[4]);
+ const spoken={first:1,second:2,third:3};
+ const marker=m[1]??m[2];
+ const target=spoken[marker]??Number(String(marker).match(/^\d+/)?.[0]);
+ const from=Number(m[3]),to=Number(m[4]);
+ const width=m[5]==null?null:Number(m[5]);
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!side||!Number.isInteger(target)||target<1||target>100||
     !Number.isInteger(from)||from<0||!Number.isInteger(to)||to<from||to>130||
@@ -398,7 +401,8 @@ export function parseSequenceBet(line,counts={}) {
  const name=norm(line.market_name??line.marketName??line.name);
  // An event numbered inside a time band is not the same as the Nth event of the match.
  if(/\b(?:minutes?|mins?|interval|period|extra time)\b|\b(?:1st|first|2nd|second)\s+half\b/.test(name))return null;
- const event=/\bcorner/.test(name)?'corner':/\bgoal/.test(name)?'goal':/\b(?:cards?|bookings?)\b/.test(name)?'card':null;
+ const shorthand=/^(?:who|which team) scores (?:the )?(first|second|third|\d{1,3}(?:st|nd|rd|th)?)$/.exec(name);
+ const event=/\bcorner/.test(name)?'corner':/\bgoal/.test(name)||shorthand?'goal':/\b(?:cards?|bookings?)\b/.test(name)?'card':null;
  if(!event)return null;
  // Zizobet publishes separate *absolute* numbered offers such as
  // "Next Goal 1st" and "Next Goal 2nd". These refer to goal #1/#2 of
@@ -414,7 +418,7 @@ export function parseSequenceBet(line,counts={}) {
  const first=/^(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?first\s+(?:goal|corner|card|booking)\b/.test(name);
  const reach=name.match(/^(?:which team\s+)?(?:reaches|gets|takes|scores|receives)\s+(\d{1,3})\s+(goals?|corners?|cards?)\s+first\b/);
  const race=name.match(/\brace to (\d{1,3}) (goals?|corners?|cards?)\b/);
- if(!isNext&&!providerOrdinal&&!numbered&&!race&&!first&&!reach)return null;
+ if(!isNext&&!providerOrdinal&&!numbered&&!race&&!first&&!reach&&!shorthand)return null;
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!side)return null;
  if(race||reach){
@@ -427,7 +431,9 @@ export function parseSequenceBet(line,counts={}) {
    noneOffered:side==='none'||line.raceNoneOffered===true};
  }
  let target=providerOrdinal?Number(providerOrdinal[2]):
-  numbered?Number(numbered[1]??numbered[2]??numbered[3]):first?1:null;
+  numbered?Number(numbered[1]??numbered[2]??numbered[3]):first?1:
+  shorthand?({first:1,second:2,third:3}[shorthand[1]]??
+   Number(shorthand[1].match(/^\d+/)?.[0])):null;
  if(isNext&&!providerOrdinal&&!numbered&&!first){
   const c=counts[event];
   const home=nonNeg(c?.home),away=nonNeg(c?.away);
