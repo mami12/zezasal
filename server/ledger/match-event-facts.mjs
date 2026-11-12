@@ -69,6 +69,35 @@ alter table app_match_event_coverage add column if not exists confirmed_at times
 `;
 const validKind = new Set(['goal','corner','card','foul']);
 const validSide = new Set(['home','away']);
+/**
+ * A newer contradictory Zizobet counter/timeline suspends a previous proof.
+ * Keep the last good incident rows for audit, but never sell their old
+ * confirmed coverage as proof of the currently observed count. Recovery
+ * must supply two new matching provider samples, even after process restart.
+ * An absent timeline with unchanged counters does not invalidate coverage.
+ */
+export async function invalidateContradictedEventCoverage(matchId,frame,execute,observedAt=new Date()){
+ if(frame?.source!=='zizobet'||typeof execute!=='function')return 0;
+ const clock=Number.isFinite(frame.clock)?frame.clock:frame.ended===true?130:null;
+ if(clock===null)return 0;
+ const observed=new Date(observedAt);
+ if(!Number.isFinite(observed.getTime()))return 0;
+ let invalidated=0;
+ for(const kind of validKind){
+  const counts=frame.teams?.[kind];
+  if(!counts||!['home','away'].every(s=>Number.isSafeInteger(counts[s])&&counts[s]>=0))continue;
+  if(!frame.rawTimelineTruncated&&frame.coverage?.[kind+'Through']!=null)continue;
+  const timelineDisagrees=frame.eventListAvailable===true;
+  const result=await execute(
+   "update app_match_event_coverage set confirmed_at=null,sample_signature=null,"+
+   "sample_first_seen_at=null where match_id=$1 and provider='zizobet' and kind=$2 "+
+   "and confirmed_at is not null and observed_at<$5::timestamptz and through_minute<=$6 "+
+   "and (count_home<>$3 or count_away<>$4 or $7::boolean) returning kind",
+   [matchId,kind,counts.home,counts.away,observed,clock,timelineDisagrees]);
+  invalidated+=result.rowCount??result.rows?.length??0;
+ }
+ return invalidated;
+}
 /** Called INSIDE the existing live-frame SQL transaction. */
 export async function persistVerifiedEventFacts(matchId, frame, execute, observedAt=new Date()) {
  const observed=new Date(observedAt);
