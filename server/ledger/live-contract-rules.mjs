@@ -223,8 +223,8 @@ export function parseIntervalCount(line) {
     /\b(?:which|who|race|next|first|last|winner|result|player|scorer|asian|handicap|penalty|extra time)\b/.test(name))return null;
  // Accept a complete grammar, not a substring: discarding "home team"
  // would pay a home-only bet from the away team's corners.
- const usual=name.match(/^(?:total\s+)?(?:(\d+(?:[.,]\d+)?)\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?)\s*(?:(home|away)\s+team)?\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
- const leading=name.match(/^(home|away)\s+team\s+(?:total\s+)?(goals?|corners?|cards?)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
+ const usual=name.match(/^(?:total\s+)?(?:(\d+(?:[.,]\d+)?)\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?|fouls?)\s*(?:(home|away)\s+team)?\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
+ const leading=name.match(/^(home|away)\s+team\s+(?:total\s+)?(goals?|corners?|cards?|fouls?)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})(?:\s+\((\d{1,2})-minute interval\))?$/);
  if(!usual&&!leading)return null;
  const titleLine=usual?.[1]??null,preSide=usual?.[2]??leading?.[1]??null;
  const eventName=usual?.[3]??leading?.[2],postSide=usual?.[4]??null;
@@ -242,7 +242,7 @@ export function parseIntervalCount(line) {
  if(length!=null&&!exclusive&&quotedEnd-from+1!==length)return null;
  const to=exclusive?quotedEnd-1:quotedEnd;
  const event=typeOf(eventName);
- if(!['goal','corner','card'].includes(event))return null;
+ if(!['goal','corner','card','foul'].includes(event))return null;
  const label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
  const rawLine=number(line.line??line.specifier),inTitle=number(titleLine?.replace(',','.'));
  const over=label.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
@@ -271,14 +271,14 @@ export function parseIntervalCount(line) {
  */
 export function parseClockWindowTotal(line){
  const name=norm(line.market_name??line.marketName??line.name);
- const m=name.match(/^(\d{1,3}):([0-5]\d)\s*[-–]\s*(\d{1,3}):([0-5]\d)\s*min\.?\s*[-–]\s*(?:total\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?)(?:\s+(home|away)\s+team)?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
+ const m=name.match(/^(\d{1,3}):([0-5]\d)\s*[-–]\s*(\d{1,3}):([0-5]\d)\s*min\.?\s*[-–]\s*(?:total\s+)?(?:(home|away)\s+team\s+)?(goals?|corners?|cards?|fouls?)(?:\s+(home|away)\s+team)?\s*(?:\((\d+(?:[.,]\d+)?)\))?$/);
  if(!m||m[2]!=='00'||m[4]!=='59'||(m[5]&&m[7]))return null;
  const from=Number(m[1]),to=Number(m[3]);
  // 45+ first-half injury time can overlap ordinary absolute minute 45;
  // no reliable period attribution currently exists for this market family.
  if(from<0||to<from||to>=45)return null;
  const event=typeOf(m[6]),side=m[5]??m[7],label=norm(line.outcome_name??line.outcomeName??line.outcome_key??line.outcomeKey);
- if(!event||!['goal','corner','card'].includes(event))return null;
+ if(!event||!['goal','corner','card','foul'].includes(event))return null;
  const over=label.match(/^over(?:\s+(\d+(?:[.,]\d+)?))?$/);
  const under=label.match(/^under(?:\s+(\d+(?:[.,]\d+)?))?$/);
  if(!over&&!under)return null;
@@ -511,7 +511,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  // contract. It can settle strictly when the Zizobet foul TimeLines reconcile
  // with the SAME match's FoulsTeam1/FoulsTeam2 counters on two polls.
  // Unknown/missing foul counters leave these bets PENDING, not LOST.
- if(contract?.event==='foul'&&contract.kind!=='window')return null;
+ if(contract?.event==='foul'&&!['window','window-total'].includes(contract.kind))return null;
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
