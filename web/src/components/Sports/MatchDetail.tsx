@@ -150,7 +150,14 @@ export default function MatchDetail() {
     let active = true;
     const requestState = {controller: null as AbortController | null};
     let sequence = 0;
+    let fullMarketTimer: number | null = null;
+    let fullMarketAttempts = 0;
     const refresh = (force = false) => {
+      if (force) fullMarketAttempts = 0;
+      if (fullMarketTimer !== null) {
+        window.clearTimeout(fullMarketTimer);
+        fullMarketTimer = null;
+      }
       if (!active) return;
       // A manual retry cancels the stale request and starts a brand-new HTTP
       // attempt. Automatic 20s refreshes instead avoid overlapping requests.
@@ -180,6 +187,13 @@ export default function MatchDetail() {
           if (next) setActiveTab(next);
         }
         setMarkets(res.data?.markets ?? []);
+        // Both LIVE and PREMATCH start from the cheap board offer. Follow the
+        // one selected full-market fetch until Zizobet confirms its snapshot.
+        // No back/re-enter and no fetch for unrelated fixtures.
+        if (res.data?.fullMarketsReady === false && fullMarketAttempts < 16) {
+          fullMarketAttempts++;
+          fullMarketTimer = window.setTimeout(() => refresh(), 1800);
+        }
       }).catch(error => {
         if (!active || requestId !== sequence || current.signal.aborted ||
             error?.code === 'ERR_CANCELED') return;
@@ -198,15 +212,14 @@ export default function MatchDetail() {
     };
     refreshRef.current = refresh;
     refresh();
-    // The first reply may predate the upstream full-market snapshot. Give the
-    // background focus one short opportunity before the regular 20s refresh.
-    const firstFullRefresh = window.setTimeout(() => refresh(), 5000);
+    // After the full snapshot arrives, normal selected-match updates suffice.
+    // While waiting, the short, bounded polling above takes priority.
     const timer = window.setInterval(() => refresh(), 20_000);
     return () => {
       active = false;
       if (refreshRef.current === refresh) refreshRef.current = null;
       requestState.controller?.abort();
-      window.clearTimeout(firstFullRefresh);
+      if (fullMarketTimer !== null) window.clearTimeout(fullMarketTimer);
       window.clearInterval(timer);
     };
   }, [id,requestedCategory, acceptMatches]);
@@ -375,6 +388,9 @@ export default function MatchDetail() {
   return (
     <div className="zshop-detail space-y-2">
       <ZshopScoreboard match={live}/>
+      {match?.fullMarketsReady === false && <div role="status" className="rounded-lg border border-tertiary bg-secondary px-3 py-2 text-xs text-text-secondary">
+        {lang==='en'?'Loading the remaining markets for this match…':'Po ngarkohen tregjet e tjera të kësaj ndeshjeje…'}
+      </div>}
       {isLive&&<PitchTracker matchId={live.id} homeTeam={live.homeTeam} awayTeam={live.awayTeam} snapshot={live}/>}
 
       {/* Filter & Search Bar */}
