@@ -18,7 +18,9 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const clockMs=match.match_time_ms;
  const clock=scheduled?null:Number.isFinite(Number(clockMs))&&clockMs!=null?Number(clockMs)/60000:null;
  const goals={home:scheduled?0:safe(match.home_score),away:scheduled?0:safe(match.away_score)};
- const corners={home:scheduled?0:safe(teams.home?.corners),away:scheduled?0:safe(teams.away?.corners)};
+ const cornerArchive=line.raceCornerSnapshot;
+ const corners={home:scheduled?0:safe(teams.home?.corners??cornerArchive?.count_home),
+  away:scheduled?0:safe(teams.away?.corners??cornerArchive?.count_away)};
  // Resolve team-name outcomes against this exact fixture, never by fuzzy
  // prefixes or a team's position in another match.
  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -134,25 +136,21 @@ export function frozenLiveContract(line,match={},at=Date.now()){
     contract.target<=current.home+current.away)throw fail('Goli i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='race'&&current?.home!=null&&current?.away!=null&&
     (current.home>=contract.target||current.away>=contract.target))throw fail('Gara e golave/kornerave ka përfunduar.');
- // Fixed interval totals/leader/result cannot be bought after their
- // opening minute: the customer may already know some or all incidents.
- // Unlike PREMATCH, LIVE requires a recent, confirmed match clock.
- if(live&&['window-total','interval-leader','interval-result'].includes(contract.kind)){
+ // An interval being in progress is not, by itself, a settled market.
+ // The bet resolver checks verified primary incidents before acceptance and
+ // rejects only completed propositions or missing required history.
+ if(live&&['window-total','interval-leader','interval-result','window','nth-time'].includes(contract.kind)){
   const clockAt=time(match.clock_at);
   if(clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000)
    throw fail('Mungon ora live e freskët për intervalin.');
-  const from=contract.kind==='interval-result'?contract.fromSeconds/60:contract.from;
-  if(!Number.isFinite(from)||clock>=from)
-   throw fail('Intervali ka nisur; nuk mund të pranohet bast për ngjarje të kaluara.');
  }
- if(contract.kind==='window'&&clock!=null&&clock>contract.to)throw fail('Intervali i këtij tregu ka përfunduar.');
- // A fixed interval already in progress may contain events before purchase.
- // Without a verified acceptance-time incident baseline, accepting it would
- // allow a customer to bet on a goal/corner/card that has already happened.
- if(live&&contract.kind==='window'&&!contract.startExclusive&&clock!=null&&clock>=contract.from)
-  throw fail('Intervali ka nisur; nuk mund të pranohet bast për ngjarje të kaluara.');
+ if(contract.kind==='window'&&clock!=null&&clock>contract.to)
+  throw fail('Intervali i këtij tregu ka përfunduar.');
  if(contract.kind==='interval-result'&&clock!=null&&clock*60>=contract.toExclusiveSeconds)
   throw fail('Intervali i rezultatit ka përfunduar.');
+ if(['window-total','interval-leader','nth-time'].includes(contract.kind)&&
+    clock!=null&&Number.isFinite(contract.to)&&clock>contract.to+1)
+  throw fail('Intervali i këtij tregu ka përfunduar.');
  // Live "Next Goal" needs *exactly* the current confirmed cumulative count.
  // Never infer it from the displayed odds or the browser's score.
  if(contract.kind==='sequence'&&/next/i.test(name)&&
