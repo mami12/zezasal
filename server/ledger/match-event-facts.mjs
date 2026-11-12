@@ -423,6 +423,7 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    where match_id=$1 and provider=$16::text and kind=$2
  ), ordered as (
    select f.*,row_number() over(order by coalesce(f.seconds,f.minute*60),f.minute,f.provider_event_id) as ordinal,
+     row_number() over(partition by f.team order by coalesce(f.seconds,f.minute*60),f.minute,f.provider_event_id) as team_ordinal,
      count(*) over(partition by coalesce(f.seconds,f.minute*60)) as same_time
    from app_match_event_fact f
    where f.match_id=$1 and f.provider=$16::text and f.kind=$2 and f.active
@@ -440,24 +441,28 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
          and coalesce(seconds,minute*60)<=$12::numeric)
         or ($10::boolean=false and ($3::numeric is null or minute >= $3)
          and ($4::numeric is null or minute <= $4)))
-      and ($5::text is null or team=$5))::int as window_count,
+      and ($5::text is null or team=$5)
+      and ($17::boolean=false or (team='home' and team_ordinal>$18::int)
+       or (team='away' and team_ordinal>$19::int)))::int as window_count,
     count(*) filter(where (
         ($10::boolean=true and coalesce(seconds,minute*60)>$11::numeric
          and coalesce(seconds,minute*60)<=$12::numeric)
         or ($10::boolean=false and ($3::numeric is null or minute >= $3)
          and ($4::numeric is null or minute <= $4)))
       and ($5::text is null or team=$5)
-      and card_color=$15::text)::int as color_window_count,
+      and card_color=$15::text
+      and ($17::boolean=false or (team='home' and team_ordinal>$18::int)
+       or (team='away' and team_ordinal>$19::int)))::int as color_window_count,
     count(*) filter(where (
       ($13::boolean=true and coalesce(seconds,minute*60)>=$11::numeric
        and coalesce(seconds,minute*60)<$12::numeric)
       or ($14::boolean=true and minute>=$3::numeric and minute<=$4::numeric))
-      and team='home')::int as window_home,
+      and team='home' and ($17::boolean=false or team_ordinal>$18::int))::int as window_home,
     count(*) filter(where (
       ($13::boolean=true and coalesce(seconds,minute*60)>=$11::numeric
        and coalesce(seconds,minute*60)<$12::numeric)
       or ($14::boolean=true and minute>=$3::numeric and minute<=$4::numeric))
-      and team='away')::int as window_away,
+      and team='away' and ($17::boolean=false or team_ordinal>$19::int))::int as window_away,
     bool_or($10::boolean=true and seconds is null
       and (minute=floor($11::numeric/60) or minute=floor($12::numeric/60))) as rolling_boundary_uncertain,
     count(*) filter(where (own_goal=false or (own_goal is null and aiscore_verified=true))
@@ -516,12 +521,20 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   c.kind==='window'&&c.startExclusive===true,
   c.kind==='interval-result'?c.fromSeconds:c.kind==='window'?c.from*60:null,
   c.kind==='interval-result'?c.toExclusiveSeconds:c.kind==='window'?c.to*60:null,
-  c.kind==='interval-result',c.kind==='interval-leader',c.cardColor??null,provider]);
+  c.kind==='interval-result',c.kind==='interval-leader',c.cardColor??null,provider,
+  c.entryBaseline!=null,c.entryBaseline?.home??0,c.entryBaseline?.away??0]);
  const data=rows[0];
  if(!data||data.through_minute==null||data.open_recovery_gap===true)return null;
  // A partial/corrected frame must not silently reclassify a missing event.
  if(Number(data.home)!==Number(data.count_home)||
     Number(data.away)!==Number(data.count_away))return null;
+ // After provider corrections, the accepted counters cannot exceed the
+ // present complete chronology. Hold the ticket for review if they do.
+ if(c.entryBaseline!=null&&(
+    !Number.isSafeInteger(c.entryBaseline.home)||c.entryBaseline.home<0||
+    !Number.isSafeInteger(c.entryBaseline.away)||c.entryBaseline.away<0||
+    c.entryBaseline.home>Number(data.count_home)||
+    c.entryBaseline.away>Number(data.count_away)))return null;
  const stats=typeof result?.statistics==='string'?(()=>{
   try{return JSON.parse(result.statistics);}catch{return null;}
  })():result?.statistics;
