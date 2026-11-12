@@ -113,6 +113,9 @@ jobs:
       - name: Market 13 - half event races
         if: always()
         run: node scripts/test-half-event-races.mjs
+      - name: First-half LIVE next/first/last and race card-corner-goal math
+        if: always()
+        run: node scripts/test-live-first-half-event-acceptance.mjs
       - name: Market 14 - team count markets
         if: always()
         run: node scripts/test-team-count-markets.mjs
@@ -146,6 +149,9 @@ jobs:
       - name: FotMob scorer and 1X2 team statistics regression
         if: always()
         run: node scripts/test-fotmob-scorer-enrichment.mjs
+      - name: FotMob identity and independent UTC kickoff regression
+        if: always()
+        run: node scripts/test-fotmob-fixture-mapping.mjs
       - name: Market 20 - race none and aiscore
         if: always()
         run: node scripts/test-race-none-and-aiscore.mjs
