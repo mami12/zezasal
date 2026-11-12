@@ -1,10 +1,12 @@
 import {createHash} from 'node:crypto';
 import {pool} from '../db.mjs';
 import {normalizeLiveFrame} from './live-observation-store.mjs';
+import {persistVerifiedEventFacts} from './match-event-facts.mjs';
 
 /** Independent sporting archive. It never contains prices and never pays bets. */
 export const ZIZOBET_MATCH_HISTORY_SQL = [
  "create table if not exists app_zizobet_match_history (match_id bigint primary key, details jsonb not null, timeline_signature text, observed_at timestamptz not null default now());",
+ "alter table app_zizobet_match_history add column if not exists evidence_observed_at timestamptz;",
  "create table if not exists app_zizobet_match_incident (match_id bigint not null, kind text not null check(kind in ('goal','corner','card','foul')), provider_event_id text not null, team text not null check(team in ('home','away')), minute integer not null check(minute between 0 and 130), detail jsonb not null, active boolean not null default true, first_observed_at timestamptz not null default now(), observed_at timestamptz not null default now(), primary key(match_id,kind,provider_event_id));",
  "create index if not exists app_zizobet_match_incident_lookup on app_zizobet_match_incident(match_id,kind,active,minute);"
 ].join('\n');
@@ -59,7 +61,7 @@ export function projectZizobetHistory(matchId,data,row={}){
   cardColor:e.cardColor??null,ownGoal:e.ownGoal??null
  })):[];
  const verifiedKinds=frame.eventListAvailable&&!frame.rawTimelineTruncated?
-  ['goal','corner','card'].filter(k=>frame.coverage?.[k+'Through']!=null):[];
+  ['goal','corner','card','foul'].filter(k=>frame.coverage?.[k+'Through']!=null):[];
  const fingerprint=frame.eventListAvailable?hash([events,verifiedKinds]):null;
  return {id,details:clean,events,verifiedKinds,
   timelineAvailable:frame.eventListAvailable, timelineSignature:fingerprint,
@@ -74,14 +76,18 @@ export function createZizobetHistoryArchive({database=pool,now=()=>new Date()}={
   if(!state)return {stored:false,reason:'INVALID_MATCH'};
   const {id,details,events,verifiedKinds,timelineAvailable,timelineSignature,summarySignature}=state;
   const prior=seen.get(id);
-  if(prior?.summary===summarySignature&&
-    (!timelineAvailable||prior.timeline===timelineSignature))return {stored:false,reason:'UNCHANGED'};
+  const unchanged=prior?.summary===summarySignature&&
+    (!timelineAvailable||prior.timeline===timelineSignature);
+  // Even a byte-for-byte unchanged final frame needs a SECOND observation
+  // at a later time before its facts are eligible for financial settlement.
+  // Archive rows can be deduplicated; evidence confirmation cannot.
+  if(unchanged&&!verifiedKinds.length)return {stored:false,reason:'UNCHANGED'};
   const observed=new Date(now());
   if(!Number.isFinite(observed.getTime()))throw Error('Invalid Zizobet observation time');
   const client=await database.connect();
   try{
    await client.query('begin');
-   await client.query(
+   if(!unchanged)await client.query(
     "insert into app_zizobet_match_history(match_id,details,timeline_signature,observed_at) "+
     "values($1,$2::jsonb,$3,$4::timestamptz) on conflict(match_id) do update set "+
     "details=app_zizobet_match_history.details || excluded.details, "+
@@ -112,10 +118,29 @@ export function createZizobetHistoryArchive({database=pool,now=()=>new Date()}={
       [id,kind,observed,ids]);
     }
    }
+   // The verified fact store is the SINGLE canonical source for grading
+   // goal/corner/card/foul contracts. The compact history above is a raw
+   // forensic archive, not an alternative financial event ledger.
+   let confirmedKinds=[];
+   if(verifiedKinds.length){
+    const frame=normalizeLiveFrame(data);
+    await persistVerifiedEventFacts(id,frame,client.query.bind(client),observed);
+    const {rows}=await client.query(
+     "select kind,confirmed_at from app_match_event_coverage "+
+     "where match_id=$1 and provider='zizobet' and observed_at=$2::timestamptz "+
+     "and kind=any($3::text[])",[id,observed,verifiedKinds]);
+    if(rows.length){
+     await client.query(
+      "update app_zizobet_match_history set evidence_observed_at=$2::timestamptz "+
+      "where match_id=$1",[id,observed]);
+     confirmedKinds=rows.filter(row=>row.confirmed_at!=null).map(row=>row.kind);
+    }
+   }
    await client.query('commit');
    seen.set(id,{summary:summarySignature,timeline:timelineSignature??prior?.timeline??null});
    if(seen.size>10000)seen.delete(seen.keys().next().value);
-   return {stored:true,eventCount:events.length,verifiedKinds};
+   return {stored:!unchanged,eventCount:events.length,verifiedKinds,confirmedKinds,
+    ...(unchanged?{reason:'EVIDENCE_REOBSERVED'}:{})};
   }catch(error){await client.query('rollback').catch(()=>{});throw error;}
   finally{client.release();}
  };
