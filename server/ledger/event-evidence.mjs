@@ -121,7 +121,7 @@ export function normalizeEvents(data,source){
   const type=String(e.type??'').toLowerCase();
   const minute=zizobetMinute(e.gt),color=explicitCardColor(e);
   return {disabled:!active(e)||cornerNotTaken(e),id:stableZizoId(e),
-   type:type==='score_change'?'goal':type==='corner_kick'?'corner':/card|booking/.test(type)?'card':e.type,
+   type:type==='score_change'?'goal':type==='corner_kick'?'corner':/card|booking/.test(type)?'card':/foul/.test(type)?'foul':e.type,
    cardColor:/card|booking/.test(type)?color:null,
    ownGoal:type==='score_change'?explicitOwnGoal(e):null,
    team:/^(?:1|home|h)$/i.test(String(e.team))?'home':/^(?:2|away|a)$/i.test(String(e.team))?'away':null,
