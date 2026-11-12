@@ -10,7 +10,7 @@ export function createEventCollector({
 }={}){
  let active=0;
  const last=new Map(),inflight=new Set();
- return async function collectEventEvidence(row,data){
+ return async function collectEventEvidence(row,data,{observedAt=null,factsPersisted=false}={}){
   const id=String(row.match_id);
   if(!(await getWatchIds()).has(id)||inflight.has(id)||active>=maxActive)return;
   if(now()-(last.get(id)??-Infinity)<refreshMs)return;
@@ -22,7 +22,12 @@ export function createEventCollector({
    // AiScore may later add a scorer name but never changes result/time/team.
    const settled=await Promise.allSettled([
     save(row.match_id,evidence),
-    recordFrame(row.match_id,data)
+    recordFrame(row.match_id,data,{
+      // A single native HTTP response is ONE observation even if the raw
+      // archive and ticket-scoped recovery reader both process it.
+      now:observedAt==null?now:()=>new Date(observedAt).getTime(),
+      skipVerifiedFacts:factsPersisted
+    })
    ]);
    for(const item of settled)if(item.status==='rejected')
     console.warn('[primary event capture]',String(row.match_id),String(item.reason?.message??item.reason));
