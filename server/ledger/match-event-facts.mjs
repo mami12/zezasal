@@ -746,24 +746,32 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   return decision(c.side===(h!==null&&(a===null||h<a)?'home':'away'));
  }
  if(c.kind==='player-goal-special'){
-  if(!full||c.event!=='goal')return null;
+  // Proven positive 2+/3+ and already-exceeded totals can settle before FT
+  // from reconfirmed primary scorer facts. An UNDER/no/exact that still
+  // depends on future events stays PENDING until the relevant scope ends.
+  if(c.event!=='goal'||(!full&&provider!=='zizobet'))return null;
   const {rows:facts}=await execute(`select minute,seconds,team,phase,player_id,
     player_name,aiscore_player_id,aiscore_player_name,aiscore_verified,
     fotmob_player_name,fotmob_verified,supplemental_player_name,
     supplemental_verified,own_goal
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='goal' and active=true`,[line.match_id,provider]);
-  return gradePlayerGoalSpecial(c,facts,{complete:true});
+  return gradePlayerGoalSpecial(c,facts,{complete:full});
  }
  if(c.kind==='player-ordinal-goal'){
-  if(!full||c.event!=='goal')return null;
+  // FIRST scorer becomes irreversible when the verified first eligible
+  // scorer is known. LAST scorer and "none won" still require FT.
+  if(c.event!=='goal'||(!full&&(provider!=='zizobet'||c.position!=='first')))return null;
   const {rows:facts}=await execute(`select minute,seconds,team,player_id,
     player_name,aiscore_player_id,aiscore_player_name,aiscore_verified,
     fotmob_player_name,fotmob_verified,supplemental_player_name,
     supplemental_verified,own_goal
     from app_match_event_fact where match_id=$1 and provider=$2
       and kind='goal' and active=true`,[line.match_id,provider]);
-  return gradePlayerOrdinalScorerFacts(c,facts,{complete:true});
+  const result=gradePlayerOrdinalScorerFacts(c,facts,{complete:true});
+  if(!full)return c.choice==='none'?(result==='LOST'?'LOST':null):
+    result==='WON'?'WON':null;
+  return result;
  }
  if(c.kind==='player-card'){
   if(typeof c.choice!=='boolean'||(!c.playerName&&!c.playerId))return null;
