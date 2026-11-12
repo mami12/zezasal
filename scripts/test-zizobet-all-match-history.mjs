@@ -22,6 +22,9 @@ assert.equal(projected.events[0].playerName,'First Scorer',
  'The financial/parser path must recognize the same actor fields as the live UI');
 assert.equal(projected.events[0].minute,10);
 assert.equal(projected.events[0].minuteLabel,'10');
+const withFoul=projectZizobetHistory(8000000000007,game('1:0','11:00',[g1,
+ {id:'foul-1',type:'foul_committed',team:2,gt:11,player:'Defender'}]),fixture);
+assert.equal(withFoul.events.find(e=>e.kind==='foul')?.playerName,'Defender');
 assert.deepEqual(projected.verifiedKinds,['goal','corner','card']);
 const withPeriods=projectZizobetHistory(8000000000007,{...game('1:0','11:00',[g1]),
  Match:{...game('1:0','11:00',[g1]).Match,SetScores:['1:0','0:1']}},fixture);
