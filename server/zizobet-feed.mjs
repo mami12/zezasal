@@ -8,7 +8,7 @@ export {isZizoId};
 export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},onFixtureDiscovered=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000,historyEnabled=autoStart,archiveHistory=archiveZizobetMatchHistory}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
  const state={provider:'ZIZOBET',transport:'MQTT cache invalidations + HTTP snapshots',running:false,cycles:0,syncedAt:null,lastError:null,received:0,kept:0,paused:false,pauses:0,resumes:0};
- const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
+ const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set(),historyFtAttempts=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
  const queue=fn=>{const p=work.then(()=>stopped||state.paused?undefined:fn());work=p.catch(e=>{state.lastError=e.message;});return p;};
  const mainQuotes=(quotes,live)=>(quotes??[]).filter(q=>{const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);const name=(live&&id===602)||(!live&&id===448)?'Full Time Result':(live&&id===603)||(!live&&id===537)?'Total Goals':def?.Name??def?.name??'';return isBoardOddsRow({market_name:name,period:/\b(?:half|period)\b/i.test(name)?1:0});});
  async function publish(row,game,rows,{complete=false,startedAt=++revision}={}){
@@ -161,23 +161,41 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
     if(!Array.isArray(data.gmk))historyOnly=true;if(Number(data.Match.GameID)!==Number(id))throw Error('Zizobet live identity mismatch');for(const m of data.mk??[])meta.liveMarkets.set(Number(m.ID),m);
     if(entry.row.status==='ended'&&Number(data.Match.EventStatus)!==40)return;
     const game={...entry.raw,...data.Match,...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row={...entry.row,service:'LIVE',status:entry.row.status==='ended'||Number(game.EventStatus)===40?'ended':'live'};
+    // One upstream response has one observation time, even when it feeds
+    // both the all-match archive and the ticket recovery reader.
+    const sampledAt=new Date();
+    let archiveFactsPersisted=false;
     // The independently retained sports archive covers EVERY live fixture,
     // not only fixtures with accepted bets. Never persist gmk/odds.
     if(historyEnabled){
      try{
       const recorded=await archiveHistory(row.match_id,{Match:data.Match,
-       ...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row);
+       ...(Array.isArray(data.TimeLines)?{TimeLines:data.TimeLines}:{})},row,
+       {observedAt:sampledAt});
+      archiveFactsPersisted=Array.isArray(recorded?.verifiedKinds)&&
+       recorded.verifiedKinds.length>0;
       const interval=Math.max(30000,Number(process.env.ZIZO_HISTORY_REFRESH_MS)||60000);
       const ended=Number(data.Match.EventStatus??data.Match.MatchStatusID)===40;
       // At FT retry incomplete provider timelines at a slower pace rather
       // than declaring that all missing incidents were archived.
-      historyPollAt.set(Number(id),now()+(ended?Math.max(300000,interval*5):interval));
+      // Recheck the first FT snapshot quickly to establish two independent
+      // observations, then slow down if native data remains incomplete.
+      const finishedAttempts=(historyFtAttempts.get(Number(id))??0)+(ended?1:0);
+      if(ended)historyFtAttempts.set(Number(id),finishedAttempts);
+      historyPollAt.set(Number(id),now()+(ended?
+        (finishedAttempts<=3?Math.max(30000,interval):Math.max(300000,interval*5)):interval));
+      // FT is finalized only when a second matching provider observation
+      // confirms its canonical event facts. A single complete-looking frame
+      // must not authorize a payout or stop the next verification poll.
       if(ended&&Array.isArray(data.TimeLines)&&
-         ['goal','corner','card'].every(kind=>recorded?.verifiedKinds?.includes(kind)))
+         ['goal','corner','card'].every(kind=>recorded?.confirmedKinds?.includes(kind)))
        historyFinalized.add(Number(id));
      }catch(error){console.warn('[zizobet] match history',row.match_id,error?.message);}
     }
-    if(autoStart&&(full||needsTicketEvidence))void collectEventEvidence(row,{...data,Match:game}).catch(()=>{});
+    if(autoStart&&(full||needsTicketEvidence))
+     void collectEventEvidence(row,{...data,Match:game},{
+       observedAt:sampledAt,factsPersisted:archiveFactsPersisted
+     }).catch(()=>{});
     await queue(async()=>{const published=await publish(row,game,historyOnly?[]:oddsOf(row,full?data.gmk:mainQuotes(data.gmk,true),meta,true,game.LiveBetStatus!==false&&row.status!=='ended'),{complete:historyOnly?false:full,startedAt});if(startedAt>=(versions.get(row.match_id)??0)){const promoted=!entry.live;entry.live=true;entry.row=published??row;entry.raw=game;entry.verifiedAt=now();transitions.delete(Number(id));delete entry.transitionAt;if(full)fullObserved.set(Number(id),now());if(promoted){const ids=liveIds();state.live=ids.length;mqtt?.setLiveIds(ids);await onCycle?.(state);}}});
    }else{const result=await request(META+'prematch/getprematchgamefull/319/'+Number(id));const g=decode(result?.game);if(Number(g?.id)!==Number(id))throw Error('Zizobet prematch identity mismatch');
     const quotes=[];for(const[mid,list]of Object.entries(g.ev??{}))for(const[id,q]of Object.entries(list??{}))quotes.push({...q,id,mid});const disabled=new Set((Array.isArray(result.disableMarkets)?result.disableMarkets:[]).map(Number));

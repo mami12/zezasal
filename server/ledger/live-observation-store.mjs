@@ -79,7 +79,7 @@ export const LIVE_OBSERVATION_SQL=[
 /** Only accepted pending matching bets trigger writes or recovery requests.
  * There is deliberately NO outgoing backup API call until a provider is added.
  */
-export async function recordWatchedLiveFrame(matchId,data,{database=pool,now=Date.now,thresholdMs=90000}={}){
+export async function recordWatchedLiveFrame(matchId,data,{database=pool,now=Date.now,thresholdMs=90000,skipVerifiedFacts=false}={}){
  if(!Number.isSafeInteger(Number(matchId))||Number(matchId)<1)return {stored:false,reason:'INVALID_MATCH'};
  const frame=normalizeLiveFrame(data);
  const at=new Date(now()),seenAt=at.getTime();
@@ -123,7 +123,8 @@ export async function recordWatchedLiveFrame(matchId,data,{database=pool,now=Dat
     [matchId,at]);
   // Recheck every valid full sample, including identical frames deduplicated
   // in the raw archive. A second matching poll confirms the DB incident set.
-  await persistVerifiedEventFacts(matchId,frame,client.query.bind(client),at);
+  if(!skipVerifiedFacts)
+   await persistVerifiedEventFacts(matchId,frame,client.query.bind(client),at);
   // A complete PRIMARY timeline reconciled with the same feed counters
   // recovers missing polls without using fabricated "zero event" intervals.
   const confirmed=await client.query(`select kind from app_match_event_coverage

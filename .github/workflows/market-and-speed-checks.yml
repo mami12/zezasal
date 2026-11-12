@@ -44,6 +44,8 @@ jobs:
         run: node scripts/test-protected-event-minutes.mjs
       - name: Every Zizobet match archived without odds
         run: node scripts/test-zizobet-all-match-history.mjs
+      - name: Unified all-fixture financial evidence and correction safety
+        run: node scripts/test-unified-fixture-evidence.mjs
       - name: Bounded real-time secondary info and AiScore
         run: node scripts/test-realtime-information.mjs
       - name: Elementary FT HT accumulator and settlement recovery

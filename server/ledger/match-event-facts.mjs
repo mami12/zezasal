@@ -69,6 +69,35 @@ alter table app_match_event_coverage add column if not exists confirmed_at times
 `;
 const validKind = new Set(['goal','corner','card','foul']);
 const validSide = new Set(['home','away']);
+/**
+ * A newer contradictory Zizobet counter/timeline suspends a previous proof.
+ * Keep the last good incident rows for audit, but never sell their old
+ * confirmed coverage as proof of the currently observed count. Recovery
+ * must supply two new matching provider samples, even after process restart.
+ * An absent timeline with unchanged counters does not invalidate coverage.
+ */
+export async function invalidateContradictedEventCoverage(matchId,frame,execute,observedAt=new Date()){
+ if(frame?.source!=='zizobet'||typeof execute!=='function')return 0;
+ const clock=Number.isFinite(frame.clock)?frame.clock:frame.ended===true?130:null;
+ if(clock===null)return 0;
+ const observed=new Date(observedAt);
+ if(!Number.isFinite(observed.getTime()))return 0;
+ let invalidated=0;
+ for(const kind of validKind){
+  const counts=frame.teams?.[kind];
+  if(!counts||!['home','away'].every(s=>Number.isSafeInteger(counts[s])&&counts[s]>=0))continue;
+  if(!frame.rawTimelineTruncated&&frame.coverage?.[kind+'Through']!=null)continue;
+  const timelineDisagrees=frame.eventListAvailable===true;
+  const result=await execute(
+   "update app_match_event_coverage set confirmed_at=null,sample_signature=null,"+
+   "sample_first_seen_at=null where match_id=$1 and provider='zizobet' and kind=$2 "+
+   "and confirmed_at is not null and observed_at<$5::timestamptz and through_minute<=$6 "+
+   "and (count_home<>$3 or count_away<>$4 or $7::boolean) returning kind",
+   [matchId,kind,counts.home,counts.away,observed,clock,timelineDisagrees]);
+  invalidated+=result.rowCount??result.rows?.length??0;
+ }
+ return invalidated;
+}
 /** Called INSIDE the existing live-frame SQL transaction. */
 export async function persistVerifiedEventFacts(matchId, frame, execute, observedAt=new Date()) {
  const observed=new Date(observedAt);
@@ -108,6 +137,10 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
    playerName:typeof e.player==='string'?e.player:null,
    ownGoal:typeof e.ownGoal==='boolean'?e.ownGoal:null,
    cardColor:kind==='card'?e.cardColor??null:null,phase:e.phase??null}));
+  // The source event set is content-addressed. A second identical poll
+  // MUST advance evidence confirmation but MUST NOT rewrite every incident.
+  // This matters with hundreds of fixtures and a small PostgreSQL server.
+  if(previous?.sample_signature!==signature){
   // A correction may remove/replace a provider event, but the raw live-frame
   // archive remains intact. Changes are atomic with coverage and the new frame.
   await execute(`update app_match_event_fact set active=false,observed_at=now()
@@ -172,6 +205,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
    [matchId,kind,JSON.stringify(facts.map(f=>({
     id:f.id,team:f.team,minute:f.minute,seconds:f.seconds,player_id:f.playerId,
     player_name:f.playerName,card_color:f.cardColor,own_goal:f.ownGoal,phase:f.phase})))]);
+  }
   await execute(`insert into app_match_event_coverage
     (match_id,provider,kind,through_minute,count_home,count_away,complete,
      sample_signature,sample_first_seen_at,confirmed_at,observed_at,card_colors_verified)
@@ -443,7 +477,11 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    from ordered
  )
  select a.*,c.through_minute,c.count_home,c.count_away,c.complete,c.observed_at,c.confirmed_at,c.card_colors_verified,
+  -- Each valid writer has its own timestamp. Do NOT use greatest() here:
+  -- the watched gap cursor may be updated after the archive proof but
+  -- before the next settlement pass, and must not hide valid evidence.
   (select last_seen_at from app_live_event_cursor where match_id=$1) as second_poll_at,
+  (select evidence_observed_at from app_zizobet_match_history where match_id=$1) as archive_poll_at,
   exists(select 1 from app_live_event_recovery g
     where g.match_id=$1 and g.status='AWAITING_BACKUP_API' and $9::uuid=any(g.line_ids)
       and $16::text='zizobet') as open_recovery_gap,
@@ -504,9 +542,9 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
  const stored=new Date(data.observed_at).getTime();
  if(![confirmed,stored].every(Number.isFinite)||confirmed>stored)return null;
  if(provider==='zizobet'){
-   if(data.second_poll_at==null)return null;
-   const cursor=new Date(data.second_poll_at).getTime();
-   if(!Number.isFinite(cursor)||stored!==cursor)return null;
+   const watcher=data.second_poll_at==null?NaN:new Date(data.second_poll_at).getTime();
+   const archive=data.archive_poll_at==null?NaN:new Date(data.archive_poll_at).getTime();
+   if(stored!==watcher&&stored!==archive)return null;
  }else if(!['fotmob','apifootball','sportapi','goalapi','bsd','worldcup26'].includes(provider)||
    !['goal','corner','card'].includes(c.event)||!full)return null;
  // No exact-second interval or rolling window may use a minute-only timestamp
