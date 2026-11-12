@@ -48,6 +48,7 @@ import { liveClock } from './minute.mjs';
 import { liveRiskReason, riskMinute } from './live-risk.mjs';
 import { liveRiskSettings, subscribeLiveRiskSettings } from './live-risk-settings.mjs';
 import { freshFeed, freshSocketHeaders, liveBoardFacts } from './feed-sync.mjs';
+import {createMatchDetailRefresh} from './match-detail-refresh.mjs';
 import { refreshLiveRiskSettings } from './ledger/live-risk-store.mjs';
 import { createIdleMonitor, getFeedMode, feedIsStopped } from './idle-mode.mjs';
 import {quoteValidUntil} from './ledger/quote-validity.mjs';
@@ -79,7 +80,16 @@ const corsOrigin = config.allowedOrigins.includes('*') ? true : config.allowedOr
 let collector = null;
 let legacyYbetsResults=null;
 let pusher = null;
-app.locals.loadMatchDetail=async id=>{boostMatch(Number(id));if(['ybets','zizobet'].includes(config.sportsProvider)){await collector?.focus(Number(id)).catch(()=>{});await flushFeedBuffer();}else pusher?.subscribeFull(Number(id));};
+// A detail HTTP response reads our existing snapshot immediately. Remote full
+// markets arrive in the regular 1s feed flush; never block the user's request
+// on a slow provider, incident archival, or a global feed-buffer flush.
+app.locals.loadMatchDetail=createMatchDetailRefresh({
+  boost:boostMatch,
+  focus:id=>collector?.focus(id),
+  subscribe:id=>pusher?.subscribeFull(id),
+  provider:()=>config.sportsProvider,
+  onError:(error,id)=>console.warn('[match-detail] provider refresh',id,error?.message??error)
+});
 let oddsStatus = { connected: false };
 let shuttingDown = false;
 // One ordered feed stream per process. Client detects missed broadcasts and
