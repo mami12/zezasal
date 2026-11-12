@@ -116,9 +116,9 @@ export function fotMobKickoff(match){
   match?.utcTime,match?.kickoff?.utcTime,
   typeof match?.time==='string'?match.time:null];
  for(const candidate of options){
-  if(typeof candidate!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(candidate))continue;
+  if(typeof candidate!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(candidate))continue;
   // Require explicit Z/offset when parsing a kickoff for financial matching.
-  if(!/(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(candidate))continue;
+  if(!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(candidate))continue;
   const stamp=Date.parse(candidate);
   if(Number.isFinite(stamp))return stamp;
  }
