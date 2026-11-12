@@ -121,6 +121,13 @@ function toStored(row, at) {
     board_column: row.column ?? null,
     subgames: row.subgames ?? null,
     provider_id: normalizeProvider(row.providerId),
+    // Preserve the real native offer identity at the price-validation boundary.
+    // Display translations do not define the settlement contract.
+    native_market_id: row.nativeMarketId ?? row.native_market_id ?? null,
+    native_outcome_id: row.nativeOutcomeId ?? row.native_outcome_id ?? null,
+    native_market_name: row.nativeMarketName ?? row.native_market_name ?? null,
+    native_outcome_name: row.nativeOutcomeName ?? row.native_outcome_name ?? null,
+    native_parameters: row.nativeParameters ?? row.native_parameters ?? null,
     updated_at: at,
   };
 }

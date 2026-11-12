@@ -3,7 +3,7 @@ import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-disp
 import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
 import {enrichPrimaryActors} from './primary-actor-enrichment.mjs';
 import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,rawProviderIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
-import {TEAM_STAT_FIELDS,teamStatisticsFromRow} from '../match-statistics.mjs';
+import {teamStatisticsFromRow} from '../match-statistics.mjs';
 import {compareFinalStatistics} from '../ledger/settlement-review.mjs';
 import {eventContract,eventSelectionSupported} from '../ledger/event-contract.mjs';
 import {supportedContract} from '../ledger/event-evidence.mjs';
@@ -13,7 +13,13 @@ import {apiFootballTimedIncidents,bsdTimedIncidents,sportApiTimedIncidents,goalA
 import {supplementalRefreshMs,fixtureLive,prematchSoon,sportingFingerprint} from './realtime-policy.mjs';
 const query=async(...a)=>(await import('../db.mjs')).query(...a);
 const specs={bsd:{base:'https://sports.bzzoiro.com/api/v2',env:'BSD_API_KEY',header:'Authorization',prefix:'Token ',day:1000,month:14000},worldcup26:{base:'https://worldcup26.ir',day:500,month:10000},sportapi:{base:'https://sportapi.ai/api',env:'SPORTAPI_API_KEY',header:'X-Api-Key',day:2000,month:14000},goalapi:{base:'https://api.goal-api.com/v1',env:'GOALAPI_API_KEY',header:'Authorization',prefix:'Bearer ',day:1000,month:31000},apifootball:{base:'https://v3.football.api-sports.io',env:'APIFOOTBALL_API_KEY',header:'x-apisports-key',day:100,month:3100}};
-const refreshMs=10*60*1000,requiredStats=['shotsOnTarget','fouls','shots','corners'];
+const refreshMs=10*60*1000;
+// Zizobet alone owns score, corners, cards and the event chronology.
+// Secondary APIs may enrich verified actors and missing team statistics.
+const supplementalStats=['shotsOnTarget','fouls','shots','possession'];
+const requiredStats=['shotsOnTarget','fouls','shots'];
+const supplementalSnapshot=values=>Object.fromEntries(supplementalStats
+ .filter(field=>values?.[field]!=null).map(field=>[field,values[field]]));
 const finished=row=>row.final===true||[row.status,row.service,row.feed_status].some(value=>/^(?:ft|full.?time|finished|ended|cancelled|canceled|after (?:match|penalt(?:y|ies)))(?:\b|$)/i.test(String(value??'')));
 const live=row=>!finished(row)&&String(row.service??row.status).toUpperCase()==='LIVE';
 export const providerUrls=Object.fromEntries(Object.entries(specs).map(([k,v])=>[k,v.base]));
@@ -186,43 +192,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
  // Backup incidents are kept in their own provenance namespace. Only
  // recorded FT results and independently fetched same-provider counters can
  // certify a complete supplementary chronology.
- async function saveVerifiedBackupFacts(id,provider,match,evidence,result){
-  if(!result||evidence?.final!==true||evidence?.complete!==true||
-     ![evidence.homeScore,evidence.awayScore].every(x=>x!=null&&Number.isSafeInteger(Number(x))&&Number(x)>=0)||
-     Number(evidence.homeScore)!==Number(result.home_score)||
-     Number(evidence.awayScore)!==Number(result.away_score))return;
-  if(typeof persistGoalFacts==='function'&&evidence.goalsAvailable===true)
-   try{await persistGoalFacts(id,evidence);}catch(error){
-    health.lastError='SUPPLEMENTAL_GOAL_FACTS_UNAVAILABLE';
-   }
-  if(typeof persistTimedFacts!=='function'||
-     (!evidence.cornerTimelineAvailable&&!evidence.cardTimelineAvailable))return;
-  const statsPath=provider==='bsd'?'/events/'+match.id+'/stats/':
-    provider==='goalapi'?'/fixtures/'+match.id+'/statistics':
-    provider==='sportapi'?'/fixtures/'+match.id+'/stats':
-    provider==='apifootball'?'/fixtures/statistics?fixture='+match.id:
-    '/get/soccer/'+match.league+'/scoreboard?dates='+String(match.start).slice(0,10).replaceAll('-','');
-  const sourceStats=displayTeamStatistics(provider,await api(provider,statsPath,0),match);
-  const pair=field=>{
-   const p=sourceStats?.[field];
-   return p&&['home','away'].every(side=>p[side]!=null&&
-      Number.isSafeInteger(Number(p[side]))&&Number(p[side])>=0)?
-     {home:Number(p.home),away:Number(p.away)}:null;
-  };
-  const corners=pair('corners'),yellow=pair('yellow'),red=pair('red');
-  const cards=yellow&&red?
-    {home:yellow.home+red.home,away:yellow.away+red.away}:null;
-  for(const [kind,events,available,counts] of [
-    ['corner',evidence.cornerEvents,evidence.cornerTimelineAvailable,corners],
-    ['card',evidence.cardEvents,evidence.cardTimelineAvailable,cards]]){
-   if(!available||!counts||!Array.isArray(events))continue;
-   try{await persistTimedFacts(id,{source:evidence.source,kind,final:true,
-     complete:true,timelineAvailable:true,homeCount:counts.home,
-     awayCount:counts.away,events});}catch(error){
-    health.lastError='SUPPLEMENTAL_'+kind.toUpperCase()+'_FACTS_UNAVAILABLE';
-   }
-  }
- }
  async function update(row,pending=false){
   if(!enabled()||!row)return;const id=String(row.match_id??row.id);
   if(inflight.has(id))return inflight.get(id);
@@ -257,12 +226,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      const evidence=await collect(provider,m,final?0:refreshFor(row)),cap=goalCapabilities(evidence);
      evidence.providerFixtureId=m.id;evidence.observedAt=new Date(now()).toISOString();
      state.offer={...cap,players:(evidence.participants??[]).filter(x=>x.played).flatMap(x=>[x.name,...(x.aliases??[])])};
-     const goals=evidence.events.filter(e=>e.type==='goal'&&!e.shootout&&!/extra|shoot/i.test(e.phase??'')&&Number.isFinite(e.minute)&&e.minute>=0&&e.minute<=90);
-     const eventIds=goals.filter(e=>e.id!=null&&String(e.id)!=='').map(e=>String(e.id));
-     const reconciled=new Set(eventIds).size===eventIds.length&&evidence.final===true&&evidence.complete===true&&[evidence.homeScore,evidence.awayScore].every(x=>Number.isInteger(x)&&x>=0)&&goals.every(e=>['home','away'].includes(e.team))&&goals.filter(e=>e.team==='home').length===evidence.homeScore&&goals.filter(e=>e.team==='away').length===evidence.awayScore&&(!result||(evidence.homeScore===Number(result.home_score)&&evidence.awayScore===Number(result.away_score)));
-     if(final&&reconciled)await saveEvidence?.(id,evidence);
-     if(final&&result&&(persistGoalFacts||persistTimedFacts))
-      await saveVerifiedBackupFacts(Number(id),provider,m,evidence,result);
      if(!final&&cap.goals&&requiredMethods.every(k=>cap.methodFields?.[k]===true)&&(!needsAssists||cap.assists))break;
     }catch(e){health.providers[provider]={...(health.providers[provider]??{}),lastError:/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE'};/* Provider failures are never zero goals. No credentials or raw responses in logs. */}
    }
@@ -298,6 +261,14 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    if(old?.version===3&&old.identity===identity&&old.next>now()&&Number.isFinite(Number(old.at))&&now()-Number(old.at)<localTtl&&!urgent.has(id)&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
    const entry={version:3,identity,values:{},goalIntervals:null,sources:{},at:now()};
+   // Reuse Zizobet's persisted full-time team stats before any extra request.
+   for(const field of supplementalStats){
+    const value=result?.statistics?.[field];
+    if(value&&['home','away'].every(side=>value[side]!=null&&Number.isFinite(Number(value[side])))){
+     entry.values[field]={home:Number(value.home),away:Number(value.away)};
+     entry.sources[field]='primary-archive';
+    }
+   }
    // Zizobet's independently reconfirmed event history is the authority for
    // goals, clock windows and minute buckets. Other services supply only
    // missing scorer labels/statistics and never replace these incidents.
@@ -334,24 +305,16 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    }
    // Even when Zizobet reports goals but its incident timeline is missing,
    // an opened match still needs a source-labelled scorer history.
-   const scoreHome=Number(row.home_score),scoreAway=Number(row.away_score);
-   const knownScore=Number.isSafeInteger(scoreHome)&&scoreHome>=0&&
-     Number.isSafeInteger(scoreAway)&&scoreAway>=0;
-   const missingPrimaryTimeline=knownScore&&scoreHome+scoreAway>0&&
-     !primaryGoal?.hasGoals;
-   let supplementalScorersComplete=false;
-   const needsAnyActors=()=>needsActors()||missingPrimaryTimeline&&!supplementalScorersComplete;
-   const observesAllScorers=events=>knownScore&&Array.isArray(events)&&
-     events.filter(e=>e.team==='home').length===scoreHome&&
-     events.filter(e=>e.team==='away').length===scoreAway&&
-     events.every(e=>!!String(e.player??e.playerName??'').trim()&&
-       ['home','away'].includes(e.team));
+   // Enrichment attaches only to a Zizobet incident, never an inferred goal.
+   const needsAnyActors=()=>needsActors();
    const observations=[],attempted=[],unavailable={};
    if(final&&result)observations.push({provider:'primary',final:true,observedAt:new Date(now()).toISOString(),values:{...(result.statistics??{}),corners:{home:result.corners_home,away:result.corners_away},cards:{home:result.cards_home,away:result.cards_away}}});
    const state=await read('match:'+id),mapping={...(state?.identity===identity?state.mapping??{}:{}),...(old?.identity===identity?old.mapping??{}:{})};
    // Avoid using daily-limited APIs for goal minutes already supplied by
    // Zizobet. For LIVE matches, rotate only if the primary lacks other
    // required statistics. FT independent audit remains unchanged.
+   // At FT compare every configured source for shots/fouls; never import
+   // their goals, corners or cards into the PRIMARY settlement ledger.
    for(const provider of (final||!statsReady(entry))?
      await providerOrder('statistics'):[]){
     if(specs[provider].env&&!env[specs[provider].env])continue;
@@ -363,10 +326,9 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        const path=provider==='bsd'?'/events/'+m.id+'/stats/':provider==='goalapi'?'/fixtures/'+m.id+'/statistics':provider==='sportapi'?'/fixtures/'+m.id+'/stats':provider==='apifootball'?'/fixtures/statistics?fixture='+m.id:'/get/soccer/'+m.league+'/scoreboard?dates='+String(m.start).slice(0,10).replaceAll('-','');
        const payload=await api(provider,path,final?0:dataTtl),values=displayTeamStatistics(provider,payload,m);
        if(final){if(await finalFixture(provider,m,payload)){
-        if(values.yellow&&values.red)values.cards={home:values.yellow.home+values.red.home,away:values.yellow.away+values.red.away};
-        observations.push({provider,final:true,values,fixtureId:m.id,observedAt:new Date(now()).toISOString()});
+        observations.push({provider,final:true,values:supplementalSnapshot(values),fixtureId:m.id,observedAt:new Date(now()).toISOString()});
        }else unavailable[provider]='STATS_NOT_FINAL';}
-       for(const field of TEAM_STAT_FIELDS){
+       for(const field of supplementalStats){
         const pair=values[field];if(!pair)continue;
         const current=entry.values[field]??{};
         if(['home','away'].some(side=>{const known=primary[side]?.[field]??current[side];return known!=null&&pair[side]!=null&&known!==pair[side];}))continue;
@@ -376,47 +338,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
         if(current.home!=null&&current.away!=null)entry.sources[field]=provider;
        }
       }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
-     }
-     if(final&&!entry.goalIntervals){
-      try{
-       let payload;
-       if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',dataTtl);
-       else if(provider==='goalapi')payload=await api(provider,'/fixtures/'+m.id+'/events',dataTtl);
-       else if(provider==='sportapi')payload=await api(provider,`/fixtures/${m.id}/events`,dataTtl);
-       else if(provider==='apifootball'){
-        const first=await api(provider,`/fixtures/events?fixture=${m.id}`,dataTtl),response=[...(first.response??[])];
-        const pages=Math.max(1,Number(first.paging?.pages)||1);
-        for(let page=2;page<=pages&&page<=20;page++){
-         const next=await api(provider,`/fixtures/events?fixture=${m.id}&page=${page}`,dataTtl);
-         response.push(...(next.response??[]));
-        }
-        if(pages>20)throw Error('STATS_INCOMPLETE_PAGES');
-        payload={...first,response};
-       }else{
-        const day=String(m.start).slice(0,10).replaceAll('-','');
-        const scoreboard=await api(provider,`/get/soccer/${m.league}/scoreboard?dates=${day}`,dataTtl);
-        if(!scoreboard.events?.some(event=>String(event.id)===String(m.id)))throw Error('STATS_NO_FIXTURE');
-        const items=[];let pageCount=null;
-        for(let pageIndex=1;pageIndex<=20;pageIndex++){
-         const next=await api(provider,`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`,dataTtl);
-         if(!Array.isArray(next.items))throw Error('STATS_INVALID_RESPONSE');
-         items.push(...next.items);pageCount=Number(next.pageCount);
-         if(Number.isFinite(pageCount)&&pageIndex>=pageCount)break;
-        }
-        if(!Number.isFinite(pageCount)||pageCount<1||pageCount>20)throw Error('STATS_INCOMPLETE_PAGES');
-        payload={...scoreboard,items};
-       }
-       if(provider==='bsd'&&!Array.isArray(payload.incidents))throw Error('STATS_INVALID_RESPONSE');
-       if(provider==='goalapi'&&(!payload.success||!Array.isArray(payload.data)||(payload.count!=null&&payload.count!==payload.data.length)||payload.pagination?.hasMore))throw Error('STATS_INCOMPLETE_PAGES');
-       if(provider==='sportapi'&&!Array.isArray(payload.data))throw Error('STATS_INVALID_RESPONSE');
-       if(provider==='apifootball'&&!Array.isArray(payload.response))throw Error('STATS_INVALID_RESPONSE');
-        const intervals=displayGoalIntervals(provider,payload,m);
-       const matchesScore=intervals&&['home','away'].every(side=>{
-        const score=row[side+'_score'];
-        return score==null||!Number.isInteger(Number(score))||Number(score)<0||intervals.reduce((sum,bin)=>sum+bin[side],0)===Number(score);
-       });
-       if(matchesScore){entry.goalIntervals=intervals;entry.sources.goals=provider;}
-      }catch(e){health.providers[provider]={...(health.providers[provider]??{}),lastError:/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE'};}
      }
      if(!final&&statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
@@ -430,8 +351,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if (fm && fm.match) {
       const details = await fetchFotMobDetails(fm.match.id,{force:urgent.has(id)});
       const parsed = parseFotMobPayload(fm.match, details);
-      if(missingPrimaryTimeline&&observesAllScorers(parsed.goalEvents))
-       supplementalScorersComplete=true;
       if(details){
        try{
         const incidents=fotMobIncidents(details);
@@ -465,7 +384,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        yellow: null,
        red: null
       };
-      for (const field of TEAM_STAT_FIELDS) {
+      for (const field of supplementalStats) {
        const pair = fmValues[field];
        if (!pair || pair.home == null || pair.away == null) continue;
        const current = entry.values[field] ?? {};
@@ -478,7 +397,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
        observations.push({
          provider: 'fotmob',
          final: true,
-         values: fmValues,
+         values: supplementalSnapshot(fmValues),
          fixtureId: fm.match.id,
          observedAt: new Date(now()).toISOString()
        });
@@ -505,9 +424,6 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       mapping[provider]=fixture;
       const evidence=await collect(provider,fixture,final?0:localTtl);
       const incidents=backupIncidents(evidence);
-      if(missingPrimaryTimeline&&observesAllScorers(
-        (evidence.events??[]).filter(e=>e.type==='goal'&&!e.shootout)))
-       supplementalScorersComplete=true;
       if(incidents.length){
        await storeSupplementalIncidents(Number(id),provider,fixture.id,incidents,
          {execute:runQuery,payload:evidence});
@@ -547,7 +463,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
   const entry=displayCache.get(String(row.match_id??row.id));
   if(!entry?.values||entry.identity!==identityOf(row)||now()-entry.at>refreshFor(row)*2)return row.stats;
   const primary=teamStatisticsFromRow(row),stats={...(row.stats??{})};
-  for(const field of TEAM_STAT_FIELDS){
+  for(const field of supplementalStats){
    const pair=entry.values[field];if(!pair)continue;
    if(['home','away'].some(side=>primary[side]?.[field]!=null&&pair[side]!=null&&primary[side][field]!==pair[side]))continue;
    for(const side of ['home','away']){
