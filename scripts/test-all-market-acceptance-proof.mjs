@@ -22,6 +22,7 @@ const supported=[
  offer('1st half - Result','1',{period:1}),
  offer('HT/FT','1/X'),
  offer('Correct Score','2:1'),
+ offer('Correct score rest of match (from 12:11)','0:0'),
  offer('Draw No Bet','1'),
  offer('Clean Sheet Home Team','Yes'),
  offer('Total Corners','Over',{line:'5.5'}),
