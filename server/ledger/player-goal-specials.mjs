@@ -32,7 +32,10 @@ function quotedActor(line,title,choice,kind){
  const market=sections[0];
  const player=param??embedded??'';
  const label=String(choice??'').trim();
- const isSelectionName=kind==='named'&&!player&&
+ // A native 2+/3+/hat-trick offer can quote the nominated player as the
+ // outcome itself, with no `pl` parameter. The market title fixes the
+ // numeric threshold, so the outcome names the actor, not a wager line.
+ const isSelectionName=(kind==='named'||kind==='count-named')&&!player&&
   label&&!/^(?:yes|no|po|jo|over|under|none|exact|1|2|x)$/i.test(label);
  const actor=isSelectionName?label:player;
  if(!actor||!canonical(actor)||actor.length>200)return null;
@@ -91,7 +94,9 @@ export function parsePlayerGoalSpecial(line){
  // Native period=1/2 on a player's goal-total is the respective half,
  // never silently expanded to full-time scoring.
  if(mode==='count'&&period)half=period;
- const actor=quotedActor(line,title,rawLabel,mode==='count'?'count':'named');
+ const actor=quotedActor(line,title,rawLabel,
+  mode==='count'&&typeof choice==='boolean'?'count-named':
+  mode==='count'?'count':'named');
  if(!actor)return null;
  if(mode==='period'&&!['boolean'].includes(typeof choice))return null;
  if(mode==='count'&&typeof choice==='boolean'&&(!Number.isSafeInteger(threshold)||threshold<1||threshold>30))return null;
