@@ -271,7 +271,12 @@ export async function inspectFootballInformation(matchId,{runQuery=query,request
 }
 export function createFootballInformationCollector({runQuery=query,request=fetch,loadMatch=getMatchById,
  env=process.env,now=Date.now}={}){
- let busy=false,lastTick=0;
+ let busy=false,lastTick=0,sourcePauseUntil=0;
+ const rememberProviderFailure=result=>{
+  if(result?.sources?.some(source=>['RATE_LIMITED','AUTH_REQUIRED'].includes(source.error)))
+   sourcePauseUntil=Math.max(sourcePauseUntil,now()+5*60*1000);
+  return result;
+ };
  const observed=new Map();
  const observeMatch=row=>{
   if(!enabled()||env.STATS_REALTIME_ENABLED==='false'||!isFootballFixture(row))return;
@@ -292,6 +297,7 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
  const warm=matchId=>{
   const id=Number(matchId);
   if(!enabled()||!Number.isSafeInteger(id)||id<=0)return Promise.resolve({status:'DISABLED_OR_INVALID'});
+  if(now()<sourcePauseUntil)return Promise.resolve({status:'UPSTREAM_PAUSED'});
   if(warming.has(id))return warming.get(id);
   const at=now();
   if(at-(lastWarm.get(id)??0)<(env.STATS_REALTIME_ENABLED==='false'?60000:20000))return Promise.resolve({status:'CACHED'});
@@ -304,7 +310,7 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
    if(!rows.length)return {status:'NO_FIXTURE_MAPPING'};
    const due=new Date(rows[0].next_check_at).getTime();
    if(Number.isFinite(due)&&due>now())return {status:'MAPPING_NOT_DUE'};
-   return inspectFootballInformation(id,{runQuery,request,loadMatch,now,needsOverride:['player'],env});
+   return rememberProviderFailure(await inspectFootballInformation(id,{runQuery,request,loadMatch,now,needsOverride:['player'],env}));
   })().finally(()=>warming.delete(id));
   warming.set(id,promise);
   return promise;
@@ -312,7 +318,7 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
  return {
   enabled,warm,observeMatch,
   async tick(){
-   if(!enabled()||busy||now()-lastTick<15000)return {enabled:enabled(),scanned:0};
+   if(!enabled()||busy||now()-lastTick<15000||now()<sourcePauseUntil)return {enabled:enabled(),scanned:0,paused:now()<sourcePauseUntil};
    busy=true;lastTick=now();
    let scanned=0,failures=0;
    try{
@@ -330,6 +336,7 @@ export function createFootballInformationCollector({runQuery=query,request=fetch
      try{
       const result=await inspectFootballInformation(row.match_id,{runQuery,request,loadMatch,now,
        needsOverride:row.pending===true?null:['player'],env});
+      rememberProviderFailure(result);
       if(result.status==='NO_SUPPLEMENTARY_NEEDS')
        await runQuery("update app_football_information_map set next_check_at=now()+interval '5 minutes' where match_id=$1",[row.match_id]);
       scanned++;
