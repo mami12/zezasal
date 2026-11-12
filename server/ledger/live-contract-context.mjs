@@ -138,10 +138,13 @@ export function frozenLiveContract(line,match={},at=Date.now()){
      status:400,code:'MARKET_DECIDED'});
    return {...contract,baseline:{home:current.home,away:current.away}};
   }
-  if(contract.side==='none'&&current?.home!=null&&current?.away!=null&&
-     current.home+current.away>0)
-   throw Object.assign(new Error('Opsioni Asnjëra është vendosur tashmë.'),{
-    status:400,code:'MARKET_DECIDED'});
+  if(contract.side==='none'){
+   if(current?.home==null||current?.away==null)
+    throw fail('Mungojnë numëruesit aktualë për opsionin Asnjëra.');
+   if(current.home+current.away>0)
+    throw Object.assign(new Error('Opsioni Asnjëra është vendosur tashmë.'),{
+     status:400,code:'MARKET_DECIDED'});
+  }
  }
  if(live&&contract.kind==='corner-comparison'&&contract.mode==='wins-both'&&
     clock!==null&&clock>=45)
