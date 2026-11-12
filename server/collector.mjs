@@ -445,7 +445,10 @@ export function serializeMatch(row, oddsRows = [], now = Date.now()) {
     events:(function(){
       const rawEvents = row.raw?.eventTimeline;
       const scorers = statsProviders.displayScorers?.(row) ?? [];
-      const baseEvents = Array.isArray(rawEvents) && rawEvents.length ? rawEvents : scorers.map(s => ({
+      // A secondary source may label an EXISTING primary goal, but must
+      // never fabricate an incident when Zizobet has no raw event timeline.
+      const primaryNames=scorers.filter(s=>s.source!=='fotmob');
+      const baseEvents = Array.isArray(rawEvents) && rawEvents.length ? rawEvents : primaryNames.map(s => ({
         id: 'scorer-' + s.minute + '-' + s.team,
         matchId: String(row.match_id),
         type: 'goal',
@@ -458,8 +461,12 @@ export function serializeMatch(row, oddsRows = [], now = Date.now()) {
       if(!baseEvents.length || !scorers.length) return baseEvents;
       return baseEvents.map(ev => {
         if(ev.type !== 'goal'||ev.player) return ev;
-        const match = scorers.find(s => s.team === ev.team && Math.abs(s.minute - ev.minute) <= 2);
-        if(!match || !match.player) return ev;
+        const advisory=scorers.filter(s=>s.source==='fotmob'&&
+          s.team===ev.team&&Number(s.minute)===Number(ev.minute));
+        const match=advisory.length===1?advisory[0]:
+          advisory.length>1?null:primaryNames.find(s=>s.team===ev.team&&
+            Math.abs(s.minute-ev.minute)<=2);
+        if(!match?.player)return ev;
         return { ...ev, player: match.player, text: 'Goal: ' + match.player };
       });
     })(),
