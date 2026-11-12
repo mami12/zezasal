@@ -64,6 +64,29 @@ assert.equal(await gradeStoredEventContract({
  live_contract:first('Zor, Yasin')
 },{home_score:1,away_score:1},{execute:fakeExecute}),'WON',
  'Stored verified player and goal chronology grade the actual FIRST scorer');
+
+ // FIRST scorer can be confirmed before FT; LAST and a NO-GOAL win cannot.
+ const earlyExecute=async(sql)=>{
+  if(sql.startsWith('with covered as'))return {rows:[{
+   home:1,away:1,total:2,count_home:1,count_away:1,
+   through_minute:35,complete:false,open_recovery_gap:false,
+   confirmed_at:stamp,observed_at:stamp,second_poll_at:stamp
+  }]};
+  if(sql.includes('select minute,seconds,team,player_id'))return {rows:facts};
+  throw Error('Unexpected early LIVE SQL '+sql.slice(0,100));
+ };
+ const liveWager=(contract)=>({
+  id:'00000000-0000-4000-8000-000000000302',match_id:321,live_contract:contract
+ });
+ assert.equal(await gradeStoredEventContract(liveWager(first('Zor, Yasin')),null,
+  {execute:earlyExecute}),'WON','confirmed FIRST scorer is irreversible while match is LIVE');
+ assert.equal(await gradeStoredEventContract(liveWager(first('No Goalscorer')),null,
+  {execute:earlyExecute}),'LOST','confirmed FIRST scorer disproves the no-scorer choice');
+ assert.equal(await gradeStoredEventContract(liveWager(first('Xaver Kiefersauer')),null,
+  {execute:earlyExecute}),null,'unverified player participation cannot cause early loss');
+ assert.equal(await gradeStoredEventContract(liveWager(last('Kiefersauer, Xaver')),null,
+  {execute:earlyExecute}),null,'LAST scorer stays pending before FT');
+ 
 const now=Date.parse('2026-11-08T13:00:00Z'),clockAt=new Date(now).toISOString();
 const live={service:'LIVE',match_time_ms:18*60000,
  clock_at:clockAt,score_at:clockAt,home_score:1,away_score:0};
