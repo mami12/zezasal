@@ -106,24 +106,48 @@ export function extractTeamNames(matchName, row = null) {
 }
 
 /**
- * Look up a match in FotMob by team names across target dates.
+ * The FotMob date-list response may contain a localized display-only "time"
+ * such as "30.08.2026 15:00", with the independently verifiable UTC kickoff
+ * stored at status.utcTime instead. Never Date.parse a localized date: it can
+ * silently fail, or reinterpret a kickoff in the server's own timezone.
  */
-export async function findFotMobFixture(home,away,targetDates,expectedKickoff=null){
+export function fotMobKickoff(match){
+ const options=[match?.status?.utcTime,match?.time?.utcTime,match?.time?.utc,
+  match?.utcTime,match?.kickoff?.utcTime,
+  typeof match?.time==='string'?match.time:null];
+ for(const candidate of options){
+  if(typeof candidate!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(candidate))continue;
+  // Require explicit Z/offset when parsing a kickoff for financial matching.
+  if(!/(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(candidate))continue;
+  const stamp=Date.parse(candidate);
+  if(Number.isFinite(stamp))return stamp;
+ }
+ return null;
+}
+/** Independently identify one FotMob fixture by BOTH team identities and UTC.
+ * Optional date reader only exists to test against exact provider-shaped
+ * payloads without downloading or inventing a result.
+ */
+export async function findFotMobFixture(home,away,targetDates,expectedKickoff=null,{fetchDate=fetchFotMobDate}={}){
+
   const matches=new Map();
   const expected=Date.parse(expectedKickoff??'');
   // This lookup can authorize historical payouts. A matching name/date with
   // missing independent kickoff is not sufficient proof of the same fixture.
   if(!Number.isFinite(expected)||!Array.isArray(targetDates))return null;
   for(const dateStr of targetDates){
-    const data=await fetchFotMobDate(dateStr);
+    const data=await fetchDate(dateStr);
     if(!Array.isArray(data?.leagues))continue;
     for(const league of data.leagues){
       for(const match of league.matches??[]){
-        const homeName=match.home?.name??match.home?.shortName;
-        const awayName=match.away?.name??match.away?.shortName;
-        if(!teamsMatch(home,homeName)||!teamsMatch(away,awayName))continue;
-        const kickoff=Date.parse(match.time?.utcTime??match.time?.utc??match.time??'');
-        if(!Number.isFinite(kickoff)||Math.abs(kickoff-expected)>7200000)continue;
+        // Some lower-tier fixtures use abbreviated display labels. Try the
+        // source's official and short names independently, never a fuzzy
+        // substring or reversed home/away match.
+        const same=(expectedName,team)=>
+          [team?.name,team?.shortName].some(label=>teamsMatch(expectedName,label));
+        if(!same(home,match.home)||!same(away,match.away))continue;
+        const kickoff=fotMobKickoff(match);
+        if(kickoff===null||Math.abs(kickoff-expected)>7200000)continue;
         if(match.id!=null)matches.set(String(match.id),{match,league:league.name,dateStr});
       }
     }
