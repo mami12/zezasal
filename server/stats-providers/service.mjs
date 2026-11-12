@@ -285,7 +285,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    const result=(await runQuery('select * from app_match_result where match_id=$1',[Number(id)])).rows[0];
    if(result)final=true;
    await init();const old=cached??await read('display:'+id);
-   if(old?.version===3&&old.identity===identity&&old.next>now()&&(!final||old.finalReview)){displayCache.set(id,old);return;}
+   if(old?.version===3&&old.identity===identity&&old.next>now()&&!urgent.has(id)&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
    const entry={version:3,identity,values:{},goalIntervals:null,sources:{},at:now()};
    // Zizobet's independently reconfirmed event history is the authority for
@@ -370,25 +370,25 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(final&&!entry.goalIntervals){
       try{
        let payload;
-       if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',displayTtl);
-       else if(provider==='goalapi')payload=await api(provider,'/fixtures/'+m.id+'/events',displayTtl);
-       else if(provider==='sportapi')payload=await api(provider,`/fixtures/${m.id}/events`,displayTtl);
+       if(provider==='bsd')payload=await api(provider,'/events/'+m.id+'/incidents/',localTtl);
+       else if(provider==='goalapi')payload=await api(provider,'/fixtures/'+m.id+'/events',localTtl);
+       else if(provider==='sportapi')payload=await api(provider,`/fixtures/${m.id}/events`,localTtl);
        else if(provider==='apifootball'){
-        const first=await api(provider,`/fixtures/events?fixture=${m.id}`,displayTtl),response=[...(first.response??[])];
+        const first=await api(provider,`/fixtures/events?fixture=${m.id}`,localTtl),response=[...(first.response??[])];
         const pages=Math.max(1,Number(first.paging?.pages)||1);
         for(let page=2;page<=pages&&page<=20;page++){
-         const next=await api(provider,`/fixtures/events?fixture=${m.id}&page=${page}`,displayTtl);
+         const next=await api(provider,`/fixtures/events?fixture=${m.id}&page=${page}`,localTtl);
          response.push(...(next.response??[]));
         }
         if(pages>20)throw Error('STATS_INCOMPLETE_PAGES');
         payload={...first,response};
        }else{
         const day=String(m.start).slice(0,10).replaceAll('-','');
-        const scoreboard=await api(provider,`/get/soccer/${m.league}/scoreboard?dates=${day}`,displayTtl);
+        const scoreboard=await api(provider,`/get/soccer/${m.league}/scoreboard?dates=${day}`,localTtl);
         if(!scoreboard.events?.some(event=>String(event.id)===String(m.id)))throw Error('STATS_NO_FIXTURE');
         const items=[];let pageCount=null;
         for(let pageIndex=1;pageIndex<=20;pageIndex++){
-         const next=await api(provider,`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`,displayTtl);
+         const next=await api(provider,`/get/soccer/${m.league}/events/${m.id}/plays?pageIndex=${pageIndex}&pageSize=100`,localTtl);
          if(!Array.isArray(next.items))throw Error('STATS_INVALID_RESPONSE');
          items.push(...next.items);pageCount=Number(next.pageCount);
          if(Number.isFinite(pageCount)&&pageIndex>=pageCount)break;
@@ -493,7 +493,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
       const fixture=mapping[provider]??await discover(provider,row);
       if(!fixture)continue;
       mapping[provider]=fixture;
-      const evidence=await collect(provider,fixture,final?0:displayTtl);
+      const evidence=await collect(provider,fixture,final?0:localTtl);
       const incidents=backupIncidents(evidence);
       if(missingPrimaryTimeline&&observesAllScorers(
         (evidence.events??[]).filter(e=>e.type==='goal'&&!e.shootout)))
@@ -639,10 +639,11 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    health.watchedMatches=ids.size;health.lastError=null;
    const all=[...ids],prioritized=all.filter(id=>urgent.has(id)||events.has(id));
    const rest=all.filter(id=>!urgent.has(id)&&!events.has(id));
-   const selected=realtime()?[...prioritized.slice(0,fastPollBatch()),
-    ...Array.from({length:Math.max(0,fastPollBatch()-prioritized.length)},
+   const priorityCap=Math.max(1,fastPollBatch()-1);
+   const selected=realtime()?[...prioritized.slice(0,priorityCap),
+    ...Array.from({length:Math.max(0,fastPollBatch()-Math.min(priorityCap,prioritized.length))},
      (_,i)=>rest.length?rest[(cursor+i)%rest.length]:null).filter(Boolean)]:all;
-   if(realtime()&&rest.length)cursor=(cursor+Math.max(1,selected.length-prioritized.length))%rest.length;
+   if(realtime()&&rest.length)cursor=(cursor+Math.max(1,selected.length-Math.min(priorityCap,prioritized.length)))%rest.length;
    for(const id of selected){
     try{
      const row=observed.get(id)?.row??await loadMatch?.(Number(id))??(await loadSnapshots?.([Number(id)]))?.[0];
