@@ -41,6 +41,8 @@ export interface Tournament {
 }
 
 export interface Match {
+  /** Whether selected LIVE/PREMATCH fixture has received all provider markets. */
+  fullMarketsReady?: boolean;
   isHidden?: boolean;
   events?:MatchEvent[];
   supplementalEvents?:MatchEvent[];
