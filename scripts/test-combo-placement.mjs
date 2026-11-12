@@ -330,7 +330,7 @@ try {
   ]));
   assert.equal(sameFixtureTicket.ticketType,'COMBO');
   assert.equal(sameFixtureTicket.lines.length,2);
-  assert.deepEqual(new Set(sameFixtureTicket.lines.map(line=>line.marketKey)),new Set(['result','total']));
+  assert.deepEqual(new Set(sameFixtureTicket.lines.map(line=>line.marketName)),new Set(['1X2','Total']));
   assert.equal(sameFixtureTicket.totalOdds,3.96);
   assert.deepEqual(await wallet(),{balance:9500,tickets:5,transactions:5});
   console.log('PASS real combo placement: server leg/product resolution, odds acceptance, suspension/staleness/missing market, disable race under DB lock, LIVE expiry/risk, atomic wallet SQL, frozen settlement, idempotency and ordinary accumulator preservation');
