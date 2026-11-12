@@ -27,7 +27,7 @@ export function buildBetslipColumns(selections: BetSelection[]) {
   // exact market are distributed across independent system columns.
   const groups = new Map<string, BetSelection[]>();
   for (const selection of selections) {
-    const identity=selectionMarketIdentity(selection)??JSON.stringify([selection.matchId,'legacy']);
+    const identity=selectionMarketIdentity(selection)??JSON.stringify([selection.matchId,'unidentified',selection.outcomeId]);
     const group = groups.get(identity);
     if (group) group.push(selection);
     else groups.set(identity, [selection]);
