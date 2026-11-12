@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer';
 import {build} from 'esbuild';
 import {Server} from 'socket.io';
 
-const root=fileURLToPath(new URL('../web',import.meta.url)),errors=[],writes=[],held=new Map(),modes=new Map();
+const root=fileURLToPath(new URL('../web',import.meta.url)),errors=[],writes=[],held=new Map(),modes=new Map(),fullReads=new Map();
 const fixture=id=>{
  const at=new Date().toISOString(),marketId=`${id}|result|`;
  return {id,tournamentId:1,homeTeam:'Home '+id,awayTeam:'Away '+id,status:'LIVE',startTime:new Date(Date.now()-600000).toISOString(),
@@ -44,6 +44,24 @@ try{
   if(mode==='hold'){held.set(id,response);return;}
   if(mode==='missing')return response.status(404).json({message:'match not found'});
   if(mode==='error')return response.status(503).json({message:'temporarily unavailable'});
+  if(mode==='expand-prematch'||mode==='expand-live'){
+   const count=(fullReads.get(id)??0)+1;fullReads.set(id,count);
+   const match=fixture(id);
+   match.status=mode==='expand-prematch'?'PREMATCH':'LIVE';
+   match.fullMarketsReady=count>=3;
+   if(match.fullMarketsReady){
+    const marketId=`${id}|corners|`;
+    match.markets.push({
+     id:marketId,matchId:id,name:'Total Corners',marketType:'OTHER',
+     status:'ACTIVE',sortOrder:2,
+     outcomes:['Over','Under'].map(code=>({
+      id:marketId+'|'+code,marketId,name:code,code,odds:2.1,status:'ACTIVE',
+      priceValidUntil:Date.now()+60000
+     }))
+    });
+   }
+   return response.json(match);
+  }
   response.json(fixture(mode==='mismatch'?'101':id));
  });
  app.get('/fixture.js',(_q,r)=>r.type('js').send(bundle.outputFiles.find(file=>file.path.endsWith('.js')).text));
@@ -107,6 +125,16 @@ try{
  modes.delete('109');held.get('109').json(fixture('109'));await loaded('109');
  await navigate('108');await loaded('108');
 
+ // The first click must show all quoted markets once the selected full
+ // snapshot finishes. No back-navigation or second click is allowed.
+ for(const [id,mode] of [['110','expand-prematch'],['111','expand-live']]){
+  modes.set(id,mode);
+  await navigate(id);
+  await loaded(id);
+  await page.waitForSelector(`[data-outcome-id="${id}|corners||Over"]`,{timeout:15000});
+  assert.ok((fullReads.get(id)??0)>=3,'Selected '+mode+' must poll until full markets are ready');
+ }
+ await navigate('108');await loaded('108');
  await page.evaluate(()=>window.favorites.toggleFavorite('108'));
  await page.waitForFunction(()=>window.favorites.isFavorite('108')&&window.favorites.isAlertEnabled('108'));
  await page.evaluate(()=>window.favorites.toggleFavorite('108'));
