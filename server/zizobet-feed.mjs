@@ -8,7 +8,7 @@ export {isZizoId};
 export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},onFixtureDiscovered=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000,historyEnabled=autoStart,archiveHistory=archiveZizobetMatchHistory}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
  const state={provider:'ZIZOBET',transport:'MQTT cache invalidations + HTTP snapshots',running:false,cycles:0,syncedAt:null,lastError:null,received:0,kept:0,paused:false,pauses:0,resumes:0};
- const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
+ const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set(),historyFtAttempts=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
  const queue=fn=>{const p=work.then(()=>stopped||state.paused?undefined:fn());work=p.catch(e=>{state.lastError=e.message;});return p;};
  const mainQuotes=(quotes,live)=>(quotes??[]).filter(q=>{const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);const name=(live&&id===602)||(!live&&id===448)?'Full Time Result':(live&&id===603)||(!live&&id===537)?'Total Goals':def?.Name??def?.name??'';return isBoardOddsRow({market_name:name,period:/\b(?:half|period)\b/i.test(name)?1:0});});
  async function publish(row,game,rows,{complete=false,startedAt=++revision}={}){
@@ -171,9 +171,17 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
       const ended=Number(data.Match.EventStatus??data.Match.MatchStatusID)===40;
       // At FT retry incomplete provider timelines at a slower pace rather
       // than declaring that all missing incidents were archived.
-      historyPollAt.set(Number(id),now()+(ended?Math.max(300000,interval*5):interval));
+      // Recheck the first FT snapshot quickly to establish two independent
+      // observations, then slow down if native data remains incomplete.
+      const finishedAttempts=(historyFtAttempts.get(Number(id))??0)+(ended?1:0);
+      if(ended)historyFtAttempts.set(Number(id),finishedAttempts);
+      historyPollAt.set(Number(id),now()+(ended?
+        (finishedAttempts<=3?Math.max(30000,interval):Math.max(300000,interval*5)):interval));
+      // FT is finalized only when a second matching provider observation
+      // confirms its canonical event facts. A single complete-looking frame
+      // must not authorize a payout or stop the next verification poll.
       if(ended&&Array.isArray(data.TimeLines)&&
-         ['goal','corner','card'].every(kind=>recorded?.verifiedKinds?.includes(kind)))
+         ['goal','corner','card'].every(kind=>recorded?.confirmedKinds?.includes(kind)))
        historyFinalized.add(Number(id));
      }catch(error){console.warn('[zizobet] match history',row.match_id,error?.message);}
     }
