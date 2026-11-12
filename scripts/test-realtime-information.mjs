@@ -70,9 +70,11 @@ const request=async url=>{
  if(url.includes('getprematchmarketsbysport'))return [
   Object.fromEntries(Array.from({length:11},(_,i)=>[i+1,{ID:i+1,Name:'Result'}]))];
  if(url.includes('headerformobilenew'))return {Games:[],Teams:teams,Regions:regions,Championats:champs};
- if(url.includes('sport/getheader/en'))return {EN:{Sports:{1:{Regions:{1:{
-  ID:1,Name:'England',Champs:{1:{ID:1,Name:'Premier League',GameSmallItems:{77:next}}}
- }}}}}}};
+ if(url.includes('sport/getheader/en')){
+  const champ={ID:1,Name:'Premier League',GameSmallItems:{77:next}};
+  const region={ID:1,Name:'England',Champs:{1:champ}};
+  return {EN:{Sports:{1:{Regions:{1:region}}}}};
+ }
  throw Error('Unexpected prematch provider URL '+url);
 };
 const prematch=[],visible=[];
