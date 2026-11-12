@@ -93,7 +93,7 @@ export function parseNumberedGoalWindow(line){
  const m=title.match(/^who scores (?:the )?(?:goal (\d{1,3})|((?:\d{1,3}(?:st|nd|rd|th)?|first|second|third) goal)) in minutes? (\d{1,3})\s*[-–]\s*(\d{1,3})(?: \((\d{1,2})-minute interval\))?$/);
  if(!m)return null;
  const spoken={first:1,second:2,third:3};
- const marker=m[1]??m[2];
+ const marker=m[1]??m[2].replace(/ goal$/,'');
  const target=spoken[marker]??Number(String(marker).match(/^\d+/)?.[0]);
  const from=Number(m[3]),to=Number(m[4]);
  const width=m[5]==null?null:Number(m[5]);
