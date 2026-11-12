@@ -1,5 +1,5 @@
 import {displayTeamStatistics,displayGoalIntervals} from './display-stats.mjs';
-import {primaryGoalDisplay,matchedSupplementalScorers} from './primary-goal-display.mjs';
+import {primaryGoalDisplay,matchedSupplementalScorers,displayOnlyFotMobScorers} from './primary-goal-display.mjs';
 import {enrichFotMobScorerNames} from './fotmob-scorer-enrichment.mjs';
 import {enrichPrimaryActors} from './primary-actor-enrichment.mjs';
 import {SUPPLEMENTAL_INCIDENT_SQL,fotMobIncidents,backupIncidents,rawProviderIncidents,storeSupplementalIncidents} from './supplemental-incidents.mjs';
@@ -350,7 +350,14 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
      if(statsReady(entry))break;
     }catch(e){unavailable[provider]=/^STATS_[A-Z_0-9]+$/.test(e.message)?e.message:'STATS_UNAVAILABLE';health.providers[provider]={...(health.providers[provider]??{}),lastError:unavailable[provider]};}
    }
-   if ((primaryGoal?.hasGoals&&primaryGoal.missingScorers) || needsAnyActors() || !statsReady(entry)) {
+   // If the primary score has goals but the SQL event timeline is missing,
+   // a detail viewer still needs an advisory FotMob scorer lookup.
+   const scoreH=Number(row.home_score),scoreA=Number(row.away_score);
+   const missingGoalActors=row.home_score!=null&&row.away_score!=null&&
+     Number.isSafeInteger(scoreH)&&Number.isSafeInteger(scoreA)&&
+     scoreH>=0&&scoreA>=0&&scoreH+scoreA>0&&
+     (!primaryGoal?.hasGoals||primaryGoal.missingScorers);
+   if (missingGoalActors || needsAnyActors() || !statsReady(entry)) {
     try {
      const targetDate = row.start_at || row.startAt || new Date().toISOString();
      const dates = candidateDateStrings(targetDate);
@@ -380,6 +387,10 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
         await enrichPrimaryActors(Number(id),'fotmob',primaryActors,incidents,{execute:runQuery});
         await refreshActors();
        }catch(error){console.warn('[supplemental incident archive]',String(error?.message??error));}
+      }
+      if(details&&!primaryGoal?.hasGoals&&parsed.goalEvents.length){
+       const names=displayOnlyFotMobScorers(row,parsed);
+       if(names.length){entry.scorers=names;entry.sources.scorers='fotmob-display-only';}
       }
       if (primaryGoal?.hasGoals && parsed.goalEvents.length) {
        // FotMob names can fill only one-to-one Zizobet scorer slots.
