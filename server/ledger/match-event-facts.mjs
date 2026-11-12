@@ -671,6 +671,11 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
   if(!Number.isInteger(c.target)||c.target<1)return null;
   if(data.nth_team!=null){
    if(Number(data.nth_same_time)>1)return null;
+   // A fixed "Who scores goal N in minutes A-B" three-way quote uses
+   // Neither when goal N is outside THAT window. General goal-N time
+   // markets without a window still mean "no Nth goal before FT".
+   if(c.choice==='none'&&Number.isInteger(c.from)&&Number.isInteger(c.to))
+    return decision(!(Number(data.nth_minute)>=c.from&&Number(data.nth_minute)<=c.to));
    if(c.choice==='none')return 'LOST';
    if(!Number.isInteger(c.from)||!Number.isInteger(c.to))return null;
    const inside=Number(data.nth_minute)>=c.from&&Number(data.nth_minute)<=c.to;
