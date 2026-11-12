@@ -50,6 +50,8 @@ jobs:
         run: node scripts/test-elementary-settlement-integration.mjs
       - name: Universal native market acceptance versus final grader
         run: node scripts/test-all-market-acceptance-proof.mjs
+      - name: Primary verified foul windows and wallet idempotency
+        run: node scripts/test-foul-window-reconciliation.mjs
       - name: Simulimi - persisted events and rejection reasons
         run: node scripts/test-simulimi-acceptance.mjs
       - name: Simulimi - offline all-market smoke and combo matrix
