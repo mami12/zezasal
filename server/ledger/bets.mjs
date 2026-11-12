@@ -40,7 +40,7 @@ import { assertDistinctSelectionMarkets } from './selection-market.mjs';
 import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
-import {parsePlayerCardContract} from './live-contract-rules.mjs';
+import {parsePlayerCardContract,parseEventWindow} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
@@ -270,7 +270,9 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // Full-time foul/shot markets are backed by the verified statistics
   // providers. Never freeze them as a time-ordered incident contract or
   // accept an unrecognized player/half statistic with no settlement rule.
-  if(isStatisticMarket(row)){
+  const foulWindow=parseEventWindow(row,
+    match.match_time_ms==null?null:Number(match.match_time_ms)/60000);
+  if(isStatisticMarket(row)&&!(foulWindow?.kind==='window'&&foulWindow.event==='foul')){
     const stat=statisticMarketContract(row);
     const selected=String(row.outcome_name??row.outcome_key??'')
       .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
