@@ -152,6 +152,9 @@ jobs:
       - name: FotMob identity and independent UTC kickoff regression
         if: always()
         run: node scripts/test-fotmob-fixture-mapping.mjs
+      - name: FotMob advisory scorer display only on existing Zizobet events
+        if: always()
+        run: node scripts/test-fotmob-advisory-goal-display.mjs
       - name: Market 20 - race none and aiscore
         if: always()
         run: node scripts/test-race-none-and-aiscore.mjs
