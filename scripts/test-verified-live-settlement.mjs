@@ -95,6 +95,58 @@ assert.equal(verifiedSecondLiveDecision(playerRow,{now}),null,
  'Score-only observations can never settle named-player wagers');
 
 
+// General timed LIVE interval contracts use purchase-time baselines, not
+// events from before the ticket or an unrelated full-time scoreboard.
+// Only an irreversible post-purchase outcome while the interval is still
+// running can be confirmed financially by two Zizobet polls.
+const timeWindow={version:1,kind:'window-total',event:'goal',from:1,to:10,
+ choice:'over',threshold:0.5,entryBaseline:{home:0,away:0},entryClockMinute:6};
+const frameFor=(event,home,away,clock=8)=>({
+ source:'zizobet',clock,teams:{[event]:{home,away}},
+ counts:{[event]:home+away},events:[],coverage:{},ended:false
+});
+const timedProof=(contract,first,second,proposed='WON')=>({
+ ...row,live_contract:contract,proposed_status:proposed,
+ payload:{contract,frame:first,frameAt:row.payload.frameAt},
+ provider_frame:second
+});
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0),frameFor('goal',1,0)),{now}),'WON');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,choice:'under'},frameFor('goal',1,0),
+ frameFor('goal',1,0),'LOST'),{now}),'LOST');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,kind:'window',choice:true},frameFor('goal',1,0),
+ frameFor('goal',1,0)),{now}),'WON');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,kind:'window',choice:false},frameFor('goal',1,0),
+ frameFor('goal',1,0),'LOST'),{now}),'LOST');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,event:'foul'},frameFor('foul',1,0),
+ frameFor('foul',1,0)),{now}),'WON',
+ 'Foul windows follow the same post-bet counter rule');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,event:'corner',side:'home'},frameFor('corner',0,1),
+ frameFor('corner',0,1)),{now}),null,
+ 'Away corner must not win home-only corner market');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',0,0),frameFor('goal',0,0)),{now}),null,
+ 'No future goal: not a proof of an Over win');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0,11),frameFor('goal',1,0,11)),{now}),null,
+ 'Events first observed after the interval cannot be assigned to it');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,from:10,to:20},frameFor('goal',1,0,11),
+ frameFor('goal',1,0,11)),{now}),null,
+ 'A fixture score cannot prove a goal inside an unstarted future interval');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,event:'card',cardColor:'yellow'},frameFor('card',1,0),
+ frameFor('card',1,0)),{now}),null,
+ 'Combined yellow/red counts cannot confirm a yellow-only incident');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0),frameFor('goal',0,1)),{now}),null,
+ 'A provider team correction between independent polls must not pay');
+
 const calls=[];
 const runQuery=async(sql)=>{assert.match(sql,/app_live_settlement_preview/);return {rows:[row,
  {...row,line_id:'line-b',open_recovery_gap:true}]};};
