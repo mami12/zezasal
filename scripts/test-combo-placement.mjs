@@ -248,10 +248,7 @@ try {
   await rejectWithoutMoney(() => placeBet(request()), error => error.status === 400,
     'a constituent suspension while waiting for wallet locks blocks the placement');
   seed();
-  await rejectWithoutMoney(() => placeBet(request([
-    {outcomeId:regularId,oddsAtPlacement:2.2}, {outcomeId:totalId,oddsAtPlacement:1.8},
-  ])), error => error.status === 400,
-    'ordinary tickets cannot multiply two correlated selections from the same event');
+  // A separate ordinary COMBO test below verifies the new same-fixture rule.
   const successful = request();
   const ticket = await placeBet(successful);
   assert.equal(ticket.stake,100); assert.equal(ticket.totalOdds,3.96); assert.equal(ticket.potentialPayout,396);
@@ -322,6 +319,20 @@ try {
   assert.equal(databaseTicket.totalOdds,3.96);
   assert.equal(databaseTicket.lines.length,1);
   assert.deepEqual(await wallet(), {balance:9600,tickets:4,transactions:4});
+  // Real wallet and SQL: two DIFFERENT offered markets on one fixture must
+  // remain one COMBO ticket with both frozen lines, not two SYSTEM columns.
+  config.matchStore='memory';config.oddsStore='memory';
+  seed('PREMATCH');
+  await persist({enabled:false,combosEnabled:false});
+  const sameFixtureTicket=await placeBet(request([
+    {outcomeId:regularId,oddsAtPlacement:2.2},
+    {outcomeId:totalId,oddsAtPlacement:1.8},
+  ]));
+  assert.equal(sameFixtureTicket.ticketType,'COMBO');
+  assert.equal(sameFixtureTicket.lines.length,2);
+  assert.deepEqual(new Set(sameFixtureTicket.lines.map(line=>line.marketKey)),new Set(['result','total']));
+  assert.equal(sameFixtureTicket.totalOdds,3.96);
+  assert.deepEqual(await wallet(),{balance:9500,tickets:5,transactions:5});
   console.log('PASS real combo placement: server leg/product resolution, odds acceptance, suspension/staleness/missing market, disable race under DB lock, LIVE expiry/risk, atomic wallet SQL, frozen settlement, idempotency and ordinary accumulator preservation');
 } finally {
   beforeConnect = null;
