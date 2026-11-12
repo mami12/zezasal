@@ -77,6 +77,9 @@ jobs:
       - name: Market 04 - player goal specials
         if: always()
         run: node scripts/test-player-goal-specials.mjs
+      - name: Primary Next/First/Nth/2+ and 3+ scorer market family coverage
+        if: always()
+        run: node scripts/test-event-family-coverage.mjs
       - name: Market 05 - player ordinal scorers
         if: always()
         run: node scripts/test-player-ordinal-scorers.mjs
@@ -119,6 +122,15 @@ jobs:
       - name: Market 19 - team interval contracts
         if: always()
         run: node scripts/test-team-interval-contracts.mjs
+      - name: General interval acceptance and 90-0 state machine
+        if: always()
+        run: node scripts/test-market-state-math.mjs
+      - name: SQL settlement of post-purchase goals, corners, cards and fouls
+        if: always()
+        run: node scripts/test-live-interval-bet-settlement.mjs
+      - name: Match alternatives and different-market column arithmetic
+        if: always()
+        run: node scripts/test-selection-market.mjs && node scripts/test-system-columns.mjs && node scripts/test-betslip-columns.mjs
       - name: Supplemental event and actor rotation archive
         if: always()
         run: node scripts/test-supplemental-incidents.mjs
@@ -166,6 +178,9 @@ jobs:
       - name: Install pinned Puppeteer Chrome
         if: always()
         run: npx puppeteer browsers install chrome
+      - name: Real browser test for same-match different markets and alternate outcomes
+        if: always()
+        run: node scripts/test-betslip-browser.mjs
       - name: Database provider/statistics contract checks
         if: always()
         run: |
