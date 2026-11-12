@@ -24,11 +24,25 @@ export function projectZizobetHistory(matchId,data,row={}){
  if(!Number.isSafeInteger(id)||id<1||!game||typeof game!=='object')return null;
  const frame=normalizeLiveFrame(data);
  const score=String(game.Score??'').match(/^(\d+):(\d+)$/);
+ const rawPeriods=game.SetScores;
+ let periods=null;
+ try{
+  const values=typeof rawPeriods==='string'?JSON.parse(rawPeriods):rawPeriods;
+  if(Array.isArray(values)){
+   const parsed=values.map(value=>{
+    const m=String(value).match(/^(\\d+):(\\d+)$/);
+    if(m)return {home:Number(m[1]),away:Number(m[2])};
+    const home=whole(value?.t1),away=whole(value?.t2);
+    return home===null||away===null?null:{home,away};
+   });
+   if(parsed.length&&parsed.every(Boolean))periods=parsed.slice(0,4);
+  }
+ }catch{}
  const details={
   provider:'zizobet', matchId:id, home:row.home??null, away:row.away??null,
   kickoffAt:row.start_at??null,
   phase:game.EventStatus??game.MatchStatusID??null,
-  clockMinute:clockOf(game),
+  clockMinute:clockOf(game),periodScores:periods,
   goals:score?{home:Number(score[1]),away:Number(score[2])}:null,
   corners:pair(game,'Corners'), yellowCards:pair(game,'YellowCards'),
   redCards:pair(game,'RedCards'), fouls:pair(game,'Fouls'), shots:pair(game,'Shots')
