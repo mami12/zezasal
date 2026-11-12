@@ -160,8 +160,10 @@ export default function MatchDetail() {
       }
       const current = new AbortController();
       requestState.controller = current;
+      const showLoading = sequence === 0 || force;
       const requestId = ++sequence;
-      setCategoryLoading(true);
+      // Background 20s snapshots must not hide the current market grid.
+      if (showLoading) setCategoryLoading(true);
       apiClient.get(`/matches/${id}`, {
         signal: current.signal,
         timeout: 12000,
