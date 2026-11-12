@@ -49,6 +49,28 @@ const legacyHandicapResult=(line,result)=>{
 };
 
 const round = (n) => Number(Number(n).toFixed(2));
+/** Keyset round-robin for PENDING work, not OFFSET (which shifts as tickets
+ * settle). An old unresolved line must not monopolize every short pass.
+ * The UUID primary key gives a deterministic total order across restarts.
+ */
+export function createPendingLineScanner(){
+ let after=null;
+ return async function scan(execute,selectPrefix,cap){
+  const select=cursor=>execute(selectPrefix+
+   ' and ($1::uuid is null or l.id>$1::uuid) order by l.id limit $2',
+   [cursor,cap]);
+  let rows=(await select(after)).rows;
+  if(!rows.length&&after!==null){
+   after=null;
+   rows=(await select(null)).rows;
+  }
+  after=rows.length?rows[rows.length-1].id:null;
+  return rows;
+ };
+}
+const nextHalfTimeLines=createPendingLineScanner();
+const nextPrimaryEventLines=createPendingLineScanner();
+
 
 /** accents/spaces removed so "Südtirol" == "sudtirol" and team names compare safely */
 const norm = (s) =>
@@ -677,15 +699,14 @@ export function gradeAtVerifiedHalfTime(line,half){
 export async function settleVerifiedHalftimes({
  runQuery=query,update=updatePendingLine,recalc=recalcTicket
 }={}){
- const rows=(await runQuery([
+ const rows=await nextHalfTimeLines(runQuery,[
   'select l.*,t.placed_at,h.home_team,h.away_team,h.half_home_score,h.half_away_score,h.confirmed_at,h.first_seen_at',
   'from app_ticket_line l',
   'join app_ticket t on t.id=l.ticket_id',
   'join app_match_half_result h on h.match_id=l.match_id',
   "where l.status='PENDING' and t.status='PENDING' and h.confirmed_at is not null and t.placed_at < h.first_seen_at",
-  'and not exists(select 1 from app_settlement_override o where o.line_id=l.id)',
-  'order by l.match_id,l.id limit 5000'
- ].join(' '))).rows;
+  'and not exists(select 1 from app_settlement_override o where o.line_id=l.id)'
+ ].join(' '),5000);
  const tickets=new Set();let graded=0,held=0;
  for(const line of rows){
   const status=gradeAtVerifiedHalfTime(line,line);
@@ -815,7 +836,7 @@ export async function settleVerifiedEventFacts({
   recalc=recalcTicket, limit=120
 }={}){
  const cap=Math.max(1,Math.min(300,Number(limit)||120));
- const {rows}=await runQuery(`select l.* from app_ticket_line l
+ const rows=await nextPrimaryEventLines(runQuery,`select l.* from app_ticket_line l
    join app_ticket t on t.id=l.ticket_id
    where l.status='PENDING' and t.status='PENDING'
      and l.live_contract is not null
@@ -827,9 +848,7 @@ export async function settleVerifiedEventFacts({
            or (e.provider in ('fotmob','apifootball','sportapi','goalapi','bsd','worldcup26')
              and e.complete=true and e.confirmed_at is not null
              and exists(select 1 from app_match_result r where r.match_id=l.match_id
-               and r.home_score is not null and r.away_score is not null))))
-   order by t.placed_at,l.match_id,l.id
-   limit $1`,[cap]);
+               and r.home_score is not null and r.away_score is not null))))`,cap);
  if(!rows.length)return {examined:0,graded:0,closed:[]};
  const ids=[...new Set(rows.map(l=>l.match_id))];
  const finals=(await runQuery('select match_id,home_score,away_score,corners_home,corners_away,cards_home,cards_away from app_match_result where match_id=any($1::bigint[])',[ids])).rows;
