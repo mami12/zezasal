@@ -21,11 +21,14 @@ export function intervalBounds(contract){
 export function assessInterval(contract,{clock,windowHome=null,windowAway=null,goalTotal=null}={}){
  const bounds=intervalBounds(contract);
  if(!bounds||!Number.isFinite(clock))return 'UNVERIFIABLE';
- if(clock>=bounds.toExclusive)return 'DECIDED';
+ // Nth-goal offers depend on the GLOBAL ordinal even before their
+ // advertised minute window begins. A goal already scored at 1:00 makes
+ // "who scores goal 1 at 6-10" irrevocably decided at 1:00.
  if(contract.kind==='nth-time'){
   if(whole(goalTotal)===null)return 'UNVERIFIABLE';
-  return goalTotal>=contract.target?'DECIDED':'OPEN';
+  return clock>=bounds.toExclusive||goalTotal>=contract.target?'DECIDED':'OPEN';
  }
+ if(clock>=bounds.toExclusive)return 'DECIDED';
  if(clock<bounds.from)return 'OPEN';
  if(contract.kind==='window'&&contract.startExclusive===true)return 'OPEN';
  // The leader/result cannot be irreversible until its clock interval ends.
