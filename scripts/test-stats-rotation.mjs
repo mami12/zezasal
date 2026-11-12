@@ -14,7 +14,7 @@ let cases=0;
 async function harness({env={},rows=[row()],stats=()=>totals,override=()=>null,events=()=>[],persistFacts=false}={}){
  await database.exec(`truncate app_ticket,app_ticket_line,app_match_result,app_stats_cache,app_stats_usage,app_stat_review`);
  let at=start;const calls=[],unexpected=[],matches=new Map(rows.map(r=>[Number(r.match_id),r])),saved=[],persistedGoals=[],persistedTimed=[];
- const config={STATS_PROVIDERS_ENABLED:'true',WORLDCUP26_LEAGUES:'eng.1',...env};
+ const config={STATS_PROVIDERS_ENABLED:'true',STATS_REALTIME_ENABLED:'false',WORLDCUP26_LEAGUES:'eng.1',...env};
  const request=async(value,options)=>{
   const url=new URL(value),path=url.pathname;
   const provider=url.host==='sports.bzzoiro.com'?'bsd':url.host==='worldcup26.ir'?'worldcup26':url.host==='sportapi.ai'?'sportapi':url.host==='api.goal-api.com'?'goalapi':'apifootball';
