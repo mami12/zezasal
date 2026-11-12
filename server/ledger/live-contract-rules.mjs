@@ -84,6 +84,24 @@ export function parsePlayerGoalContract(line){
  return null;
 }
 
+/** Team scoring the Nth goal inside an explicitly quoted provider minute band.
+ * This is NOT the player goalscorer market: selections are home/away/none.
+ * The goal ordinal is global to this match, while the band is absolute time.
+ */
+export function parseNumberedGoalWindow(line){
+ const title=norm(line.market_name??line.marketName??line.name);
+ const m=title.match(/^who scores (?:the )?goal (\d{1,3}) in minutes? (\d{1,3})\s*[-–]\s*(\d{1,3})(?: \((\d{1,2})-minute interval\))?$/);
+ if(!m)return null;
+ const target=Number(m[1]),from=Number(m[2]),to=Number(m[3]);
+ const width=m[4]==null?null:Number(m[4]);
+ const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
+ if(!side||!Number.isInteger(target)||target<1||target>100||
+    !Number.isInteger(from)||from<0||!Number.isInteger(to)||to<from||to>130||
+    (width!==null&&width!==to-from+1))return null;
+ return {version:1,kind:'nth-time',event:'goal',target,
+  choice:side==='none'?'none':'team-window',...(side==='none'?{}:{side}),from,to};
+}
+
 export function parseOrdinalGoalTime(line){
  const title=String(line.market_name??line.marketName??line.name??'').trim();
  if(!/^when will (?:next )?goal\b/i.test(title))return null;
@@ -483,7 +501,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  const yellow=/\byellow\s+cards?\b/.test(name),red=/\bred\s+cards?\b/.test(name);
  const ambiguous=/\b(?:second\s+yellow|yellow\s+red)\b/.test(name);
  if((yellow&&red)||ambiguous)return null;
- const contract=parsePlayerOrdinalScorer(line)??parsePlayerGoalSpecial(line)??parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseOrdinalGoalTime(line)??
+ const contract=parsePlayerOrdinalScorer(line)??parsePlayerGoalSpecial(line)??parsePlayerCardContract(line)??parsePlayerGoalContract(line)??parseNumberedGoalWindow(line)??parseOrdinalGoalTime(line)??
   parseTimedResultMarket(line)??parseIntervalLeader(line)??
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfExactMarket(line)??parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
