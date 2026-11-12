@@ -71,7 +71,7 @@ export function projectZizobetHistory(matchId,data,row={}){
 /** One latest match row plus independently keyed events, not a frame per second. */
 export function createZizobetHistoryArchive({database=pool,now=()=>new Date()}={}){
  const seen=new Map();
- return async function archive(matchId,data,row={}){
+ return async function archive(matchId,data,row={},{observedAt=null}={}){
   const state=projectZizobetHistory(matchId,data,row);
   if(!state)return {stored:false,reason:'INVALID_MATCH'};
   const {id,details,events,verifiedKinds,timelineAvailable,timelineSignature,summarySignature}=state;
@@ -82,7 +82,7 @@ export function createZizobetHistoryArchive({database=pool,now=()=>new Date()}={
   // at a later time before its facts are eligible for financial settlement.
   // Archive rows can be deduplicated; evidence confirmation cannot.
   if(unchanged&&!verifiedKinds.length)return {stored:false,reason:'UNCHANGED'};
-  const observed=new Date(now());
+  const observed=new Date(observedAt??now());
   if(!Number.isFinite(observed.getTime()))throw Error('Invalid Zizobet observation time');
   const client=await database.connect();
   try{
