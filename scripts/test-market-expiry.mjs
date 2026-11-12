@@ -199,6 +199,26 @@ closed(match(0,0,{corners:{home:1,away:0}}),{name:'First Corner',outcomes:[outco
 closed(match(0,0,{currentMinute:21}),{name:'Goal before 20 minutes',outcomes:[outcome('Yes')]});
 closed(match(0,0,{currentMinute:19}),{name:'Goal before 20 minutes',outcomes:[outcome('Yes')]});
 
+// Native Zizobet sequence offers must use their exact contract:
+ // bare NEXT is relative to purchase, numbered NEXT is absolute, and
+ // a player can still score regardless of the full match's team tally.
+const native=(name,options=['1','2'])=>({
+ name,key:'zz777@e30',marketType:'OTHER',status:'ACTIVE',
+ outcomes:options.map(label=>outcome(label))
+});
+open(match(1,0),native('Next Goal'));
+open(match(1,0),native('Next Goal 2nd'));
+closed(match(2,0),native('Next Goal 2nd'));
+open(match(0,0),native('Who scores first'));
+closed(match(1,0),native('Who scores first'));
+open(match(0,0),native('Who scores goal 1 in minutes 6-10 (5-minute interval)'));
+closed(match(1,0,{currentMinute:2}),native('Who scores goal 1 in minutes 6-10 (5-minute interval)'));
+open(match(90,0,{currentMinute:60}),native('Total goals in minutes 61-70 (10-minute interval)',['Over','Under']));
+open(match(90,0,{currentMinute:65}),native('Will there be a goal in minutes 61-70',['Yes','No']));
+open(match(90,0,{currentMinute:65}),native('Player to score 2 or more goals',['Alice']));
+open(match(0,0,{corners:{home:6,away:2}}),native('Race to 7 Corners'));
+closed(match(0,0,{corners:{home:7,away:2}}),native('Race to 7 Corners'));
+
 // Scoring-once contracts, but not anytime/next-goalscorer propositions.
 closed(match(1,0),btts('Home Team to Score'));
 open(match(1,0),btts('Away Team to Score'));
