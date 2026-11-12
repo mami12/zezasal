@@ -41,6 +41,7 @@ import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
 import {verifyLiveIntervalAcceptance} from './live-interval-acceptance.mjs';
+import {primaryLiveCounters} from './primary-live-counters.mjs';
 import {nativeZizobetContractRow} from './native-zizobet-contract.mjs';
 import {parsePlayerCardContract,parseEventWindow} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
@@ -361,7 +362,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // whether Race to X Cards has already ended at LIVE placement.
   let raceCornerSnapshot=null;
   const liveMatch=String(match.service??'').toUpperCase()==='LIVE';
-  if(liveMatch&&(/\brace to \d+ corners?\b|\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+corners?\b/i.test(raceName))){
+  if(liveMatch&&!primaryLiveCounters(match,'corner')&&(/\brace to \d+ corners?\b|\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+corners?\b/i.test(raceName))){
     try{
       const {rows}=await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at from app_match_event_coverage
         where match_id=$1 and provider='zizobet' and kind='corner' and confirmed_at is not null limit 1`,[matchId]);
@@ -373,15 +374,10 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
          Number(snapshot.through_minute)>=Math.floor(Number(match.match_time_ms)/60000))
         raceCornerSnapshot=snapshot;
     }catch{ /* missing coverage means no historical fallback */ }
-    if(!raceCornerSnapshot&&Number(match.match_time_ms)===0&&
-       Number.isFinite(new Date(match.clock_at).getTime())&&Date.now()-new Date(match.clock_at).getTime()<=45000){
-      // The verified first LIVE clock tick is the same zero baseline as PREMATCH.
-      raceCornerSnapshot={count_home:0,count_away:0};
-    }
   }
   let raceCardSnapshot=null;
   if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence)&&
-     String(match.service??'').toUpperCase()==='LIVE'){
+     String(match.service??'').toUpperCase()==='LIVE'&&!primaryLiveCounters(match,'card')){
     try{
       raceCardSnapshot=(await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at
         from app_match_event_coverage
