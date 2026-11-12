@@ -411,8 +411,10 @@ ledgerRouter.get(
     const warmStats=statsProviders.warm(row);
     void Promise.resolve(warmStats).then(()=>footballInformation.warm(matchId))
       .catch(error=>console.warn('[aiscore] selected match:',error.message));
-    await req.app.locals.loadMatchDetail?.(row.match_id);
-    row=await getMatchRow(Number(req.params.id))??row;
+    // The quoted snapshot is local. Full provider markets refresh in the
+    // background and reach this match through the next odds push/REST poll.
+    // Do not block detail or tracker requests on provider HTTP/database writes.
+    req.app.locals.loadMatchDetail?.(row.match_id);
     const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
     const match = toClientMatch(serialized);
     if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
@@ -431,8 +433,10 @@ ledgerRouter.get(
     let row = await getMatchRow(Number(req.params.id));
     if (!row || matchOverride(row.match_id)?.hidden || isSyntheticFootballMatch(row)) return res.status(404).json({ message: 'match not found' });
     boostMatch(row.match_id);
-    await req.app.locals.loadMatchDetail?.(row.match_id);
-    row=await getMatchRow(Number(req.params.id))??row;
+    // The quoted snapshot is local. Full provider markets refresh in the
+    // background and reach this match through the next odds push/REST poll.
+    // Do not block detail or tracker requests on provider HTTP/database writes.
+    req.app.locals.loadMatchDetail?.(row.match_id);
 
     const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
     const m = toClientMatch(serialized);
