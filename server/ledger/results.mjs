@@ -127,6 +127,25 @@ export async function archiveFinishedMatch(row) {
   return { recorded: result.rowCount > 0, inserted };
 }
 
+/** Use the newest confirmed provider FT observation. A stale recovery
+ * snapshot must never overwrite a more recent in-memory correction.
+ */
+export function preferVerifiedFinal(current,snapshot){
+ if(!isFinished(snapshot))return current??null;
+ if(!isFinished(current))return snapshot;
+ const observed=row=>Math.max(
+  ...[row.score_at,row.feed_status_at].map(v=>{
+   const at=v==null?NaN:new Date(v).getTime();
+   return Number.isFinite(at)?at:-Infinity;
+  }));
+ if(observed(snapshot)>observed(current))return snapshot;
+ if(observed(snapshot)<observed(current))return current;
+ const sameScore=Number(snapshot.home_score)===Number(current.home_score)&&
+   Number(snapshot.away_score)===Number(current.away_score);
+ if(sameScore&&!verifiedFirstHalf(current.periods_score)&&
+    verifiedFirstHalf(snapshot.periods_score))return snapshot;
+ return current;
+}
 /** copies every verified FT result into the durable result table (idempotent) */
 export async function captureFinishedMatches() {
   const rows = await getMatches({ includeEnded: true, limit: 2000 });
@@ -139,7 +158,9 @@ export async function captureFinishedMatches() {
 
   const candidateMatches = new Map(rows.map(row => [Number(row.match_id), row]));
   for(const persisted of await matchSnapshots.load([...pendingMatchIds])){
-    if(isFinished(persisted))candidateMatches.set(Number(persisted.match_id),persisted);
+    const id=Number(persisted.match_id);
+    if(isFinished(persisted))
+      candidateMatches.set(id,preferVerifiedFinal(candidateMatches.get(id),persisted));
   }
   for (const matchId of pendingMatchIds) {
     if (!candidateMatches.has(matchId)) {
