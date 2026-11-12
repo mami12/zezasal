@@ -527,7 +527,14 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
   // Never access the detailed incident tables for multi-match board calls.
   // Detail reads take actor labels only from Zizobet facts or a fixture-matched,
   // source-labelled supplemental event archive.
-  if(displayStats&&!board&&ids.length){
+  // PREMATCH detail has no incident chronology to enrich. Skip both
+  // optional ledger reads there instead of occupying the database while
+  // hundreds of users browse upcoming fixtures.
+  const incidentIds=displayStats&&!board?rows
+    .filter(row=>String(row.service??'').toUpperCase()==='LIVE'||
+      /^(?:ended|finished)$/i.test(String(row.status??'')))
+    .map(row=>row.match_id):[];
+  if(incidentIds.length){
     try{
       const names=(await dbQuery(`select match_id,provider_event_id,kind,team,minute,card_color,
         coalesce(player_name,
@@ -538,7 +545,7 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
         from app_match_event_fact
         where match_id=any($1::bigint[]) and provider='zizobet'
           and kind in ('goal','card','corner','foul') and active=true
-        order by minute limit 500`,[ids])).rows;
+        order by minute limit 500`,[incidentIds])).rows;
       for(const match of matches){
         const known=names.filter(n=>String(n.match_id)===String(match.id));
         const events=Array.isArray(match.events)?match.events:[];
@@ -588,7 +595,7 @@ export async function withOdds(rows, now = Date.now(),{board=false,displayStats=
         from app_supplemental_match_incident
         where match_id=any($1::bigint[]) and active=true and minute is not null
           and team in ('home','away') and kind in ('goal','corner','card','foul','shot')
-        order by minute,added_minute,source_order limit 500`,[ids]);
+        order by minute,added_minute,source_order limit 500`,[incidentIds]);
       for(const match of matches){
         match.supplementalEvents=incidents.filter(item=>String(item.match_id)===String(match.id))
          .map(item=>({
