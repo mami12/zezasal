@@ -43,7 +43,7 @@ import {frozenLiveContract} from './live-contract-context.mjs';
 import {verifyLiveIntervalAcceptance} from './live-interval-acceptance.mjs';
 import {primaryLiveCounters} from './primary-live-counters.mjs';
 import {nativeZizobetContractRow} from './native-zizobet-contract.mjs';
-import {parsePlayerCardContract,parseEventWindow} from './live-contract-rules.mjs';
+import {parsePlayerCardContract,parsePlayerGoalContract,parseEventWindow} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
 import {parseFirstHalfCorner,parseHalfEventContract} from './live-contract-rules.mjs';
 import {isHandicapMarket,parseHandicapContract} from './handicap-contracts.mjs';
@@ -206,32 +206,6 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(!playerGoalSpecial)
       throw Object.assign(badRequest('Mungon emri i lojtarit ose limiti i saktë i golave.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-    if(String(match.service??'').toUpperCase()==='LIVE'){
-      const observed=Date.now();
-      // A fresh 0-0 Zizobet score proves there cannot be a previously scored
-      // player goal. Avoid unnecessary event-history SQL for the first quote.
-      // With a nonzero score, use the confirmed scorer history as before.
-      let verified=playerGoalLiveGuard(playerGoalSpecial,null,null,match,{now:observed});
-      if(!verified.allowed){
-        const coverage=(await executor(`select count_home,count_away,through_minute,
-          observed_at,confirmed_at from app_match_event_coverage
-          where match_id=$1 and provider='zizobet' and kind='goal' limit 1`,
-          [matchId])).rows[0]??null;
-        const facts=(await executor(`select minute,phase,team,player_id,player_name,
-          aiscore_player_id,aiscore_player_name,aiscore_verified,
-          fotmob_player_name,fotmob_verified,supplemental_player_name,
-          supplemental_verified,own_goal
-          from app_match_event_fact where match_id=$1 and provider='zizobet'
-            and kind='goal' and active=true order by minute,provider_event_id limit 250`,
-          [matchId])).rows;
-        verified=playerGoalLiveGuard(playerGoalSpecial,coverage,facts,match,{now:observed});
-      }
-      if(!verified.allowed)
-        throw Object.assign(badRequest('Golashënuesi LIVE nuk ka kronologji të freskët ose tregu ka përfunduar.'),{
-          code:verified.reason==='PLAYER_GOAL_MARKET_ALREADY_DECIDED'?
-            'MARKET_DECIDED':'MARKET_EVIDENCE_UNSUPPORTED',
-          outcomeId:selection?.outcomeId,reason:verified.reason});
-    }
     if(String(match.service??'').toUpperCase()==='LIVE'&&
        playerGoalSpecial.mode==='period'){
       const now=Date.now(),stamp=Date.parse(match.clock_at??'');
@@ -243,6 +217,35 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         throw Object.assign(badRequest('Pjesa e zgjedhur nuk ka të dhëna LIVE të verifikuara.'),{
           code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
     }
+  }
+  // The same guard must protect ALL nominated scorer markets. Otherwise
+  // a stale Anytime Goalscorer quote can be bought after that player scored,
+  // even though the 2+/3+ quotes were correctly blocked.
+  const playerGoalContract=playerGoalSpecial??parsePlayerGoalContract(row);
+  if(playerGoalContract&&String(match.service??'').toUpperCase()==='LIVE'){
+    const observed=Date.now();
+    // A fresh primary 0-0 proves no player has scored; on 1+ goals use the
+    // reconciled, confirmed named incidents before accepting a quote.
+    let verified=playerGoalLiveGuard(playerGoalContract,null,null,match,{now:observed});
+    if(!verified.allowed){
+      const coverage=(await executor(`select count_home,count_away,through_minute,
+        observed_at,confirmed_at from app_match_event_coverage
+        where match_id=$1 and provider='zizobet' and kind='goal' limit 1`,
+        [matchId])).rows[0]??null;
+      const facts=(await executor(`select minute,phase,team,player_id,player_name,
+        aiscore_player_id,aiscore_player_name,aiscore_verified,
+        fotmob_player_name,fotmob_verified,supplemental_player_name,
+        supplemental_verified,own_goal
+        from app_match_event_fact where match_id=$1 and provider='zizobet'
+          and kind='goal' and active=true order by minute,provider_event_id limit 250`,
+        [matchId])).rows;
+      verified=playerGoalLiveGuard(playerGoalContract,coverage,facts,match,{now:observed});
+    }
+    if(!verified.allowed)
+      throw Object.assign(badRequest('Golashënuesi LIVE nuk ka kronologji të freskët ose tregu ka përfunduar.'),{
+        code:verified.reason==='PLAYER_GOAL_MARKET_ALREADY_DECIDED'?
+          'MARKET_DECIDED':'MARKET_EVIDENCE_UNSUPPORTED',
+        outcomeId:selection?.outcomeId,reason:verified.reason});
   }
   // Exactly scored half/team totals use the true HT/FT result, and the
   // quoted period is frozen at purchase rather than reconstructed later.
