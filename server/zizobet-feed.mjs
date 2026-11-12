@@ -8,7 +8,7 @@ export {isZizoId};
 export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},onFixtureDiscovered=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000,historyEnabled=autoStart,archiveHistory=archiveZizobetMatchHistory}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
  const state={provider:'ZIZOBET',transport:'MQTT cache invalidations + HTTP snapshots',running:false,cycles:0,syncedAt:null,lastError:null,received:0,kept:0,paused:false,pauses:0,resumes:0};
- const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set(),historyFtAttempts=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
+ const games=new Map(),quotes=new Map(),focused=new Map(),focusAttemptAt=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set(),historyFtAttempts=new Map();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
  const queue=fn=>{const p=work.then(()=>stopped||state.paused?undefined:fn());work=p.catch(e=>{state.lastError=e.message;});return p;};
  const mainQuotes=(quotes,live)=>(quotes??[]).filter(q=>{const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);const name=(live&&id===602)||(!live&&id===448)?'Full Time Result':(live&&id===603)||(!live&&id===537)?'Total Goals':def?.Name??def?.name??'';return isBoardOddsRow({market_name:name,period:/\b(?:half|period)\b/i.test(name)?1:0});});
  async function publish(row,game,rows,{complete=false,startedAt=++revision}={}){
@@ -147,6 +147,7 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
    // Pending tickets need the complete incident snapshot, not every quote.
    const needsTicketEvidence=[...await getWatchedIds()].some(value=>Number(value)-OFFSET===Number(id));
    full=full||focused.get(Number(id))>now();
+   if(full)focusAttemptAt.set(Number(id),now());
    let entry=games.get(Number(id)),recovered;
    if(!entry){recovered=await request(CACHE+'live/gamenew/'+Number(id));if(Number(recovered?.Match?.GameID)!==Number(id))throw Error('Pending result snapshot unavailable');const row=rowOf(recovered.Match,meta,true);if(!row)throw Error('Pending match metadata unavailable');entry=games.get(Number(id))??{row,raw:recovered.Match,live:true};games.set(Number(id),entry);}
    if(entry&&!entry.live&&!probeLive&&!full)return refreshPrematchBoard([Number(id)]);
@@ -209,7 +210,11 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
   for(const[topic,run]of[['live/headerformobilenew/en',liveList],['prematch/markets',metadata],['prematch/header',prematchList]])if(topics.includes(topic))try{await run();}catch(e){state.lastError=e.message;dirty.add(topic);}
   if(topics.includes('prematch/games'))try{const data=await request(CACHE+'prematch/games');for(const r of data?.UpdateList??[])if(games.has(Number(r.GameId))&&!games.get(Number(r.GameId)).live)pendingPre.push(Number(r.GameId));for(const value of data?.DeleteList??[]){const id=Number(value?.GameId??value),e=games.get(id);if(e&&!e.live){transition(id,e);await queue(()=>suspend(e));dirty.add('live/headerformobilenew/en');}}}catch(e){state.lastError=e.message;dirty.add('prematch/games');}
   const ids=new Set(topics.filter(t=>/^live\/gamenew\/\d+$/.test(t)).map(t=>Number(t.split('/').at(-1))));
-  for(const[id,until]of focused){if(until<now())focused.delete(id);else if(now()-(fullObserved.get(id)??-Infinity)>=Math.max(15000,Number(process.env.ZIZO_FOCUSED_REFRESH_MS)||30000))ids.add(id);}
+  for(const[id,until]of focused){
+   if(until<now()){focused.delete(id);focusAttemptAt.delete(id);}
+   else if(now()-Math.max(fullObserved.get(id)??0,focusAttemptAt.get(id)??0)>=
+     Math.max(15000,Number(process.env.ZIZO_FOCUSED_REFRESH_MS)||30000))ids.add(id);
+  }
   const watched=new Set();for(const id of await getWatchedIds())if(isZizoId(id)){
     const native=Number(id)-OFFSET;watched.add(native);
     // One pending ticket must not cause full odds/timeline downloads every 3s.
