@@ -590,6 +590,11 @@ async function applyInfoFromFeed(info) {
   }
 
   const updated = await applyMatchInfo(enriched);
+  if(updated&&config.sportsProvider==='zizobet'){
+    // Score/corner/card changes are stronger triggers than advancing clocks.
+    statsProviders.observeMatch(updated);
+    footballInformation.observeMatch(updated);
+  }
   if(ledgerReady&&updated){try{await matchSnapshots.save(updated);}catch(error){console.error('[settle] provider snapshot persistence failed:',info.matchId,error.message);}}
   if (ledgerReady) {
     try { await pendingResults.observe(enriched, updated); }
