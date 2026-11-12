@@ -69,7 +69,7 @@ export function parsePlayerGoalSpecial(line){
      (half!=='both'&&period&&period!==half))return null;
   choice=yes(rawLabel);
   if(choice===null){
-   if(!/^[a-z][\p{L}\p{M} .,'-]{1,199}$/iu.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
+   if(!/^\p{L}[\p{L}\p{M} .,'-]{1,199}$/u.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
     return null;
    choice=true;
   }
@@ -77,7 +77,7 @@ export function parsePlayerGoalSpecial(line){
   mode='count';threshold=hat?3:Number(atLeast[1]);
   choice=yes(rawLabel);
   if(choice===null){
-   if(!/^[a-z][\p{L}\p{M} .,'-]{1,199}$/iu.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
+   if(!/^\p{L}[\p{L}\p{M} .,'-]{1,199}$/u.test(rawLabel)||/^(?:over|under|none|exact|draw|home|away|home team|away team)$/i.test(rawLabel))
     return null;
    choice=true;
   }
