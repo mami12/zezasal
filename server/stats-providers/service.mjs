@@ -295,7 +295,7 @@ export function createStatsService({runQuery=query,env=process.env,request=fetch
    const result=(await runQuery('select * from app_match_result where match_id=$1',[Number(id)])).rows[0];
    if(result)final=true;
    await init();const old=cached??await read('display:'+id);
-   if(old?.version===3&&old.identity===identity&&old.next>now()&&!urgent.has(id)&&(!final||old.finalReview)){displayCache.set(id,old);return;}
+   if(old?.version===3&&old.identity===identity&&old.next>now()&&Number.isFinite(Number(old.at))&&now()-Number(old.at)<localTtl&&!urgent.has(id)&&(!final||old.finalReview)){displayCache.set(id,old);return;}
    // Start each refresh with new facts. Keeping non-null values froze live totals forever.
    const entry={version:3,identity,values:{},goalIntervals:null,sources:{},at:now()};
    // Zizobet's independently reconfirmed event history is the authority for
