@@ -40,6 +40,7 @@ import { assertDistinctSelectionMarkets } from './selection-market.mjs';
 import {quoteValidUntil,quoteExpired} from './quote-validity.mjs';
 import {isSyntheticFootballMatch} from '../football-competitions.mjs';
 import {frozenLiveContract} from './live-contract-context.mjs';
+import {verifyLiveIntervalAcceptance} from './live-interval-acceptance.mjs';
 import {nativeZizobetContractRow} from './native-zizobet-contract.mjs';
 import {parsePlayerCardContract,parseEventWindow} from './live-contract-rules.mjs';
 import {parseCornerComparison} from './corner-comparisons.mjs';
@@ -358,6 +359,26 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // Cards cannot use the goal scoreboard or a guessed yellow+red sum.
   // Only a confirmed, recent primary card incident coverage can establish
   // whether Race to X Cards has already ended at LIVE placement.
+  let raceCornerSnapshot=null;
+  const liveMatch=String(match.service??'').toUpperCase()==='LIVE';
+  if(liveMatch&&(/\brace to \d+ corners?\b|\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+corners?\b/i.test(raceName))){
+    try{
+      const {rows}=await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at from app_match_event_coverage
+        where match_id=$1 and provider='zizobet' and kind='corner' and confirmed_at is not null limit 1`,[matchId]);
+      const snapshot=rows?.[0];
+      const at=snapshot?.observed_at==null?NaN:new Date(snapshot.observed_at).getTime();
+      const clk=match.clock_at==null?NaN:new Date(match.clock_at).getTime();
+      if(snapshot&&Number.isFinite(at)&&Date.now()-at<=45000&&at<=Date.now()+5000&&
+         Number.isFinite(clk)&&Date.now()-clk<=45000&&
+         Number(snapshot.through_minute)>=Math.floor(Number(match.match_time_ms)/60000))
+        raceCornerSnapshot=snapshot;
+    }catch{ /* missing coverage means no historical fallback */ }
+    if(!raceCornerSnapshot&&Number(match.match_time_ms)===0&&
+       Number.isFinite(new Date(match.clock_at).getTime())&&Date.now()-new Date(match.clock_at).getTime()<=45000){
+      // The verified first LIVE clock tick is the same zero baseline as PREMATCH.
+      raceCornerSnapshot={count_home:0,count_away:0};
+    }
+  }
   let raceCardSnapshot=null;
   if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence)&&
      String(match.service??'').toUpperCase()==='LIVE'){
@@ -441,12 +462,15 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
+      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCornerSnapshot,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
     if(playerGoalSpecial)contract=playerGoalSpecial;
     if(periodGoalContract)contract=periodGoalContract;
+    // PREMATCH starts at zero without a history query. A started LIVE
+    // interval is checked against confirmed primary incidents, not its start minute.
+    await verifyLiveIntervalAcceptance(contract,match,{execute:executor});
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
