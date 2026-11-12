@@ -100,7 +100,13 @@ try{
  const incomplete={...match,TimeLines:match.TimeLines.filter(e=>e.id!=='g3')};
  const missing=await resumed(id,incomplete,fixture);
  assert.equal(missing.verifiedKinds.includes('goal'),false);
- assert.equal((await q("select confirmed_at from app_match_event_coverage where match_id=$1 and kind='goal'",[id])).rows[0].confirmed_at!=null,true);
+ assert.equal((await q("select confirmed_at from app_match_event_coverage where match_id=$1 and kind='goal'",[id])).rows[0].confirmed_at,null,
+  'Newer inconsistent goal count must suspend older confirmed proof');
+ // Reappearance of the fully reconciled corrected score needs TWO new polls.
+ now+=6000;
+ assert.equal((await resumed(id,corrected,fixture)).confirmedKinds.includes('goal'),false);
+ now+=6000;
+ assert.ok((await resumed(id,corrected,fixture)).confirmedKinds.includes('goal'));
 
  console.log('PASS all-fixture unified facts, two-poll proof, event families, PENDING participation, exactly-once payouts and restart-safe corrections');
 }finally{await pg.close();}
