@@ -148,18 +148,18 @@ export default function MatchDetail() {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    let controller: AbortController | null = null;
+    const requestState = {controller: null as AbortController | null};
     let sequence = 0;
     const refresh = (force = false) => {
       if (!active) return;
       // A manual retry cancels the stale request and starts a brand-new HTTP
       // attempt. Automatic 20s refreshes instead avoid overlapping requests.
-      if (controller) {
+      if (requestState.controller) {
         if (!force) return;
-        controller.abort();
+        requestState.controller.abort();
       }
       const current = new AbortController();
-      controller = current;
+      requestState.controller = current;
       const requestId = ++sequence;
       setCategoryLoading(true);
       apiClient.get(`/matches/${id}`, {
@@ -190,7 +190,7 @@ export default function MatchDetail() {
         });
       }).finally(() => {
         if (!active || requestId !== sequence) return;
-        if (controller === current) controller = null;
+        if (requestState.controller === current) requestState.controller = null;
         setCategoryLoading(false);
       });
     };
@@ -203,7 +203,7 @@ export default function MatchDetail() {
     return () => {
       active = false;
       if (refreshRef.current === refresh) refreshRef.current = null;
-      controller?.abort();
+      requestState.controller?.abort();
       window.clearTimeout(firstFullRefresh);
       window.clearInterval(timer);
     };
