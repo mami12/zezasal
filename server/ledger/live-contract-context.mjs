@@ -116,20 +116,43 @@ export function frozenLiveContract(line,match={},at=Date.now()){
      !phase||finished||(contract.half===1&&firstEnded))
    throw fail('Periudha e marketit nuk është e hapur ose ora LIVE nuk është e konfirmuar.');
  }
- // The current match-wide scoreboard does not establish a 2H-only
- // race/ordinal baseline. Do not sell a half market on a guessed history.
- if(live&&(contract.kind==='half-race'||contract.kind==='half-last-event'))
-  throw fail('Kërkohet historik i konfirmuar sipas pjesës për këtë treg LIVE.');
+ // During FIRST HALF, match-wide cumulative counters ARE also the
+ // first-half counters. Race-to-X stays open until either side reaches X;
+ // the first-half LAST outcome stays open until the official HT event.
+ // Only second-half variants need an independent HT baseline.
+ if(live&&(contract.kind==='half-race'||contract.kind==='half-last-event')){
+  if(contract.half!==1)
+   throw fail('Kërkohet numëruesi i ndarë i pjesës së dytë LIVE.');
+  const clockAt=time(match.clock_at),scoreAt=time(match.score_at);
+  const phase=norm(match.feed_status??match.phase??'');
+  const firstEnded=/^(?:ht|half time|halftime|break time|2h|2nd half|second half|ft|full time|finished|ended)\b/.test(phase);
+  if(clock===null||clock>=45||clockAt===null||at-clockAt>45000||clockAt-at>5000||
+     firstEnded||contract.event==='goal'&&
+      (scoreAt===null||at-scoreAt>90000||scoreAt-at>5000))
+   throw fail('Pjesa e parë ose ora LIVE nuk është e hapur dhe e konfirmuar.');
+  if(contract.kind==='half-race'){
+   if(current?.home==null||current?.away==null)
+    throw fail('Mungojnë numëruesit aktualë për Race to X në pjesën e parë.');
+   if(current.home>=contract.target||current.away>=contract.target)
+    throw Object.assign(new Error('Gara e pjesës së parë ka përfunduar.'),{
+     status:400,code:'MARKET_DECIDED'});
+   return {...contract,baseline:{home:current.home,away:current.away}};
+  }
+  if(contract.side==='none'&&current?.home!=null&&current?.away!=null&&
+     current.home+current.away>0)
+   throw Object.assign(new Error('Opsioni Asnjëra është vendosur tashmë.'),{
+    status:400,code:'MARKET_DECIDED'});
+ }
  if(live&&contract.kind==='corner-comparison'&&contract.mode==='wins-both'&&
     clock!==null&&clock>=45)
   throw fail('Ky treg LIVE kërkon verifikimin e rezultatit të kornerave në pjesën e parë.');
  if(live&&contract.kind==='half-first-event'){
   if(contract.half!==1)
    throw fail('Mungon numëruesi i verifikuar i ngjarjeve të pjesës së dytë LIVE.');
-  const count=contract.event==='goal'?goals:contract.event==='corner'?corners:null;
+  const count=current;
   const clockAt=time(match.clock_at),scoreAt=time(match.score_at);
   if(clock===null||clock>=45||clockAt===null||at-clockAt>45000||clockAt-at>5000||
-     scoreAt===null||at-scoreAt>90000||scoreAt-at>5000||
+     (contract.event==='goal'&&(scoreAt===null||at-scoreAt>90000||scoreAt-at>5000))||
      count?.home==null||count?.away==null)
     throw fail('Mungon numri ose ora LIVE e konfirmuar për ngjarjen e parë të pjesës së parë.');
   if(count.home+count.away>0)
