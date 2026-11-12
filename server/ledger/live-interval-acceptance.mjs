@@ -1,3 +1,4 @@
+import {primaryLiveCounters} from './primary-live-counters.mjs';
 /**
  * Verify an already-started interval against PRIMARY Zizobet incidents at bet
  * acceptance. PREMATCH never calls this lookup: the baseline is zero.
@@ -27,6 +28,10 @@ export function assessInterval(contract,{clock,windowHome=null,windowAway=null,g
  }
  if(clock<bounds.from)return 'OPEN';
  if(contract.kind==='window'&&contract.startExclusive===true)return 'OPEN';
+ // The leader/result cannot be irreversible until its clock interval ends.
+ // A valid current quote can be accepted without fetching ALL past events;
+ // settlement still requires the complete primary fact history.
+ if(contract.kind==='interval-leader'||contract.kind==='interval-result')return 'OPEN';
  const h=whole(windowHome),a=whole(windowAway);
  if(h===null||a===null)return 'UNVERIFIABLE';
  const n=contract.side==='home'?h:contract.side==='away'?a:h+a;
@@ -38,29 +43,6 @@ export function assessInterval(contract,{clock,windowHome=null,windowAway=null,g
  }
  return 'OPEN'; // interval leaders/results stay uncertain until the interval closes.
 }
-const currentCounts=(match,event)=>{
- const {home,away}=((event==='goal')
-   ?{home:whole(match?.home_score),away:whole(match?.away_score)}
-   :(()=>{
-     const stats=match?.stats??{},raw=match?.raw??{};
-     const read=(side,field)=>{
-       const id=raw?.[side+'Team']?.id;
-       const item=(id!=null?stats[String(id)]:null)??stats[side];
-       return whole(item?.[field]);
-     };
-     if(event==='corner'||event==='foul'){
-       const field=event==='corner'?'corners':'fouls';
-       return {home:read('home',field),away:read('away',field)};
-     }
-     if(event==='card'){
-       const h=[read('home','yellow'),read('home','red')];
-       const a=[read('away','yellow'),read('away','red')];
-       return {home:h.every(v=>v!==null)?h[0]+h[1]:null,away:a.every(v=>v!==null)?a[0]+a[1]:null};
-     }
-     return {home:null,away:null};
-   })());
- return {home,away};
-};
 function enforce(decision){
  if(decision==='DECIDED')throw invalid('Ky treg është vendosur tashmë sipas të dhënave LIVE.','MARKET_DECIDED');
  if(decision==='UNVERIFIABLE')throw invalid('Mungon historia e konfirmuar e Zizobet për intervalin LIVE.');
@@ -76,8 +58,8 @@ export async function verifyLiveIntervalAcceptance(contract,match,{execute,at=Da
  if(!bounds)return;
  const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
  if(!Number.isFinite(clock))throw invalid('Mungon ora e konfirmuar LIVE.');
- const counts=currentCounts(match,contract.event);
- const goalTotal=counts.home!==null&&counts.away!==null?counts.home+counts.away:null;
+ const counts=primaryLiveCounters(match,contract.event,{at});
+ const goalTotal=counts?counts.home+counts.away:null;
  const inspect=(windowHome,windowAway)=>enforce(assessInterval(contract,{clock,goalTotal,windowHome,windowAway}));
  // The ordinal rule is decided by the current full-score aggregate regardless
  // of which minute range or score (including 100-0) the provider displays.
@@ -86,14 +68,10 @@ export async function verifyLiveIntervalAcceptance(contract,match,{execute,at=Da
   inspect(null,null);return;
  }
  if(clock>=bounds.toExclusive){inspect(null,null);return;}
- // A fresh primary zero aggregate proves NO incident in ANY prior sub-window.
- // Do not use a zero placeholder without a timestamp from Zizobet.
- const observed=contract.event==='goal'?match.score_at:null;
- const primaryTimestamp=observed==null?NaN:new Date(observed).getTime();
- const zeroVerified=counts.home===0&&counts.away===0&&
-   contract.event==='goal'&&Number.isFinite(primaryTimestamp)&&
-   primaryTimestamp<=at+5000&&at-primaryTimestamp<=45000;
- if(zeroVerified){inspect(0,0);return;}
+ // A fresh Zizobet 0-0 counter proves the entire prior match had ZERO
+ // events of this kind. Works for goals, corners, cards AND fouls at 0/1/6.
+ // These values are not placeholders: primaryLiveCounters checks timestamps.
+ if(counts?.home===0&&counts?.away===0){inspect(0,0);return;}
  if(typeof execute!=='function')throw invalid('Mungon kontrolli i kronologjisë LIVE.');
  let row;
  try{
@@ -123,8 +101,8 @@ export async function verifyLiveIntervalAcceptance(contract,match,{execute,at=Da
  const valid=row&&Number.isFinite(seen)&&Number.isFinite(confirmed)&&confirmed<=seen&&
   seen<=at+5000&&at-seen<=45000&&Number(row.through_minute)>=Math.floor(clock)&&
   whole(row.count_home)===whole(row.total_home)&&whole(row.count_away)===whole(row.total_away)&&
-  (counts.home===null||counts.home===whole(row.count_home))&&
-  (counts.away===null||counts.away===whole(row.count_away))&&
+  (!counts||counts.home===whole(row.count_home))&&
+  (!counts||counts.away===whole(row.count_away))&&
   (!contract.cardColor||row.card_colors_verified===true);
  if(!valid)throw invalid('Mungon kronologjia e freskët e konfirmuar e Zizobet për këtë interval.');
  const home=whole(contract.cardColor?row.color_interval_home:row.interval_home);
