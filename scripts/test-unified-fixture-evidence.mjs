@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
 import {LEDGER_SQL} from '../server/ledger/schema.mjs';
 import {createZizobetHistoryArchive} from '../server/ledger/zizobet-match-history.mjs';
+import {recordWatchedLiveFrame} from '../server/ledger/live-observation-store.mjs';
 import {settleVerifiedEventFacts,updatePendingLine,recalcTicket}
  from '../server/ledger/settler.mjs';
 
@@ -108,5 +109,26 @@ try{
  now+=6000;
  assert.ok((await resumed(id,corrected,fixture)).confirmedKinds.includes('goal'));
 
+ // A single upstream HTTP response may flow through both the all-match
+ // archive and the watched-ticket gap reader. It is still ONE observation.
+ const watchedId=id+1;
+ const watchTicket=(await q(
+  "insert into app_ticket(user_id,stake,total_odds,potential_payout,status,placed_at) "+
+  "values($1,10,2,20,'PENDING',$2) returning id",[user,new Date(now-15000)])).rows[0].id;
+ await q("insert into app_ticket_line(ticket_id,match_id,market_key,outcome_key,outcome_name,market_name,match_name,odds_at_placement,status,live_contract) values($1,$2,'zz999@e30','1','1','Next Goal','Home v Away',2,'PENDING',$3::jsonb)",
+  [watchTicket,watchedId,JSON.stringify({kind:'sequence',event:'goal',target:1,side:'home'})]);
+ const observed=new Date(now+=7000),watchedMatch={
+  ...match,Match:{...match.Match,GameID:1000234}
+ };
+ await archive(watchedId,watchedMatch,fixture,{observedAt:observed});
+ await recordWatchedLiveFrame(watchedId,watchedMatch,{database,now:()=>observed.getTime(),skipVerifiedFacts:true});
+ assert.equal((await q("select confirmed_at from app_match_event_coverage where match_id=$1 and kind='goal'",[watchedId])).rows[0].confirmed_at,null,
+  'Dual ingestion of ONE provider response may not certify a financial result');
+ const observedAgain=new Date(now+=6000);
+ await archive(watchedId,watchedMatch,fixture,{observedAt:observedAgain});
+ await recordWatchedLiveFrame(watchedId,watchedMatch,{database,now:()=>observedAgain.getTime(),skipVerifiedFacts:true});
+ const verified=(await q("select confirmed_at from app_match_event_coverage where match_id=$1 and kind='goal'",[watchedId])).rows[0];
+ assert.notEqual(verified.confirmed_at,null);
+ assert.equal(new Date((await q("select last_seen_at from app_live_event_cursor where match_id=$1",[watchedId])).rows[0].last_seen_at).getTime(),observedAgain.getTime());
  console.log('PASS all-fixture unified facts, two-poll proof, event families, PENDING participation, exactly-once payouts and restart-safe corrections');
 }finally{await pg.close();}
