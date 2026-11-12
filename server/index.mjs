@@ -83,7 +83,14 @@ let pusher = null;
 // A detail HTTP response reads our existing snapshot immediately. Remote full
 // markets arrive in the regular 1s feed flush; never block the user's request
 // on a slow provider, incident archival, or a global feed-buffer flush.
-app.locals.matchMarketsReady=id=>config.sportsProvider!=='zizobet'||collector?.fullMarketsReady?.(Number(id))===true;
+// A Zizobet full snapshot becomes ready only AFTER its odds rows have moved
+// from the temporary feed buffer into the odds store. Reporting ready earlier
+// would recreate the "back and open again" problem on slow servers.
+app.locals.matchMarketsReady=id=>{
+ if(config.sportsProvider!=='zizobet'||!isZizoId(id))return true;
+ return collector?.fullMarketsReady?.(Number(id))===true &&
+   !flushing && !oddsBuffer.some(row=>Number(row.matchId)===Number(id));
+};
 app.locals.loadMatchDetail=createMatchDetailRefresh({
   boost:boostMatch,
   focus:async id=>{await collector?.focus(id);await flushFeedBuffer();},
