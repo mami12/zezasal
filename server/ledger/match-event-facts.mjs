@@ -472,9 +472,8 @@ async function gradeSingleEventProvider(line,result,{execute,provider='zizobet'}
    from ordered
  )
  select a.*,c.through_minute,c.count_home,c.count_away,c.complete,c.observed_at,c.confirmed_at,c.card_colors_verified,
-  // A watched-bet cursor or a transactionally persisted all-match
-  // archive observation can confirm a SECOND identical provider sample.
-  // Neither path may manufacture coverage from an unverified timeline.
+  -- A watched-bet cursor or transactionally persisted archive proof
+  -- can confirm a SECOND identical source sample, not an invented event.
   greatest(
     (select last_seen_at from app_live_event_cursor where match_id=$1),
     (select evidence_observed_at from app_zizobet_match_history where match_id=$1)
