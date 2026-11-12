@@ -43,7 +43,13 @@ try{
  const read=sql=>pg.query(sql,[id]);
  const initial=await save(id,game('1:0','11:00',[g1]),fixture);
  assert.equal(initial.stored,true);
- assert.equal((await save(id,game('1:0','11:00',[g1]),fixture)).reason,'UNCHANGED');
+ assert.equal(initial.confirmedKinds.length,0,'One upstream sample cannot confirm financial evidence');
+ clock+=6000;
+ const repeated=await save(id,game('1:0','11:00',[g1]),fixture);
+ assert.equal(repeated.stored,false,'Identical sports summaries are not repeatedly written');
+ assert.equal(repeated.reason,'EVIDENCE_REOBSERVED');
+ assert.ok(repeated.confirmedKinds.includes('goal'),
+  'A second identical provider sample must confirm canonical evidence');
  let rows=(await read('select kind,minute,detail,active from app_zizobet_match_incident where match_id=$1')).rows;
  assert.equal(rows.length,1);
  assert.equal(rows[0].detail.playerName,'First Scorer');
