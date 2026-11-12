@@ -30,7 +30,7 @@ export function projectZizobetHistory(matchId,data,row={}){
   const values=typeof rawPeriods==='string'?JSON.parse(rawPeriods):rawPeriods;
   if(Array.isArray(values)){
    const parsed=values.map(value=>{
-    const m=String(value).match(/^(\\d+):(\\d+)$/);
+    const m=String(value).match(/^(\d+):(\d+)$/);
     if(m)return {home:Number(m[1]),away:Number(m[2])};
     const home=whole(value?.t1),away=whole(value?.t2);
     return home===null||away===null?null:{home,away};
