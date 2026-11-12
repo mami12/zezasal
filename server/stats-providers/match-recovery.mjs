@@ -40,7 +40,8 @@ export async function fetchFotMobDate(dateStr) {
  const flight=(async()=>{
   try{
    const url=`https://www.fotmob.com/api/data/matches?date=${dateStr}&timezone=Europe%2FTirane`;
-   const res=await fetch(url,{headers:{accept:'application/json'},signal:AbortSignal.timeout(12000)});
+   const res=await fetch(url,{headers:{'Accept':'application/json',
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},signal:AbortSignal.timeout(12000)});
    if(!res.ok){noteRateLimit(res);return cached?.data??null;}
    const data=await res.json();
    fotmobDailyCache.set(dateStr,{at:Date.now(),data});
