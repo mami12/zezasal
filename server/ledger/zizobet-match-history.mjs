@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import {pool} from '../db.mjs';
 import {normalizeLiveFrame} from './live-observation-store.mjs';
-import {persistVerifiedEventFacts} from './match-event-facts.mjs';
+import {persistVerifiedEventFacts,invalidateContradictedEventCoverage} from './match-event-facts.mjs';
 
 /** Independent sporting archive. It never contains prices and never pays bets. */
 export const ZIZOBET_MATCH_HISTORY_SQL = [
@@ -122,8 +122,9 @@ export function createZizobetHistoryArchive({database=pool,now=()=>new Date()}={
    // goal/corner/card/foul contracts. The compact history above is a raw
    // forensic archive, not an alternative financial event ledger.
    let confirmedKinds=[];
+   const frame=normalizeLiveFrame(data);
+   await invalidateContradictedEventCoverage(id,frame,client.query.bind(client),observed);
    if(verifiedKinds.length){
-    const frame=normalizeLiveFrame(data);
     await persistVerifiedEventFacts(id,frame,client.query.bind(client),observed);
     const {rows}=await client.query(
      "select kind,confirmed_at from app_match_event_coverage "+
