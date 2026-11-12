@@ -11,7 +11,8 @@ export const ZIZOBET_MATCH_HISTORY_SQL = [
 
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const whole=value=>value!=null&&String(value).trim()!==''&&Number.isSafeInteger(Number(value))&&Number(value)>=0?Number(value):null;
-const pair=(game,name)=>({home:whole(game[name+'Team1']),away:whole(game[name+'Team2'])});
+const pair=(game,name)=>{const home=whole(game[name+'Team1']),away=whole(game[name+'Team2']);
+ return home===null||away===null?null:{home,away};};
 const clockOf=game=>{
  const m=String(game.MatchTimeExtended??'').match(/^(\d{1,3}):([0-5]\d)$/);
  if(m)return Number(m[1])+Number(m[2])/60;
