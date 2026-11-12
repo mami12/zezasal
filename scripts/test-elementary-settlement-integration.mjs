@@ -76,7 +76,7 @@ try{
  const htft=await mk({items:[{id:4101,market:'HT/FT',choice:'1/1'}]});
  const incomplete=await mk({items:[{id:4101,market:'HT/FT',choice:'bad'}]});
  let result=await settleMatch(4101);
- assert.ok(result.settled>=5);
+ assert.equal(result.settled,4,'Four elementary selections decide at FT; unknown HT/FT stays pending');
  result=await settleMatch(4102);
  assert.ok(result.settled>=2);
  const read=async id=>(await q('select status,potential_payout from app_ticket where id=$1',[id])).rows[0];
