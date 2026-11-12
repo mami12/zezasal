@@ -488,10 +488,12 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
   parseEventWindow(line,clock)??parseIntervalCount(line)??parseClockWindowTotal(line)??
   parseHalfExactMarket(line)??parseHalfTotal(line)??(parseParityMarket(line)?.kind==='half-parity'?parseParityMarket(line):null)??parseColorCardCount(line)??parseFirstHalfCorner(line)??parseHalfEventContract(line)??parseLastEvent(line)??parseSequenceBet(line,counts)??
   parseTeamGoalMarket(line,teams)??parseMultiCornerContract(line)??parseCornerComparison(line)??parseTeamCountMarket(line)??parseCountMarket(line);
- // Foul totals come from verified match statistics, not from the
- // sparse provider incident timeline. Time/ordinal foul wagers are not
- // supported until a complete independent foul chronology exists.
- if(contract?.event==='foul')return null;
+ // Full-time foul totals continue to use verified final statistics.
+ // For explicitly bounded YES/NO foul windows ONLY, accept a native event
+ // contract. It can settle strictly when the Zizobet foul TimeLines reconcile
+ // with the SAME match's FoulsTeam1/FoulsTeam2 counters on two polls.
+ // Unknown/missing foul counters leave these bets PENDING, not LOST.
+ if(contract?.event==='foul'&&contract.kind!=='window')return null;
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
