@@ -40,15 +40,20 @@ const live={service:'LIVE',home:'Viktoria Plzen',away:'Sparta Prague',
  home_score:0,away_score:0,score_at:new Date(at).toISOString(),clock_at:new Date(at).toISOString(),
  match_time_ms:15*60000};
 assert.deepEqual(frozenLiveContract(line(homeName),live,at),home);
-for(const minute of [16,18,21])assert.throws(
- ()=>frozenLiveContract(line(homeName),{...live,match_time_ms:minute*60000},at),
- error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED','Interval already started: '+minute);
+for(const minute of [16,18])assert.deepEqual(
+ frozenLiveContract(line(homeName),{...live,match_time_ms:minute*60000},at),home,
+ 'An in-progress fixed interval can still be offered for future incidents: '+minute);
+assert.throws(
+ ()=>frozenLiveContract(line(homeName),{...live,match_time_ms:21*60000},at),
+ error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED',
+ 'A genuinely finished minute range cannot accept a NEW live ticket');
 assert.throws(()=>frozenLiveContract(line(homeName),
  {...live,clock_at:new Date(at-120000).toISOString()},at),
  error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED');
-assert.throws(()=>frozenLiveContract(line('Who takes most corners in minutes 16-20 (5-minute interval)','1',''),
- {...live,match_time_ms:18*60000},at),
- error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED','Leader must not accept an already started interval');
+assert.equal(
+ frozenLiveContract(line('Who takes most corners in minutes 16-20 (5-minute interval)','1',''),
+  {...live,match_time_ms:18*60000},at)?.kind,'interval-leader',
+ 'A timed leader bought LIVE is determined from events after its saved acceptance baseline');
 
 async function settle(contract,teams,through=21){
  const execute=async(sql,args)=>{
