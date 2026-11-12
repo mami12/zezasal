@@ -56,6 +56,14 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  const oldFrame=old?.frame;
  if(!contract||!oldFrame||!current||!old?.contract||
     JSON.stringify(contract)!==JSON.stringify(old.contract))return null;
+ // Real payouts without a complete incident archive are limited to the
+ // irreversible sequence/race facts proven by accepted and current counters.
+ // Minute windows and player identity cannot be inferred from match totals.
+ if(!['sequence','race'].includes(contract.kind)||
+    !['goal','corner','card'].includes(contract.event))return null;
+ const base=contract.baseline;
+ if(!base||!['home','away'].every(side=>
+    Number.isSafeInteger(base[side])&&base[side]>=0))return null;
  const placed=millis(row.placed_at),first=millis(old.frameAt);
  const stored=millis(row.preview_at),latest=millis(row.frame_at),second=millis(row.second_seen_at);
  if(![placed,first,stored,latest,second,now].every(Number.isFinite))return null;
@@ -64,10 +72,17 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  if(first<placed||stored<first||latest<first||latest>second||
     second<stored+5000||second>now+5000||now-second>60000||
     now-stored>300000||now-latest>300000)return null;
+ // A full provider timeline may corroborate the counters, but without
+ // that timeline ONLY an unambiguous delta from the frozen purchase state
+ // may authorize a financial write. Partial lists cannot choose the winner.
+ const firstDelta=gradeFromAcceptedCounters(contract,oldFrame);
+ const secondDelta=gradeFromAcceptedCounters(contract,current);
+ if(!firstDelta||firstDelta!==secondDelta||
+    !['WON','LOST'].includes(firstDelta))return null;
  const firstDecision=primaryLiveDecision(contract,oldFrame);
  const secondDecision=primaryLiveDecision(contract,current);
- return firstDecision&&firstDecision===secondDecision&&
-   firstDecision===row.proposed_status?firstDecision:null;
+ return firstDecision===firstDelta&&secondDecision===secondDelta&&
+    firstDelta===row.proposed_status?firstDelta:null;
 }
 
 /**
