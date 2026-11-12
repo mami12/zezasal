@@ -19,10 +19,10 @@ export const prematchSoon=(row,now=Date.now(),env={})=>{
  const ahead=int(env.STATS_PREMATCH_WINDOW_MS,2*60*60*1000,5*60*1000,24*60*60*1000);
  return Number.isFinite(kickoff)&&kickoff>=now-5*60*1000&&kickoff-now<=ahead;
 };
-export const supplementalRefreshMs=(row,env={})=>{
+export const supplementalRefreshMs=(row,env={},now=Date.now())=>{
  if(env.STATS_REALTIME_ENABLED==='false')return 10*60*1000;
  if(fixtureLive(row))return int(env.STATS_LIVE_REFRESH_MS,30000,15000,5*60*1000);
- if(prematchSoon(row,Date.now(),env))return int(env.STATS_PREMATCH_REFRESH_MS,300000,60000,30*60*1000);
+ if(prematchSoon(row,now,env))return int(env.STATS_PREMATCH_REFRESH_MS,300000,60000,30*60*1000);
  return 10*60*1000;
 };
 /** Ignore advancing clocks: only material result/incident count changes wake enrichment. */
