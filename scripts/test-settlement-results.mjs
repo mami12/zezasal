@@ -15,7 +15,7 @@ import { createLocalPool } from '../server/local-database.mjs';
 import { LEDGER_SQL } from '../server/ledger/schema.mjs';
 
 process.env.DB_DRIVER = 'postgres';
-const { isFinished, FINISHED_RESULT_INSERT, finishedResultParameters, verifiedFirstHalf, archiveFinishedMatch, unsettledMatchIds } = await import('../server/ledger/results.mjs');
+const { isFinished, FINISHED_RESULT_INSERT, finishedResultParameters, verifiedFirstHalf, archiveFinishedMatch, unsettledMatchIds, preferVerifiedFinal } = await import('../server/ledger/results.mjs');
 const { isStillOnBoard, gradeLine, hasRequiredSettlementEvidence, settleAll, recalcTicket } = await import('../server/ledger/settler.mjs');
 const { playerBetStatuses } = await import('../server/ledger/bet-history.mjs');
 const { pool } = await import('../server/db.mjs');
@@ -33,6 +33,16 @@ const fulltime = {
 };
 
 assert.equal(isFinished(fulltime), true);
+const currentFT={...fulltime,score_at:'2026-11-12T20:00:00Z',home_score:2,away_score:1};
+const oldSnapshot={...fulltime,score_at:'2026-11-12T19:55:00Z',home_score:1,away_score:1};
+assert.equal(preferVerifiedFinal(currentFT,oldSnapshot),currentFT,
+ 'Stale persisted final snapshot must not erase a later score correction');
+assert.equal(preferVerifiedFinal({...currentFT,feed_status:'LIVE'},oldSnapshot),oldSnapshot,
+ 'Valid persisted FT is recoverable when the in-memory catalogue is incomplete');
+const richerSnapshot={...currentFT,periods_score:[{t1:1,t2:0},{t1:1,t2:1}]};
+assert.equal(preferVerifiedFinal({...currentFT,periods_score:null},richerSnapshot),richerSnapshot,
+ 'Same-score HT breakdown survives even when current header contains only FT');
+
 assert.equal(isFinished({...fulltime,status:'live',feed_status:'1H'}), false,
   'do not settle live matches just because a timer passed 110 minutes');
 assert.equal(isFinished({...fulltime,service:'PREMATCH'}), true,
