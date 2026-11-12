@@ -466,7 +466,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(periodGoalContract)contract=periodGoalContract;
     // PREMATCH starts at zero without a history query. A started LIVE
     // interval is checked against confirmed primary incidents, not its start minute.
-    await verifyLiveIntervalAcceptance(contract,match,{execute:executor});
+    contract=await verifyLiveIntervalAcceptance(contract,match,{execute:executor});
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
