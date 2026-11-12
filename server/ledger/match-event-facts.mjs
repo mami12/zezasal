@@ -137,6 +137,10 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
    playerName:typeof e.player==='string'?e.player:null,
    ownGoal:typeof e.ownGoal==='boolean'?e.ownGoal:null,
    cardColor:kind==='card'?e.cardColor??null:null,phase:e.phase??null}));
+  // The source event set is content-addressed. A second identical poll
+  // MUST advance evidence confirmation but MUST NOT rewrite every incident.
+  // This matters with hundreds of fixtures and a small PostgreSQL server.
+  if(previous?.sample_signature!==signature){
   // A correction may remove/replace a provider event, but the raw live-frame
   // archive remains intact. Changes are atomic with coverage and the new frame.
   await execute(`update app_match_event_fact set active=false,observed_at=now()
@@ -201,6 +205,7 @@ export async function persistVerifiedEventFacts(matchId, frame, execute, observe
    [matchId,kind,JSON.stringify(facts.map(f=>({
     id:f.id,team:f.team,minute:f.minute,seconds:f.seconds,player_id:f.playerId,
     player_name:f.playerName,card_color:f.cardColor,own_goal:f.ownGoal,phase:f.phase})))]);
+  }
   await execute(`insert into app_match_event_coverage
     (match_id,provider,kind,through_minute,count_home,count_away,complete,
      sample_signature,sample_first_seen_at,confirmed_at,observed_at,card_colors_verified)
