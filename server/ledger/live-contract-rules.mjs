@@ -205,11 +205,13 @@ export function parseEventWindow(line,clock=null) {
  */
 export function parseIntervalLeader(line) {
  const name=norm(line.market_name??line.marketName??line.name);
- const m=name.match(/^who\s+(?:scores\s+most\s+goals|takes\s+most\s+corners)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})\b/);
+ const m=name.match(/^who\s+(scores\s+most\s+goals|takes\s+most\s+corners|(?:gets|receives)\s+most\s+cards|commits\s+most\s+fouls)\s+in\s+minutes?\s+(\d{1,3})\s*[-–]\s*(\d{1,3})\s*(?:\((\d{1,2})-minute interval\))?$/);
  if(!m)return null;
- const from=Number(m[1]),to=Number(m[2]);
- if(from<0||to<from||to>130)return null;
- const event=/corners/.test(name)?'corner':'goal';
+ const from=Number(m[2]),to=Number(m[3]),width=m[4]==null?null:Number(m[4]);
+ if(from<0||to<from||to>130||
+    (width!==null&&width!==to-from+1&&width!==to-from))return null;
+ const event=/corners/.test(m[1])?'corner':/cards/.test(m[1])?'card':
+  /fouls/.test(m[1])?'foul':'goal';
  const side=sideOf(line.outcome_name??line.outcomeName)??sideOf(line.outcome_key??line.outcomeKey);
  if(!side)return null;
  return {version:1,kind:'interval-leader',event,from,to,side};
@@ -517,7 +519,7 @@ export const liveContract=(line,{counts={},clock=null,teams={}}={})=>{
  // contract. It can settle strictly when the Zizobet foul TimeLines reconcile
  // with the SAME match's FoulsTeam1/FoulsTeam2 counters on two polls.
  // Unknown/missing foul counters leave these bets PENDING, not LOST.
- if(contract?.event==='foul'&&!['window','window-total'].includes(contract.kind))return null;
+ if(contract?.event==='foul'&&!['window','window-total','interval-leader'].includes(contract.kind))return null;
  if(!contract)return null;
  if(yellow||red){
   // Reject a color qualifier attached to an unrelated contract.
