@@ -451,6 +451,20 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     }
     throw error;
   }
+  // A provider can quote a valid price for a market that this deployment has
+  // no payout rule for. Do not take the stake and then hold it forever as
+  // PENDING: verify the actual final-result grader before charging the wallet.
+  // Frozen chronological contracts are handled separately by the fact grader.
+  if(!nativeOffer&&!contract){
+    const {hasFinalSettlementRule}=await import('./market-settlement-preflight.mjs');
+    if(!hasFinalSettlementRule({...row,market_name:row.market_name??raceName,
+       outcome_name:row.outcome_name??parsed.outcomeKey,
+       outcome_key:row.outcome_key??parsed.outcomeKey},
+       {home:match.home,away:match.away}))
+      throw Object.assign(badRequest('Tregu nuk ka rregull të provuar verifikimi për këtë zgjedhje.'),{
+        code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId,
+        marketName:row.market_name, outcomeName:row.outcome_name});
+  }
   return {
     matchId: String(matchId),
     marketKey: parsed.marketKey,
