@@ -55,8 +55,9 @@ const window=quote('Will there be a goal in minutes 10-20','Yes');
 assert.equal(diagnosticForScope(window,'PREMATCH').status,'CONTRACT_MAPPED_ONLY');
 assert.equal(diagnosticForScope(window,'LIVE_0').status,'CONTRACT_MAPPED_ONLY');
 const liveStarted=diagnosticForScope(window,'LIVE_15');
-assert.equal(liveStarted.status,'REJECTED');
-assert.match(liveStarted.reason,/Intervali ka nisur/);
+assert.equal(liveStarted.status,'CONTRACT_MAPPED_ONLY',
+ 'An interval already underway remains eligible for events after purchase, not automatically rejected');
+assert.equal(liveStarted.rule,'window');
 const handicap=diagnosticForScope(quote('Asian Handicap','Home','1.25'),'PREMATCH');
 assert.equal(handicap.status,'REJECTED');
 assert.match(handicap.reason,/0.25|0.75/);
