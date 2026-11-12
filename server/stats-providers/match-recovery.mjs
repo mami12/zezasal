@@ -13,10 +13,18 @@ import {persistHistoricalGoalFacts,validateHistoricalGoals} from '../ledger/hist
 import {persistHistoricalTimedEvents} from '../ledger/historical-timed-events.mjs';
 import {fotMobTimedIncidents} from './historical-incidents.mjs';
 
-const fotmobDailyCache = new Map();
+const fotmobDailyCache = new Map(),fotmobDateFlights=new Map();
+let fotmobPauseUntil=0;
+const blocked=()=>Date.now()<fotmobPauseUntil;
+const noteRateLimit=response=>{
+ if([403,429].includes(response?.status)){
+  const seconds=Number(response.headers?.get?.('retry-after'));
+  fotmobPauseUntil=Date.now()+(Number.isFinite(seconds)&&seconds>=0?Math.max(60000,seconds*1000):300000);
+ }
+};
 const fotmobDetailsCache = new Map(),fotmobDetailFlights = new Map();
-const FOTMOB_DETAILS_TTL_MS = 60 * 1000;
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const FOTMOB_DETAILS_TTL_MS = 30 * 1000;
+const CACHE_TTL_MS = 2 * 60 * 1000;
 const recoveryCooldowns=new Map();
 let recoveryCursor=0;
 const RECOVERY_RETRY_MS=8 * 60 * 1000;
@@ -25,37 +33,38 @@ const RECOVERY_RETRY_MS=8 * 60 * 1000;
  * Fetch all matches for a given date from FotMob (YYYYMMDD).
  */
 export async function fetchFotMobDate(dateStr) {
-  const cached = fotmobDailyCache.get(dateStr);
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return cached.data;
+ const cached=fotmobDailyCache.get(dateStr);
+ if(cached&&Date.now()-cached.at<CACHE_TTL_MS)return cached.data;
+ if(blocked())return cached?.data??null;
+ if(fotmobDateFlights.has(dateStr))return fotmobDateFlights.get(dateStr);
+ const flight=(async()=>{
+  try{
+   const url=`https://www.fotmob.com/api/data/matches?date=${dateStr}&timezone=Europe%2FTirane`;
+   const res=await fetch(url,{headers:{'Accept':'application/json',
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},signal:AbortSignal.timeout(12000)});
+   if(!res.ok){noteRateLimit(res);return cached?.data??null;}
+   const data=await res.json();
+   fotmobDailyCache.set(dateStr,{at:Date.now(),data});
+   if(fotmobDailyCache.size>32)fotmobDailyCache.delete(fotmobDailyCache.keys().next().value);
+   return data;
+  }catch(error){
+   console.warn('[fotmob] date refresh:',String(error?.message??error));
+   return cached?.data??null;
   }
-  try {
-    const url = `https://www.fotmob.com/api/data/matches?date=${dateStr}&timezone=Europe%2FTirane`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      },
-      signal: AbortSignal.timeout(12000)
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    fotmobDailyCache.set(dateStr, { at: Date.now(), data });
-    return data;
-  } catch (e) {
-    console.warn('[fotmob-recovery] fetchFotMobDate error for', dateStr, e.message);
-    return null;
-  }
+ })().finally(()=>fotmobDateFlights.delete(dateStr));
+ fotmobDateFlights.set(dateStr,flight);
+ return flight;
 }
 
 /**
  * Fetch detailed match facts (corners, cards, fouls, shots, goalscorers) from FotMob.
  */
-export async function fetchFotMobDetails(matchId) {
+export async function fetchFotMobDetails(matchId,{force=false}={}) {
  const id=String(matchId??'').trim();
  if(!/^\d+$/.test(id))return null;
+ if(blocked())return fotmobDetailsCache.get(id)?.data??null;
  const cached=fotmobDetailsCache.get(id);
- if(cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
+ if(!force&&cached&&Date.now()-cached.at<FOTMOB_DETAILS_TTL_MS)return cached.data;
  if(fotmobDetailFlights.has(id))return fotmobDetailFlights.get(id);
  const flight=(async()=>{
   try {
@@ -67,7 +76,7 @@ export async function fetchFotMobDetails(matchId) {
     },
     signal: AbortSignal.timeout(12000)
    });
-   if(!res.ok)return null;
+   if(!res.ok){noteRateLimit(res);return cached?.data??null;}
    const data=await res.json();
    fotmobDetailsCache.set(id,{at:Date.now(),data});
    if(fotmobDetailsCache.size>400)fotmobDetailsCache.delete(fotmobDetailsCache.keys().next().value);

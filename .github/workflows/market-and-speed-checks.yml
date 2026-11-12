@@ -44,6 +44,8 @@ jobs:
         run: node scripts/test-protected-event-minutes.mjs
       - name: Every Zizobet match archived without odds
         run: node scripts/test-zizobet-all-match-history.mjs
+      - name: Bounded real-time secondary info and AiScore
+        run: node scripts/test-realtime-information.mjs
       - name: Simulimi - persisted events and rejection reasons
         run: node scripts/test-simulimi-acceptance.mjs
       - name: Simulimi - offline all-market smoke and combo matrix

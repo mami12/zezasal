@@ -5,7 +5,7 @@ import {collectEventEvidence} from './zizobet/event-collector.mjs';
 import {archiveZizobetMatchHistory} from './ledger/zizobet-match-history.mjs';
 import {providerTimeline,inheritEventPlayers} from './live-event-timeline.mjs';
 export {isZizoId};
-export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000,historyEnabled=autoStart,archiveHistory=archiveZizobetMatchHistory}={}){
+export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDefinitions=()=>{},onFixtureDiscovered=()=>{},selectRows=r=>r,getWatchedIds=()=>[],request=get,connectMqtt=startMqtt,autoStart=true,now=()=>Date.now(),transitionGraceMs=120000,retentionMs=21600000,historyEnabled=autoStart,archiveHistory=archiveZizobetMatchHistory}={}){
  const meta={teams:new Map(),regions:new Map(),champs:new Map(),liveMarkets:new Map(),preMarkets:new Map(),positions:new Map(),statuses:new Map()};
  const state={provider:'ZIZOBET',transport:'MQTT cache invalidations + HTTP snapshots',running:false,cycles:0,syncedAt:null,lastError:null,received:0,kept:0,paused:false,pauses:0,resumes:0};
  const games=new Map(),quotes=new Map(),focused=new Map(),inflight=new Map(),dirty=new Set(),versions=new Map(),fullObserved=new Map(),watchedSnapshotAt=new Map(),transitions=new Map(),historyPollAt=new Map(),historyFinalized=new Set();let stopped=false,work=Promise.resolve(),mqtt,catalogAt=0,revision=0;
@@ -109,7 +109,14 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
   if(stopped||state.paused)return;
   const raw=[];
   for(const region of Object.values(sport.Regions??{})){meta.regions.set(Number(region.ID),region);for(const champ of Object.values(region.Champs??{})){meta.champs.set(Number(champ.ID),champ);for(const g of Object.values(champ.GameSmallItems??{})){if(Number(g.ID)<=0)continue;raw.push({...g,Region:g.Region??g.region??region.ID,Champ:g.Champ??g.ch??champ.ID,Team1:g.t1,Team2:g.t2});}}}
-  const present=new Set(raw.map(g=>Number(g.ID))),prepared=raw.map(g=>({g,row:rowOf(g,meta,false)})).filter(x=>x.row&&!games.get(Number(x.g.ID))?.live),selected=new Set(selectRows(prepared.map(x=>x.row)).map(r=>r.match_id));
+  const present=new Set(raw.map(g=>Number(g.ID))),prepared=raw.map(g=>({g,row:rowOf(g,meta,false)})).filter(x=>x.row&&!games.get(Number(x.g.ID))?.live);
+  // Preflight information from the provider's FULL PREMATCH catalog, not just
+  // the fixtures published on the betting board. This callback is lightweight
+  // and cannot write odds or cause synchronous external API requests.
+  for(const item of prepared)try{onFixtureDiscovered(item.row);}catch(error){
+   console.warn('[zizobet] prematch information watch:',error?.message);
+  }
+  const selected=new Set(selectRows(prepared.map(x=>x.row)).map(r=>r.match_id));
   await queue(async()=>{for(const {g,row}of prepared){if(!selected.has(row.match_id)||games.get(Number(g.ID))?.live)continue;transitions.delete(Number(g.ID));games.set(Number(g.ID),{row,raw:g,live:false});await onMatch(row);}
    for(const[id,e]of games)if(!e.live&&!selected.has(e.row.match_id)){
     // Actual removal may be the small gap between the two provider catalogs.

@@ -152,6 +152,7 @@ async function probeDb() {
 /** the ledger tables (users/tickets/results) are created on boot and retried until the database answers */
 let ledgerReady = false;
 let settleTimer = null;
+let supplementalTimer = null;
 let pendingLiveMonitor = null;
 let settlementBusy = false;
 let lastUnresolvedCheck = 0;
@@ -177,6 +178,7 @@ async function ensureLedgerSchema() {
     ledgerReady = true;
     console.log('[db] ledger schema ready');
     armSettlement(); // Also starts after a late DB recovery, not just at boot.
+    armSupplementalInformation();
   } catch (e) {
     console.error('[db] ledger schema not ready yet:', dbErrorHint(e.message));
     if (config.dbInitStrict) {
@@ -282,6 +284,20 @@ async function runSettlement(why = 'periodic') {
   }
 }
 
+/** Independent information loop: unlike settlement, it tracks uncovered
+ * LIVE and imminent PREMATCH fixtures with a bounded quota-aware cadence.
+ * All source data is informational; it never overwrites Zizobet prices.
+ */
+function armSupplementalInformation(){
+ if(shuttingDown||supplementalTimer)return;
+ const interval=Math.max(10000,Number(process.env.STATS_TICK_MS)||15000);
+ supplementalTimer=setInterval(()=>{
+  if(shuttingDown||!ledgerReady||feedIsStopped())return;
+  trackBackground(statsProviders.tick().catch(error=>console.warn('[stats] refresh:',error.message)));
+  trackBackground(footballInformation.tick().catch(error=>console.warn('[aiscore] refresh:',error.message)));
+ },interval);
+ supplementalTimer.unref?.();
+}
 /** Start once after ledger creation OR database recovery. */
 function armSettlement() {
   if (shuttingDown || !ledgerReady || settleTimer) return;
@@ -574,6 +590,11 @@ async function applyInfoFromFeed(info) {
   }
 
   const updated = await applyMatchInfo(enriched);
+  if(updated&&config.sportsProvider==='zizobet'){
+    // Score/corner/card changes are stronger triggers than advancing clocks.
+    statsProviders.observeMatch(updated);
+    footballInformation.observeMatch(updated);
+  }
   if(ledgerReady&&updated){try{await matchSnapshots.save(updated);}catch(error){console.error('[settle] provider snapshot persistence failed:',info.matchId,error.message);}}
   if (ledgerReady) {
     try { await pendingResults.observe(enriched, updated); }
@@ -1035,8 +1056,22 @@ async function boot() {
     if(config.oddsStore==='db'||config.matchStore==='db')throw new Error('Ybets requires MATCH_STORE=memory and ODDS_STORE=memory; the financial database remains local.');
     collector=(config.sportsProvider==='zizobet'?startZizoFeed:startYbetsFeed)({
       pollMs:config.pollIntervalMs,
-      onMatch:row=>upsertMatches([row]),
+      onMatch:row=>{
+        // Lightweight registration only. External info refresh runs in its
+        // own bounded loop, not inside the odds/feed callback.
+        if(config.sportsProvider==='zizobet'){
+          statsProviders.observeMatch(row);
+          footballInformation.observeMatch(row);
+        }
+        return upsertMatches([row]);
+      },
       onOdds:rows=>{oddsBuffer.push(...rows);},
+      onFixtureDiscovered:row=>{
+        if(config.sportsProvider==='zizobet'){
+          statsProviders.observeMatch(row);
+          footballInformation.observeMatch(row);
+        }
+      },
       onMarketDefinitions:definitions=>{
         if(!ledgerReady||config.sportsProvider!=='zizobet')return;
         // Never block the provider refresh on a slow/offline database.
@@ -1117,6 +1152,7 @@ installGracefulShutdown({
     pusher?.close();
     stopProbe();
     clearInterval(settleTimer);
+    clearInterval(supplementalTimer);
     clearInterval(pendingLiveMonitor);
     clearInterval(feedFlushTimer);
     clearInterval(riskRefreshTimer);
