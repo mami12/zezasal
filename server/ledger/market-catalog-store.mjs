@@ -1,7 +1,21 @@
 import {pool,query} from '../db.mjs';
-import {catalogRows,setCatalogRows,marketFamily,marketCategories,MARKET_CATEGORY_IDS,setCategoryPolicies,categoryPolicies,setScopeBlocks,scopeBlockRows,marketScopeBlocked} from '../market-catalog.mjs';
+import {catalogRows,setCatalogRows,marketFamily,nativeMarketPolicyKeys,marketCategories,MARKET_CATEGORY_IDS,setCategoryPolicies,categoryPolicies,setScopeBlocks,scopeBlockRows,marketScopeBlocked} from '../market-catalog.mjs';
 const listeners=new Set();export const onMarketPolicy=fn=>listeners.add(fn);
 let flight,saving=0;
+/** The provider dictionary contains markets not quoted by the board yet.
+ * Import native LIVE/PREMATCH IDs into the admin's persisted market catalog,
+ * so every quoted offer can later be enabled/disabled by that native identity.
+ */
+export async function seedNativeMarketCatalog({database=pool}={}){
+ await database.query(`insert into app_market_catalog(key,name)
+   select 'zizobet:'||lower(scope)||':'||native_market_id,
+          '['||scope||'] '||native_market_name
+     from app_provider_market_definition
+    where provider_id='ZIZOBET' and scope in ('LIVE','PREMATCH')
+      and native_market_name is not null and trim(native_market_name)<>''
+    on conflict(key) do nothing`);
+ return refreshMarketCatalog({database});
+}
 const invalid=(message,status=400)=>Object.assign(new Error(message),{status});
 const changed=()=>{for(const fn of listeners)fn();};
 export async function refreshMarketCatalog({initialize=false,database=pool}={}){
@@ -32,11 +46,11 @@ export async function assertMarketEnabled(m,executor=query,match){
  // One database round-trip per validation instead of three, while keeping
  // all policy reads on the supplied transaction connection.
  const policy=await executor(`select
-   exists(select 1 from app_market_catalog where key=$1 and enabled=false) as market_disabled,
+   exists(select 1 from app_market_catalog where key=any($1::text[]) and enabled=false) as market_disabled,
    exists(select 1 from app_market_category_policy where enabled=false and category=any($2::text[])) as category_disabled,
    case when $3::boolean then
      (select coalesce(jsonb_agg(jsonb_build_object('country',country,'league',league,'categories',categories,'families',families)),'[]'::jsonb) from app_market_scope_policy)
-   else '[]'::jsonb end as scopes`,[f.key,marketCategories(f.name),Boolean(match)]);
+   else '[]'::jsonb end as scopes`,[[f.key,...nativeMarketPolicyKeys(m,match)],marketCategories(f.name),Boolean(match)]);
  const state=policy.rows[0]??{};
  const scopeDenied=Boolean(match)&&marketScopeBlocked(m,match,state.scopes??[]);
  if(state.market_disabled||state.category_disabled||scopeDenied)throw Object.assign(new Error('Ky treg nuk ofrohet.'),{status:400,code:'MARKET_NOT_OFFERED'});
