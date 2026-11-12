@@ -535,13 +535,8 @@ export async function resolveSelection(selection, options = {}) {
   }
 }
 
-// A regular ticket must never multiply correlated picks from one match.
-function assertDistinctMatches(lines) {
-  const ids = lines.map(line => String(line.matchId));
-  if (new Set(ids).size !== ids.length) {
-    throw badRequest('Dy markete nga e njëjta ndeshje duhen ndarë në kolona ose zgjedhur si Bet Builder.');
-  }
-}
+// Distinct same-match markets are valid COMBO lines; duplicate outcomes of
+// one market appear only as different SYSTEM columns.
 
 // Resolve each template leg through the exact same price, lock, freshness and
 // risk checks as a normal ticket. Never trust browser-provided composite odds.
@@ -790,7 +785,6 @@ export async function placeBet({ user, stake, selections = [], ticketType = null
   const lines = (await Promise.all(selections.map(resolve))).map(line => ({ ...line, price: frozenSelectionPrice(line.price) }));
 
   assertDistinctSelectionMarkets(lines);
-  assertDistinctMatches(lines);
   const totalOdds = totalOddsForSelections(lines);
   if (!Number.isFinite(totalOdds) || totalOdds > 9999999999.9999) throw badRequest('Koeficienti i biletës është shumë i madh.');
   const payout = systemColumnPayout(amount, lines.map(line => line.price));
@@ -956,7 +950,8 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
   const response = async batch => aggregateSystemTicket(batch,await Promise.all(batch.ticket_ids.map(getTicket)));
   const previous = await getPrevious({ query: runQuery });
   if (previous) return response(previous);
-  assertDistinctSelectionMarkets(picks);
+  // Alternative outcomes are allowed in the input; each output column
+  // is checked after expansion.
 
   // Every underlying selection is resolved exactly once, so repeated legs across
   // columns cannot acquire different prices while the feed changes.
@@ -964,9 +959,10 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
     const line = await resolve(pick);
     return [String(pick.outcomeId), { ...line, price: frozenSelectionPrice(line.price) }];
   })));
-  assertDistinctSelectionMarkets([...linesById.values()]);
+  // Do not reject the union of alternate outcomes: no single column
+  // contains two results from one market.
   const resolved = grouped.map(column => column.map(pick => linesById.get(String(pick.outcomeId))));
-  resolved.forEach(assertDistinctMatches);
+  resolved.forEach(assertDistinctSelectionMarkets);
   const priced = resolved.map((lines, i) => ({
     stake: stakes[i], odds: totalOddsForSelections(lines),
     payout: systemColumnPayout(stakes[i], lines.map(line => line.price)), lines,
@@ -1067,7 +1063,6 @@ export async function bookTicket({ stake, selections = [], ticketType = null, sy
   const lines = [];
   for (const selection of selections) lines.push(await resolveSelection(selection));
   assertDistinctSelectionMarkets(lines);
-  assertDistinctMatches(lines);
 
   const totalOdds = totalOddsForSelections(lines);
   const payout = systemColumnPayout(amount, lines.map(line => line.price));
