@@ -44,7 +44,7 @@ export function primaryLiveDecision(contract,frame){
  // A LIVE timed purchase concerns events AFTER its frozen baseline, not
  // earlier events in the same named minute band. Only the delta can decide
  // an irreversible timed outcome from raw primary frames.
- const timed=['window','window-total'].includes(contract.kind)&&contract.entryBaseline!=null;
+ const timed=['window','window-total','nth-time'].includes(contract.kind)&&contract.entryBaseline!=null;
  const timeline=timed?null:gradeLiveContract(contract,frame,{ended:frame.ended===true});
  const delta=gradeFromAcceptedCounters(contract,frame);
  if(timeline&&delta&&timeline!==delta)return null;
@@ -66,8 +66,8 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  // counters. An interval uses its own purchase baseline and must still be
  // running in BOTH frames. Player identity and a final UNDER/NO win cannot
  // be decided by a scoreboard delta.
- const timed=['window','window-total'].includes(contract.kind);
- if(!['sequence','race','window','window-total'].includes(contract.kind)||
+ const timed=['window','window-total','nth-time'].includes(contract.kind);
+ if(!['sequence','race','window','window-total','nth-time'].includes(contract.kind)||
     !(timed?['goal','corner','card','foul']:['goal','corner','card']).includes(contract.event))return null;
  const base=timed?contract.entryBaseline:contract.baseline;
  if(!base||!['home','away'].every(side=>
