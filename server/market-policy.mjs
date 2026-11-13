@@ -20,12 +20,14 @@ export function isRetiredPlayerOfferMarket(market){
  if(!title)return false;
  // Team-level propositions must continue through normal provider settlement.
  if(/^(?:home team|away team|team [12]|either team|both teams|total |first team|last team|next team)\b/.test(title))return false;
- if(/\b(?:anytime|any time)\s+goalscorer\b/.test(title))return false;
+ if(/\b(?:anytime|any time)\s+goalscorer\b/.test(title)&&
+    !/\b(?:extra\s*time|overtime)\b/.test(title))return false;
 
  // Native provider markets frequently embed the person's full name in the
  // market title rather than in an outcome label.
  const individual=(
-   /\b(?:player|goalscorer|goal scorer|goalscorer|goalkeeper|goal keeper|scorer)\b/.test(title)||
+   !!String(market?.player??market?.pl??market?.nativeParameters?.pl??'').trim()||
+   /\b(?:player|goalscorer|goal scorer|goalkeeper|goal keeper|scorer)\b/.test(title)||
    /^(?!\d)(?!total\b)[\p{L}][\p{L}'., -]{1,95}\s+(?:to\s+|\-\s+|will\s+)/u.test(title)
  );
  if(!individual)return false;
@@ -41,7 +43,7 @@ export function isRetiredPlayerOfferMarket(market){
     /\b(?:first|last|next)\s+(?:goal|scorer)\b/.test(title)||
     /\b(?:score|scoring|goal)\b.*\b(?:header|headed|head|by head)\b/.test(title)||
     /\b(?:to score|score|scoring|goals?)\b.*\b(?:extra\s*time|overtime|incl(?:uding)?\.?\s+extra\s*time)\b/.test(title)||
-    /\bto\s+score\s+(?:(?:in|during|between|from|within|the)\b|\d+\s+goals?\b)/.test(title)||
+    /\bto\s+score\s+(?:(?:in|during|between|from|within|the)\b|\d+\s*(?:(?:\+|or more)\s*)?goals?\b)/.test(title)||
     /\b(?:to\s+score|scores?)\s+(?:at\s+least\s+)?\d+\s+goals?\b/.test(title)||
     /\b(?:to score|scorer)\b.*\b(?:minute|minutes|interval|1st\s+half|2nd\s+half|first\s+half|second\s+half)\b/.test(title))
    return true;
