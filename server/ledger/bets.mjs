@@ -976,6 +976,9 @@ export function createColumnsPlacer({
   getTicket = id => getTicketWithLines(id,{consolidate:false}), lockRisk = lockLiveRiskSettings,
   assertRisk = assertLiveBetRisk, assertPlayer = assertPlayerCanBet,
   chargeCommission = chargeManagerCommission,
+  // Only isolated tests of historical funded columns can opt in. The public
+  // router constructs the placer without this option and cannot override it.
+  allowHistoricalSystemAlternatives = false,
 } = {}) {
 return async function placeSystemColumns({ user, totalStake, stake, selections, columns, clientRequestId }) {
   if (user.role !== 'PLAYER' || user.status !== 'ACTIVE') {
@@ -1007,6 +1010,10 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
     }
     picks = [...unique.values()];
   }
+  // A system is ONE logical wager, not a loophole to purchase two options
+  // of the same offered market in separate financial columns. The old
+  // alternative-column structure remains readable/settleable for past bets.
+  if(!allowHistoricalSystemAlternatives)assertDistinctSelectionMarkets(picks);
   const grouped = buildSystemColumns(picks, { matchIdOf: selection => {
     const builder = parseBuilderId(selection?.outcomeId);
     const parsed = builder ?? parseOutcomeId(selection?.outcomeId);
@@ -1055,8 +1062,11 @@ return async function placeSystemColumns({ user, totalStake, stake, selections, 
     const line = await resolve(pick);
     return [String(pick.outcomeId), { ...line, price: frozenSelectionPrice(line.price) }];
   })));
-  // Do not reject the union of alternate outcomes: no single column
-  // contains two results from one market.
+  // Raw outcome IDs are not authoritative. Confirm canonical market and
+  // line identities against the actual feed, across the entire logical wager.
+  // (Only historical integration tests use the old alternative-column mode.)
+  if(!allowHistoricalSystemAlternatives)
+    assertDistinctSelectionMarkets([...linesById.values()]);
   const resolved = grouped.map(column => column.map(pick => linesById.get(String(pick.outcomeId))));
   resolved.forEach(assertDistinctSelectionMarkets);
   const priced = resolved.map((lines, i) => ({

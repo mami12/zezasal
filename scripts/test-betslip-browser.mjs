@@ -89,8 +89,13 @@ try {
         minColumnPayout:Math.min(...columns.map(column=>column.potentialPayout)),
         maxColumnPayout:Math.max(...columns.map(column=>column.potentialPayout)),paidOut:0,refunded:0,pendingColumns:columns.length} });
   });
-  app.post('/app/api/bets/place', (request, response) => {
+  app.post('/app/api/bets/place', async (request, response) => {
     plainRequests.push(request.body);
+    await new Promise(resolve=>setTimeout(resolve,120));
+    if(failNextPlacement){
+      failNextPlacement=false;
+      return response.status(500).json({message:'Test response lost; retry safely.'});
+    }
     if (oddsChangedResponse) {
       const changed = oddsChangedResponse;
       oddsChangedResponse = null;
@@ -137,20 +142,31 @@ try {
     total: window.slip.potentialPayout, overflow: window.slip.columnsOverflow,
   }));
   const add = async rows => {
-    const expected=await page.evaluate(rows => {
+    const expected=await page.evaluate(rows=>{
       let picks=[...window.slip.selections];
+      const identity=value=>{
+        const parts=String(value.outcomeId??'').split('|');
+        if(parts.length>=4&&parts[0]&&parts[1])
+          return JSON.stringify(parts.slice(0,3));
+        return JSON.stringify([String(value.matchId??''),String(value.marketId??''),
+          String(value.marketLine??''),Number(value.period??0)]);
+      };
       rows.forEach(row=>{
-        const selected=picks.some(pick=>pick.outcomeId===row.outcomeId);
-        if(selected)picks=picks.filter(pick=>pick.outcomeId!==row.outcomeId);
+        const matched=picks.some(pick=>pick.outcomeId===row.outcomeId);
+        const index=picks.findIndex(pick=>identity(pick)===identity(row));
+        if(matched)picks=picks.filter(pick=>identity(pick)!==identity(row));
+        else if(index>=0)picks.splice(index,1,row);
         else picks.push(row);
         window.slip.addSelection(row);
       });
       return picks.map(row=>row.outcomeId);
-    }, rows);
-    await page.waitForFunction(ids => JSON.stringify(window.slip.selections.map(row=>row.outcomeId))===JSON.stringify(ids)&&
-      (!ids.length||[...document.querySelectorAll('button')].some(button=>button.textContent.trim()==='Vendos Bastin')), {}, expected);
+    },rows);
+    await page.waitForFunction(ids=>
+      JSON.stringify(window.slip.selections.map(row=>row.outcomeId))===JSON.stringify(ids)&&
+      (!ids.length||[...document.querySelectorAll('button')].some(button=>button.textContent.trim()==='Vendos Bastin')),
+      {},expected);
   };
-  const waitType = type => page.waitForFunction(type => window.slip.ticketType === type, {}, type);
+  const waitType=type=>page.waitForFunction(type=>window.slip.ticketType===type,{},type);
   const builderOptions=[{
     ...fixtureSelections[0],outcomeId:'BB|A|yes-over',marketId:'BB|A|yes-over|market',marketName:'Bet Builder: Both Teams to Score + Total Goals',
     builderLegs:[{marketId:'A|btts|',outcomeId:'A|btts||Yes'},{marketId:'A|total|2.5',outcomeId:'A|total|2.5|Over'}],
@@ -159,46 +175,41 @@ try {
     builderLegs:[{marketId:'A|total|2.5',outcomeId:'A|total|2.5|Under'},{marketId:'A|btts|',outcomeId:'A|btts||No'}],
   }];
   await page.evaluate(rows=>rows.forEach(row=>window.slip.addSelection(row)),builderOptions);
-  await page.waitForFunction(()=>window.slip.selections.length===2);
-  await waitType('SYSTEM');
-  assert.equal((await snapshot()).columns.length,2,
-    'two outcomes of one identical builder source market are alternatives');
+  await page.waitForFunction(()=>window.slip.selections.length===1&&window.slip.selections[0].outcomeId==='BB|A|no-under');
+  await waitType('SINGLE');
+  assert.equal((await snapshot()).columns.length,1,
+    'two outcomes of the same builder source contracts must not create independent columns');
   await page.evaluate(()=>window.slip.clearAll());
   await page.waitForFunction(()=>window.slip.selections.length===0);
 
-  // Different markets on the SAME match belong inside the same column.
+  // Different markets on the SAME match remain valid in one COMBO.
   await add([fixtureSelections[0],fixtureSelections[2]]);
   await waitType('COMBO');
   await add([fixtureSelections[1]]);
-  await waitType('COMBO');
   assert.deepEqual((await snapshot()).columns,[['A1','B1','Aover']]);
   assert.equal((await snapshot()).stake,'100');
   assert.deepEqual((await snapshot()).stakes,[10000]);
 
-  // Columns are alternatives of a SINGLE market, not unrelated markets.
+  // Switching the 1X2 selection REPLACES it, not a parallel paid column.
   await add([alternativeOutcome]);
-  await waitType('SYSTEM');
-  assert.deepEqual((await snapshot()).columns,[
-    ['A1','B1','Aover'],['A2','B1','Aover']
-  ]);
-  assert.deepEqual((await snapshot()).stakes,[5000,5000]);
-  assert.deepEqual((await snapshot()).payouts,[7969.5,4781.7]);
-  await add([alternativeOutcome]); // exact option removes itself
   await waitType('COMBO');
-  await add([selection('A','Aunder',2,'A-total','Under')]);
-  await waitType('SYSTEM');
-  assert.deepEqual((await snapshot()).columns,[
-    ['A1','B1','Aover'],['A1','B1','Aunder']
-  ]);
+  assert.deepEqual((await snapshot()).columns,[['A2','B1','Aover']]);
+  await add([alternativeOutcome]); // same choice removes itself
+  await waitType('COMBO');
+  assert.deepEqual((await snapshot()).columns,[['B1','Aover']]);
+  const under=selection('A','Aunder',2,'A-total','Under');
+  await add([under]);
+  assert.deepEqual((await snapshot()).columns,[['B1','Aunder']]);
   await add([selection('A','Abtts',4,'A-btts','Yes')]);
-  assert.equal((await snapshot()).columns.length,2,'third market stays within each column');
+  assert.deepEqual((await snapshot()).columns,[['B1','Aunder','Abtts']]);
   await page.evaluate(()=>window.slip.clearAll());
   await page.waitForFunction(()=>window.slip.selections.length===0);
 
-  // Place actual two-column ticket using the same event with alternate 1X2
-  // outcomes. Its separate TOTAL market is included in BOTH columns.
+  // The server should receive exactly ONE choice per market: no SYSTEM calls.
+  // The ordinary idempotent COMBO endpoint handles a lost-response retry.
   await add([...fixtureSelections,alternativeOutcome]);
-  await waitType('SYSTEM');
+  await waitType('COMBO');
+  assert.deepEqual((await snapshot()).columns,[['A2','Aover','B1']]);
   failNextPlacement=true;
   await page.evaluate(()=>{
     const button=[...document.querySelectorAll('button')]
@@ -206,27 +217,27 @@ try {
     button.click();button.click();
   });
   await page.waitForFunction(()=>!window.slip.isPlacingBet);
-  assert.equal(requests.length,1,'a double click must not debit twice');
-  assert.equal(requests[0].totalStake,100);
-  assert.equal(requests[0].columns,undefined);
-  assert.equal(requests[0].stake,undefined);
-  await page.evaluate(() => [...document.querySelectorAll('button')]
-    .find(button => button.textContent.trim() === 'Vendos Bastin').click());
-  await page.waitForFunction(() => document.querySelector('.ticket-print-panel')?.innerText.includes('Sistem · 2 kolona'));
-  assert.equal(requests.length,2);
-  assert.equal(requests[0].clientRequestId,requests[1].clientRequestId,
-    'uncertain network failure preserves the same payment key');
-  const receiptText=await page.$eval('.ticket-print-panel', panel=>panel.innerText);
-  assert.ok(receiptText.includes('100.00 Lëk')&&receiptText.includes('50.00 Lëk'));
-  assert.ok(receiptText.includes('4781.70')&&receiptText.includes('7969.50'),
-    'the two columns must show separately priced combined markets');
+  assert.equal(plainRequests.length,1,'a double click must not debit twice');
+  assert.equal(plainRequests[0].stake,100);
+  assert.equal(plainRequests[0].selections.length,3);
+  assert.equal(requests.length,0,'there must be no system-column financial requests');
+  await page.evaluate(()=>[...document.querySelectorAll('button')]
+    .find(button=>button.textContent.trim()==='Vendos Bastin').click());
+  await page.waitForFunction(()=>document.querySelector('.ticket-print-panel')?.innerText.includes('BILETË BASTI'));
+  assert.equal(plainRequests.length,2);
+  assert.equal(plainRequests[0].clientRequestId,plainRequests[1].clientRequestId,
+    'a lost response must retry the same idempotency key');
+  const receiptText=await page.$eval('.ticket-print-panel',el=>el.innerText);
+  assert.ok(receiptText.includes('100.00 Lëk'));
+  assert.ok(!receiptText.includes('2 kolona'),'ordinary COMBO is not an alternative system');
+  plainRequests.length=0;
   await page.click('button[aria-label="Mbyll"]');
   await page.waitForFunction(()=>!document.body.innerText.includes('BILETË BASTI'));
 
   await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
   await add([...fixtureSelections,alternativeOutcome]);
-  await waitType('SYSTEM');
-  assert.deepEqual((await snapshot()).stakes,[5000,5000]);
+  await waitType('COMBO');
+  assert.deepEqual((await snapshot()).stakes,[10000]);
   await page.evaluate(()=>window.slip.clearAll());
   await page.waitForFunction(()=>window.slip.selections.length===0);
   // The real shared Socket.IO provider immediately disables a prefilled combo.
@@ -404,18 +415,19 @@ try {
   const idleClock=await page.evaluate(()=>({text:document.querySelector('#fixture-clock').textContent,renders:window.probeRenders}));
   await page.waitForFunction(text=>document.querySelector('#fixture-clock').textContent!==text,{},idleClock.text);
   assert.equal(await page.evaluate(()=>window.probeRenders),idleClock.renders,'clock ticks must not redraw the shared odds/slip consumers');
-  // Five genuinely alternative source markets create 2^5=32 SYSTEM columns.
-  // Two different markets in one match do NOT expand into alternatives.
-  const explosive = Array.from({ length: 5 }, (_, index) => [
-    selection(`M${index}`, `M${index}1`, 2, `M${index}-1x2`, '1'),
-    selection(`M${index}`, `M${index}2`, 3, `M${index}-1x2`, '2')
+  // Repeated alternatives from five distinct matches cannot inflate the
+  // Cartesian system: each pair is represented by the latest choice only.
+  const alternatives=Array.from({length:5},(_,index)=>[
+    selection(`M${index}`,`M${index}1`,2,`M${index}-1x2`,'1'),
+    selection(`M${index}`,`M${index}2`,3,`M${index}-1x2`,'2')
   ]).flat();
-  await page.evaluate(rows => { window.slip.clearAll(); rows.forEach(row => window.slip.addSelection(row)); }, explosive);
-  await page.waitForFunction(() => window.slip.columnsOverflow);
-  assert.equal((await snapshot()).columns.length, 0);
-  assert.equal(await page.evaluate(() => [...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Vendos Bastin')?.disabled), true);
+  await page.evaluate(rows=>{window.slip.clearAll();rows.forEach(row=>window.slip.addSelection(row));},alternatives);
+  await page.waitForFunction(()=>window.slip.selections.length===5);
+  assert.equal((await snapshot()).columns.length,1);
+  assert.equal((await snapshot()).overflow,false);
+  assert.equal(await page.evaluate(()=>window.slip.selections.every(s=>String(s.outcomeId).endsWith('2'))),true);
   assert.deepEqual(failures, []);
-  console.log('PASS real React betslip: System stakes/payouts, desktop/mobile, caps, retries, receipts, combo socket policies and consistent accepted two-decimal quotes');
+  console.log('PASS React betslip: one choice per market, normal combos on desktop/mobile, no duplicate columns, retries, receipts and live quote controls');
 } catch (error) {
   console.error('Betslip browser regression failed:', error.message, failures);
   throw error;
