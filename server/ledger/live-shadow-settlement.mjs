@@ -26,7 +26,8 @@ export async function createLiveSettlementPreviews({
  for(const row of rows){
   const contract=typeof row.live_contract==='string'?JSON.parse(row.live_contract):row.live_contract;
   const frame=typeof row.provider_frame==='string'?JSON.parse(row.provider_frame):row.provider_frame;
-  if(!frame){await clear(row.line_id);held++;continue;}
+  // Only the primary Zizobet frame can originate a real-money preview.
+  if(!frame||frame.source!=='zizobet'){await clear(row.line_id);held++;continue;}
   const frameAt=new Date(row.frame_at).getTime();
   const placedAt=row.placed_at==null?NaN:new Date(row.placed_at).getTime();
   if(!Number.isFinite(placedAt)||!Number.isFinite(frameAt)||frameAt<placedAt||frameAt>now()+5000||
@@ -49,9 +50,12 @@ export async function createLiveSettlementPreviews({
    'payload=excluded.payload,updated_at=excluded.updated_at '+
    // Keep the original evidence and proposal timestamp while the verdict
    // stays unchanged. The independent second poll must not reset its own
-   // five-second confirmation clock on every provider update.
+   // five-second confirmation clock on every provider update. A genuine
+   // score/corner/card/foul increment starts a new confirmation pair, so a
+   // more recent stable snapshot can still be financially decided.
    "where app_live_settlement_preview.proposed_status is distinct from excluded.proposed_status "+
-   "or app_live_settlement_preview.payload->'contract' is distinct from excluded.payload->'contract'",
+   "or app_live_settlement_preview.payload->'contract' is distinct from excluded.payload->'contract' "+
+   "or app_live_settlement_preview.payload->'frame'->'teams' is distinct from excluded.payload->'frame'->'teams'",
    [row.line_id,row.match_id,status,JSON.stringify(evidence)]);
   proposed++;
  }
