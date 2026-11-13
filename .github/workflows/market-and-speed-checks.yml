@@ -74,6 +74,9 @@ jobs:
       - name: Market 03 - half combinations
         if: always()
         run: node scripts/test-half-combinations.mjs
+      - name: Provider-listed halves and corners safety
+        if: always()
+        run: node scripts/test-provider-half-corner-safety.mjs
       - name: Financial invariant - composite markets and historical review recovery
         if: always()
         run: |
@@ -85,6 +88,9 @@ jobs:
       - name: Primary Next/First/Nth/2+ and 3+ scorer market family coverage
         if: always()
         run: node scripts/test-event-family-coverage.mjs
+      - name: Zizobet market-pruning and active player-offer policy
+        if: always()
+        run: node scripts/test-retired-player-markets.mjs
       - name: Native Zizobet LIVE offers accept exact races numbered events and future minute bands
         if: always()
         run: node scripts/test-native-quoted-event-acceptance.mjs

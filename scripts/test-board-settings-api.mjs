@@ -25,6 +25,30 @@ try{
  assert.deepEqual((await call('GET','/sports/18/matches?limit=10000')).body.map(m=>m.id).sort(),['3','5']);
  const tree=await call('GET','/sports');assert.equal(tree.body[0].categories.reduce((n,c)=>n+c.count,0),2);
  assert.equal((await call('GET','/matches/1')).status,200,'hidden fixture still reachable for existing tickets and detail');assert.equal(store.getMatches({catalog:true}).length,5,'no ingestion rows deleted');
+ // The odds response must NOT wait for optional actor lookups or the legacy
+ // Bet Builder SQL catalogue. These were previously awaited on every
+ // tab change and caused 12-second mobile timeouts even for ten corners.
+ const baseQuery=pool.query.bind(pool);let costlyQueries=0;
+ pool.query=async(sql,...args)=>{
+  if(/app_match_event_fact|app_supplemental_match_incident|app_bet_builder_template/.test(String(sql))){
+   costlyQueries++;
+   await new Promise(resolve=>setTimeout(resolve,350));
+  }
+  return baseQuery(sql,...args);
+ };
+ try{
+  const began=Date.now();
+  const detail=await call('GET','/matches/5?marketLimit=40&marketOffset=0&category=Corners');
+  assert.equal(detail.status,200,'LIVE Corners endpoint responds');
+  assert.ok(Date.now()-began<300,'Market detail must not wait for slow optional actor DB reads');
+  assert.equal(costlyQueries,0,'The paginated market route skips actor and legacy builder database reads');
+  const incidents=await call('GET','/matches/5/incidents');
+  assert.equal(incidents.status,200);
+  assert.equal(incidents.body.id,'5');
+  assert.ok(Array.isArray(incidents.body.events));
+  assert.ok(costlyQueries>=2,'Separate incident endpoint still gathers verified player names');
+ }finally{pool.query=baseQuery;}
+
  assert.equal(filterPublishedRows(rows,{q:'Home3'})[0].match_id,3);
  await pool.query("update app_user set status='FROZEN' where id=$1",[admin.id]);assert.equal((await call('PUT',endpoint,admin,{settings:{prematchLimit:0}})).status,403);assert.equal((await call('GET',endpoint,admin)).status,403);await pool.query("update app_user set status='ACTIVE' where id=$1",[admin.id]);
  assert.equal(Number((await pool.query("select count(*) n from app_admin_audit where action='UPDATE BOARD_SETTINGS'")).rows[0].n),1);

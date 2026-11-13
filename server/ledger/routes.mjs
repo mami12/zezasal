@@ -419,32 +419,58 @@ ledgerRouter.get(
     }
     if(!row)return res.status(404).json({message:'match not found'});
     matchReadAt=Date.now();
-    const marketOffset=Math.max(0,Math.floor(Number(req.query.marketOffset)||0));
-    const firstMarketPage=marketOffset===0;
-    // All pages read locally cached odds. Only the initial page may request
-    // a provider full-market refresh and actor enrichment; scrolling to a
-    // second category page must not start another provider/SQL load.
-    if(firstMarketPage){
-      boostMatch(row.match_id);
-      const warmStats=statsProviders.warm(row);
-      void Promise.resolve(warmStats).then(()=>footballInformation.warm(matchId))
-        .catch(error=>console.warn('[aiscore] selected match:',error.message));
-      req.app.locals.loadMatchDetail?.(row.match_id);
-    }
-    const [serialized] = await withOdds([row],Date.now(),{displayStats:firstMarketPage});
-    oddsReadAt=Date.now();
-    const match = toClientMatch(serialized);
-    if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
-    decoratedAt=Date.now();
     const category=CATEGORIES.includes(req.query.category)?req.query.category:'all';
     const page=req.query.marketLimit===undefined?undefined:{
       limit:Math.min(80,Math.max(1,Math.floor(Number(req.query.marketLimit)||40))),
       offset:Math.min(10000,Math.max(0,Math.floor(Number(req.query.marketOffset)||0))),
       search:String(req.query.q??'').trim().slice(0,120),
     };
+    const marketOffset=page?.offset??0;
+    const firstMarketPage=marketOffset===0;
+    // All pages read locally cached odds. Only the initial page may request
+    // a provider full-market refresh and actor enrichment; scrolling to a
+    // second category page must not start another provider/SQL load.
+    if(firstMarketPage){
+      // A provider refresh or name-enrichment operation must NEVER delay
+      // the current HTTP response. A loaded quote snapshot is already local.
+      boostMatch(row.match_id);
+      setImmediate(()=>{
+        Promise.resolve().then(()=>req.app.locals.loadMatchDetail?.(row.match_id))
+          .catch(error=>console.warn('[match-detail] background full-market refresh:',error?.message));
+      });
+    }
+    // Markets are independent of optional database actor lookups. The live
+    // incident names and supplemental data arrive via /matches/:id/incidents.
+    // The mobile client explicitly pages the provider catalog; synthetic
+    // Bet Builder decoration and its DB catalog read are legacy-only.
+    const [serialized] = await withOdds([row],Date.now(),{displayStats:false});
+    oddsReadAt=Date.now();
+    const match = toClientMatch(serialized);
+    if(!page&&ledger.isLedgerReady())await builders.decorateMatches([match]);
+    decoratedAt=Date.now();
     return res.json({...detailProjection(match,category,page),fullMarketsReady:req.app.locals.matchMarketsReady?.(matchId)??true});
   }),
 );
+
+/**
+ * Optional name/incident enrichment is intentionally INDEPENDENT of the
+ * odds catalog. Slow local SQLite/Postgres reads or provider stat metadata
+ * cannot turn a 10-market Corners response into a 12s timeout.
+ * The primary match timeline remains available on /matches/:id.
+ */
+ledgerRouter.get('/matches/:id/incidents',guard(async(req,res)=>{
+ const matchId=Number(req.params.id);
+ if(!Number.isSafeInteger(matchId)||matchId<=0)return res.status(404).json({message:'match not found'});
+ const row=await getMatchRow(matchId);
+ if(!row||matchOverride(row.match_id)?.hidden||isSyntheticFootballMatch(row))
+   return res.status(404).json({message:'match not found'});
+ if(String(row.service??'').toUpperCase()!=='LIVE'&&
+    !/^(?:ended|finished)$/i.test(String(row.status??'')))
+   return res.json({id:String(matchId),events:[],supplementalEvents:[]});
+ const [enriched]=await withOdds([row],Date.now(),{displayStats:true,skipOdds:true});
+ return res.json({id:String(matchId),events:enriched.events??[],
+   supplementalEvents:enriched.supplementalEvents??[]});
+}));
 
 /**
  * The app's pitch tracker. Our feed gives score, clock, corners and cards but no ball

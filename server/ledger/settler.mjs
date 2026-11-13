@@ -57,6 +57,14 @@ const round = (n) => Number(Number(n).toFixed(2));
  */
 export function unverifiedCompositeLine(line={},result={}){
  const name=String(line.market_name??line.marketName??'').trim();
+ // These three correlated families have incompatible periods or a third
+ // condition. They must NEVER fall into generic FT DC/BTTS or HT/FT grading
+ // just because one familiar phrase appears in the title.
+ if(/^double\s*chance\b.*\b(?:1st|first|2nd|second)\s+half\b/i.test(name)||
+    /^(?:1st|first)\s*\/\s*(?:2nd|second)\s+half\s+both\s+teams?\s+to\s+score/i.test(name)||
+    /\bcorners?\b.*\bhalf[\s-]*time\s*\/?\s*full[\s-]*time\b/i.test(name)||
+    (isHtFtMarket(name)&&/\b(?:correct score|exact goals?|total goals?|total corners?|both teams?|btts)\b/i.test(name)))
+  return true;
  if(!/\b(?:and|with)\b|&|(?<!\d)\+|\+(?=[a-z])/i.test(name))return false;
  if(!/\b(?:result|winner|goals?|total|double chance|both teams?|btts|1x2|corners?|cards?|shots?|fouls?|score)\b/i.test(name))
   return false;

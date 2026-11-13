@@ -1,3 +1,4 @@
+import {isRetiredPlayerOfferMarket} from '../market-policy.mjs';
 import {competitionDecision,isSyntheticFootballMatch} from '../football-competitions.mjs';
 export const OFFSET=8_000_000_000_000;
 export const zId=id=>{if(!Number.isSafeInteger(Number(id))||Number(id)<=0||Number(id)>100000000000)throw Error('Invalid Zizobet ID');return OFFSET+Number(id);};
@@ -117,6 +118,8 @@ export function oddsOf(row,quotes,meta,live,open=true){
  for(const q of quotes??[]){const id=Number(q.mid),def=(live?meta.liveMarkets:meta.preMarkets).get(id);if(!def)continue;
   if(id===27073)continue;
   const rawName=def.Name??def.name;if(!rawName)continue;
+  // Skip retirements before title expansion, key generation or odds storage.
+  if(isRetiredPlayerOfferMarket({name:rawName}))continue;
   if((def.IsOverUnder===true||def.ou===true)&&q.h!=null&&Math.abs(Number(q.h)*4)%2===1)continue;
   const params=Object.fromEntries(['p1','p2','p3','pl','comp','seq'].filter(k=>q[k]!=null).map(k=>[k,q[k]]));
   const key='zz'+id+'@'+Buffer.from(JSON.stringify(params)).toString('base64url'),line=q.h!=null?String(q.h):'';
@@ -126,6 +129,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
   let name=resolveMarketTitle(live&&id===18639?'Correct score [{score}]':rawName,q,{intervalWidth:measuredWidth});if(!name)continue;
   if(live&&id===602)name='1X2';
   name=name.replace(/\bHometeam\b/gi,'Home team').replace(/\bAwayteam\b/gi,'Away team');
+  if(isRetiredPlayerOfferMarket({name,pl:q.pl}))continue;
   if(q.pl&&!name.includes(String(q.pl)))name+=' · '+q.pl;
   const fullResult=(live&&id===602)||(!live&&id===448);
   const fullTotal=(live&&id===603)||(!live&&id===537);
