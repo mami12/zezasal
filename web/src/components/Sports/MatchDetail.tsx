@@ -25,6 +25,7 @@ import type { MarketCategory, MarketLanguage } from '../../utils/marketCatalog';
 import {marketRank} from '../../../../server/market-catalog.mjs';
 import { useFavorites } from '../../context/FavoritesContext';
 import { isComboMarket } from '../../utils/comboPolicy';
+import {retainEventPlayerNames} from '../../utils/eventPlayers';
 
 // MatchDetail keeps its original tab IDs, but uses the same canonical
 // classification and localized labels as MarketPanel.
@@ -151,12 +152,12 @@ export default function MatchDetail() {
 
   useEffect(() => {
     if(!id)return;
-    let active=true,sequence=0,busy=false,refreshQueued=false,nextOffset=0,more=false,loadedOnce=false;
+    let active=true,sequence=0,busy=false,refreshQueued=false,nextOffset=0,more=false,loadedOnce=false,retryTimer:number|null=null;
     let fullMarketTimer:number|null=null,fullMarketAttempts=0;
     const controller=new AbortController();
     const PAGE=40;
     setMarkets([]);setCategoryLoading(true);setMarketLoadingMore(false);setHasMoreMarkets(false);
-    const fetchPage=async(offset:number,first=false)=>{
+    const fetchPage=async(offset:number,first=false,attempt=0)=>{
       if(!active||busy)return;
       busy=true;
       if(offset>0)setMarketLoadingMore(true);
@@ -175,8 +176,9 @@ export default function MatchDetail() {
         // Later market pages intentionally omit expensive incident enrichment.
         // Retain the confirmed first-page supplemental timeline on the same
         // fixture rather than making player/card/foul details vanish on scroll.
-        setMatch(previous=>offset>0&&previous!==null&&previous.id===res.data.id
-          ?{...res.data,supplementalEvents:previous.supplementalEvents??res.data.supplementalEvents}
+        setMatch(previous=>previous!==null&&previous.id===res.data.id
+          ?{...res.data,events:retainEventPlayerNames(res.data.events??[],previous.events??[]),
+            supplementalEvents:previous.supplementalEvents??res.data.supplementalEvents}
           :res.data);
         setCategoryTotals(res.data.marketCategories??{});
         if(requestedCategory==='Popular'&&res.data.marketCategories?.Popular===0){
@@ -204,10 +206,17 @@ export default function MatchDetail() {
         }
       }catch(error:any){
         if(!active||error?.code==='ERR_CANCELED')return;
-        // A delayed background refresh or later scroll page is not a reason
-        // to erase a valid market grid already rendered for this fixture.
-        if(!loadedOnce){
-          const httpStatus=Number(error?.response?.status);
+        const httpStatus=Number(error?.response?.status);
+        const temporary=(error?.code==='ECONNABORTED'||error?.code==='ETIMEDOUT'||
+          !Number.isInteger(httpStatus)||httpStatus>=500);
+        if(!loadedOnce&&temporary&&attempt<2){
+          // Short local-server hiccups should retry themselves rather than
+          // leaving the match behind a permanent Try Again page.
+          if(retryTimer!==null)window.clearTimeout(retryTimer);
+          retryTimer=window.setTimeout(()=>{
+            retryTimer=null;if(active)void fetchPage(offset,first,attempt+1);
+          },1500*(attempt+1));
+        }else if(!loadedOnce){
           setRequestError({id,notFound:httpStatus===404,
             httpStatus:Number.isInteger(httpStatus)&&httpStatus>0?httpStatus:null,
             timedOut:error?.code==='ECONNABORTED'||error?.code==='ETIMEDOUT'});
@@ -233,9 +242,42 @@ export default function MatchDetail() {
       active=false;refreshRef.current=null;moreMarketsRef.current=null;
       controller.abort();
       if(fullMarketTimer!==null)window.clearTimeout(fullMarketTimer);
+      if(retryTimer!==null)window.clearTimeout(retryTimer);
       window.clearInterval(timer);
     };
   },[id,requestedCategory,requestSearch,acceptMatches]);
+
+  // Fetch source-verified actor names and supplemental incidents separately.
+  // Local database latency must never block opening Corners/Goals categories.
+  useEffect(()=>{
+    if(!id||match?.status!=='LIVE')return;
+    let active=true,busy=false;
+    const controller=new AbortController();
+    const enrich=async()=>{
+      if(!active||busy)return;
+      busy=true;
+      try{
+        const response=await apiClient.get(`/matches/${id}/incidents`,{
+          signal:controller.signal,timeout:10000,
+        });
+        if(!active||String(response.data?.id)!==id)return;
+        const confirmed=Array.isArray(response.data.events)?response.data.events:[];
+        const supplemental=Array.isArray(response.data.supplementalEvents)?response.data.supplementalEvents:[];
+        setMatch(previous=>{
+          if(!previous||String(previous.id)!==id)return previous;
+          return {...previous,
+            events:retainEventPlayerNames(previous.events??[],confirmed),
+            supplementalEvents:supplemental.length? supplemental:(previous.supplementalEvents??[])};
+        });
+      }catch(error:any){
+        if(active&&error?.code!=='ERR_CANCELED')
+          console.warn('[match detail] optional incident lookup failed:',error?.message);
+      }finally{busy=false;}
+    };
+    void enrich();
+    const timer=window.setInterval(()=>void enrich(),45000);
+    return()=>{active=false;controller.abort();window.clearInterval(timer);};
+  },[id,match?.status]);
 
   useEffect(()=>{
     const el=marketSentinel.current,root=el?.closest('[data-sportsbook-scroll]');
