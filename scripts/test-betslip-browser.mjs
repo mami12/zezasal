@@ -134,7 +134,15 @@ try {
   await page.goto(origin, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForFunction(() => !!window.slip, { timeout: 60000 });
   await page.waitForFunction(() => window.feed.connected);
-  console.log('Real React betslip and local socket connected');
+  // Simulate a LAN HTTP/mobile WebView: crypto.randomUUID() is undefined
+  // while crypto.getRandomValues() still works. Every placement below must
+  // generate a valid stable key and survive an uncertain-response retry.
+  const uuidFallback=await page.evaluate(()=>{
+    Object.defineProperty(window.crypto,'randomUUID',{configurable:true,value:undefined});
+    return {randomUUID:typeof window.crypto.randomUUID,getRandomValues:typeof window.crypto.getRandomValues};
+  });
+  assert.deepEqual(uuidFallback,{randomUUID:'undefined',getRandomValues:'function'});
+  console.log('Real React betslip and local socket connected, without crypto.randomUUID');
   const snapshot = () => page.evaluate(() => ({
     stake: window.slip.stake, type: window.slip.ticketType,
     columns: window.slip.columns.map(column => column.map(row => row.outcomeId)),
