@@ -21,12 +21,16 @@ const btts=value=>{
  if(['no','ng','jo','bttsno','bothteamsnotoscore','bothteamstoscoreno'].includes(s))return false;
  return null;
 };
-const total=value=>{
- const m=fold(value).match(/^(over|under|mbi|nen)\s*(\d{1,3}(?:[.,]\d+)?)$/);
+const total=(value,quotedLine=null)=>{
+ // Zizobet can supply "12 / Over" while 1.5 is frozen separately as
+ // market.line OR as a numeric suffix in the native market title.
+ const m=fold(value).match(/^(over|under|mbi|nen|lart|poshte)(?:\s*(\d{1,3}(?:[.,]\d+)?))?$/);
  if(!m)return null;
- const line=Number(m[2].replace(',','.'));
- return line>=0&&line<=50&&Number.isSafeInteger(line*2)?
-  {direction:['over','mbi'].includes(m[1])?'over':'under',line}:null;
+ const inline=m[2]==null?null:Number(m[2].replace(',','.'));
+ if(inline!==null&&quotedLine!==null&&inline!==quotedLine)return null;
+ const line=inline??quotedLine;
+ return line!==null&&Number.isFinite(line)&&line>=0&&line<=50&&Number.isSafeInteger(line*2)?
+  {direction:['over','mbi','lart'].includes(m[1])?'over':'under',line}:null;
 };
 const chance=value=>{
  const n=fold(value).replace(/[^a-z0-9]/g,'');
@@ -36,11 +40,28 @@ const chance=value=>{
  return null;
 };
 const parts=label=>{
- const s=outcome(label);
+ // "/" is a real quoted separator: "12 / Over", "1X / Under".
+ // Normalize DC selections such as "1 / X" BEFORE splitting them.
+ const s=outcome(label).replace(/\b1\s*\/\s*x\b/gi,'1X')
+  .replace(/\bx\s*\/\s*2\b/gi,'X2').replace(/\b1\s*\/\s*2\b/gi,'12');
  if(!s)return null;
- // Multiples are two distinct quoted propositions, never a fuzzy name match.
- const pieces=s.split(/\s*(?:&|\+|\||\band\b|\bwith\b|;)\s*/i).map(v=>v.trim()).filter(Boolean);
+ const pieces=s.split(/\s*(?:&|\+|\||\band\b|\bwith\b|;|\/)\s*/i)
+  .map(v=>v.trim()).filter(Boolean);
  return pieces.length===2?pieces:null;
+};
+const namedLine=raw=>{
+ const match=String(raw??'').trim().match(/(?:\s*\(\s*(\d{1,3}(?:[.,]\d+)?)\s*\)|\s+(\d{1,3}(?:[.,]\d+)?))\s*$/);
+ return match?Number((match[1]??match[2]).replace(',','.')):null;
+};
+const stripLine=name=>name.replace(/(?:\s*\(\s*\d{1,3}(?:[.,]\d+)?\s*\)|\s+\d{1,3}(?:[.,]\d+)?)\s*$/,'').trim();
+const quoteLine=line=>{
+ const name=line?.market_name??line?.marketName??line?.name??'';
+ const nameLine=namedLine(name),raw=line?.line??line?.marketLine??
+  line?.market_line??line?.accepted_contract?.providerLine;
+ const specified=raw==null||String(raw).trim()===''?null:Number(String(raw).replace(',','.'));
+ if(specified!==null&&(!Number.isFinite(specified)||specified<0||specified>50))return {conflict:true};
+ if(nameLine!==null&&specified!==null&&nameLine!==specified)return {conflict:true};
+ return {line:nameLine??specified};
 };
 const names={
  'result-total':/^(?:result|1x2|match result|full time result)\s+(?:and|&|\+)\s+(?:total|total goals?|goals? over\s*\/\s*under)$/,
@@ -50,12 +71,14 @@ const names={
  'dc-total':/^double chance\s+(?:and|&|\+)\s+(?:total|total goals?)$/
 };
 export function isHalfComboFamily(line){
- const name=fold(line?.market_name??line?.marketName??line?.name);
+ const name=stripLine(fold(line?.market_name??line?.marketName??line?.name));
  const rest=name.replace(/^(?:(?:1st|first|2nd|second) half|full time|match)\s*[-:.\s]*/,'');
  return Object.values(names).some(regex=>regex.test(rest));
 }
 export function parseHalfCombination(line,teams={}){
- const original=fold(line?.market_name??line?.marketName??line?.name);
+ const original=stripLine(fold(line?.market_name??line?.marketName??line?.name));
+ const quote=quoteLine(line);
+ if(quote.conflict)return null; // Two contradictory advertised thresholds.
  const match=original.match(/^(1st|first|2nd|second) half\s*[-:.]?\s*(.+)$/);
  let half=0,name=original;
  if(match){half=/^(?:1st|first)$/.test(match[1])?1:2;name=match[2];}
@@ -74,7 +97,7 @@ export function parseHalfCombination(line,teams={}){
    for(const [resultPart,totalPart]of [[a,b],[b,a]]){
     const choice=family==='dc-total'?chance(resultPart):
      termResult(resultPart,teams.home??teams.home_team,teams.away??teams.away_team);
-    const summed=total(totalPart);
+    const summed=total(totalPart,quote.line);
     if(choice&&summed)return {version:1,kind:'half-combo',half,family,choice,
       totalDirection:summed.direction,totalLine:summed.line};
    }
@@ -87,7 +110,7 @@ export function parseHalfCombination(line,teams={}){
    }
   }else{
    for(const [totalPart,bttsPart]of [[a,b],[b,a]]){
-    const summed=total(totalPart),yes=btts(bttsPart);
+    const summed=total(totalPart,quote.line),yes=btts(bttsPart);
     if(summed&&yes!==null)return {version:1,kind:'half-combo',half,family,
       totalDirection:summed.direction,totalLine:summed.line,btts:yes};
    }
