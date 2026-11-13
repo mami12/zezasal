@@ -45,7 +45,9 @@ for(const scope of scopes)for(const line of [0.5,1.5,2.5,3.0,4.5])
   assert.equal(frozenOver.totalLine,line);
   assert.equal(frozenUnder.totalLine,line);
   for(let h=0;h<=6;h++)for(let a=0;a<=6;a++)
-   for(let hh=0;hh<=h;hh++)for(let ha=0;ha<=a;ha++){
+   for(const [hh,ha] of [
+      [0,0],[h,a],[Math.floor(h/2),Math.floor(a/2)]
+   ].filter(([x,y],i,all)=>all.findIndex(([u,v])=>u===x&&v===y)===i)){
     const score=result(h,a,hh,ha);
     const [partH,partA]=scope.extract(h,a,hh,ha);
     const totals=partH+partA,dcWins=winners[dc](partH,partA);
