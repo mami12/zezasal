@@ -6,6 +6,11 @@ import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 const result={home_score:3,away_score:2,half_home_score:1,half_away_score:0,
  home_team:'Home',away_team:'Away'};
 const quote=(market_name,outcome_name,line='',period=0)=>({market_name,outcome_name,line,period});
+for(const market_name of ['Anytime Goalscorer','First Goalscorer','Last Goalscorer',
+  'Player to score','Player X Goals']){
+  assert.equal(isPeriodGoalTotal(quote(market_name,'Player X')),false,
+    'An individual scorer proposition cannot be graded from match goals: '+market_name);
+}
 for(const [market,label,line,expected]of [
  ['1st Half Total Goals','Over','0.5','WON'],
  ['2nd Half Goals','Over 3.5','','WON'],
