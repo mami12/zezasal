@@ -4,6 +4,7 @@ import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { transactionLabel } from '../../utils/accountLabels';
+import {createClientRequestId} from '../../utils/clientRequestId.mjs';
 import './user-directory.css';
 type Role='ADMIN'|'AGENT'|'MANAGER'|'PLAYER';
 type Finance=Record<string,number>;
@@ -36,7 +37,7 @@ export default function UserDirectory({mode='admin'}:{mode?:'admin'|'agent'}){
   const ownAccount=!agent?users.find(account=>account.id===user?.id):undefined;
   const filtered=useMemo(()=>users.filter(u=>(role==='ALL'||u.role===role)&&(status==='ALL'||u.status===status)&&(!owner||u.managerId===owner||u.agentId===owner||users.find(m=>m.id===u.managerId)?.agentId===owner)&&`${u.username} ${u.id} ${u.manager?.username||''} ${u.agent?.username||''}`.toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>sort==='balance'?b.balance-a.balance:sort==='recent'?Date.parse(b.createdAt)-Date.parse(a.createdAt):a.username.localeCompare(b.username)),[users,role,status,owner,search,sort]);
   const pages=Math.max(1,Math.ceil(filtered.length/20)),current=Math.min(page,pages),shown=filtered.slice((current-1)*20,current*20);
-  const begin=(kind:Form['kind'],account?:Account)=>{setFormError('');setFields({...blank,role:agent?'MANAGER':account?.role||'PLAYER',username:account?.username||'',status:account?.status||'ACTIVE',managerId:account?.managerId||'',agentId:account?.agentId||''});setForm({kind,account,requestId:crypto.randomUUID()});};
+  const begin=(kind:Form['kind'],account?:Account)=>{setFormError('');setFields({...blank,role:agent?'MANAGER':account?.role||'PLAYER',username:account?.username||'',status:account?.status||'ACTIVE',managerId:account?.managerId||'',agentId:account?.agentId||''});setForm({kind,account,requestId:createClientRequestId()});};
   const view=(id:string)=>{setTab('overview');setSelected(id);};
   const close=()=>{if(!busy){if(form)setForm(null);else setSelected(null);}};
   const submit=async(event:FormEvent)=>{event.preventDefault();if(!form||busy)return;setBusy(true);setFormError('');try{
