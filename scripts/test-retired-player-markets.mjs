@@ -56,10 +56,10 @@ const quotes=[];
 let mid=9000;
 for(const name of [...retired,...kept]){
  mid++;
- const def={Name:name};
+ const def={Name:name,pos:[{id:1,nm:'Yes'}]};
  meta.preMarkets.set(mid,def);meta.liveMarkets.set(mid,def);
  const id=mid*10;
- quotes.push({mid,id,pid:'yes',pn:'Yes',v:2.1,coef:2.1,pl:name==='Anytime Goalscorer'?'Anytime Test':undefined});
+ quotes.push({mid,id,pid:'yes',pos:1,pn:'Yes',v:2.1,coef:2.1,pl:name==='Anytime Goalscorer'?'Anytime Test':undefined});
 }
 const row={match_id:8999000999},pre=oddsOf(row,quotes,meta,false),live=oddsOf(row,quotes,meta,true);
 assert.equal(pre.length,kept.length,'PREMATCH player specials must not reach storage');
