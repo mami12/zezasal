@@ -16,6 +16,11 @@ const aliases=(name,known)=>[
 ].flatMap(([side,values])=>values.filter(Boolean).map(v=>[side,norm(v)]));
 export function isPeriodGoalTotal(line){
  const name=norm(line?.market_name??line?.marketName??line?.name);
+ // A correlated offer is never a simple goal total. Otherwise a native
+ // Double Chance + Totals quote is held as "unmapped goal total" before
+ // its complete two-leg settlement contract can be frozen.
+ if(/\b(?:match\s*bet|double chance|result|winner|both teams?|btts|1x2)\b/.test(name)&&
+    /\b(?:and|with)\b|&|(?<!\d)\+|\+(?=[a-z])/.test(name))return false;
  // A word-prefix like "goal" must never turn "Goalscorer" into a team
  // goal-total contract: it is an individual-player proposition.
  if(/\b(?:goals?scorers?|scorers?|player|scorer)\b/.test(name))return false;
