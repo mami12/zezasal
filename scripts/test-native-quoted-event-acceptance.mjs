@@ -40,6 +40,27 @@ for(const [market,choice,kind,target]of cases){
   error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED',
   market+' cannot bypass evidence without a validated native Zizobet quote');
 }
+// A quote for a FUTURE minute band needs no old counter history: all
+// incidents in that band occur after this bet. But an already-started band
+// cannot ignore its purchase baseline, because pre-bet incidents exist.
+const future={...missing,match_time_ms:5*60000,clock_at:new Date(now)};
+const futureOffer=offer('Total corners in minutes 11-20 (10-minute interval)','Over',true);
+futureOffer.line='0.5';
+const futureRule=frozenLiveContract(futureOffer,future,now);
+assert.equal(futureRule?.kind,'window-total');
+assert.equal(futureRule?.event,'corner');
+const futureAccepted=await verifyLiveIntervalAcceptance(futureRule,future,{
+  nativeQuoteVerified:true,at:now,
+  execute:()=>{throw Error('No pre-band coverage at minute 5');}
+});
+assert.equal(futureAccepted?.kind,'window-total');
+assert.ok(!futureAccepted.entryBaseline,'No fictitious zero corner baseline');
+await assert.rejects(()=>verifyLiveIntervalAcceptance(futureRule,
+  {...future,match_time_ms:15*60000},{
+    nativeQuoteVerified:true,at:now,execute:async()=>({rows:[]})
+  }),error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED',
+  'An already-running band cannot omit its pre-purchase incident baseline');
+
 // Bare NEXT has no absolute ordinal: without current provider counters its
 // target CANNOT be identified, even though a named Next Goal 2nd can.
 assert.throws(()=>frozenLiveContract(offer('Next Goal','1',true),missing,now),
