@@ -60,7 +60,7 @@ assert.deepEqual(toggleMarketSelection([yesOver],noUnder),[noUnder],
 const sameIdRepeated=[over,under,over,line35];
 assert.deepEqual(toggleMarketSelection(sameIdRepeated,under),[line35],
  'Clicking a selected option also cleans up old duplicate-market slip state');
-assert.deepEqual(toggleMarketSelection(sameIdRepeated,draw),[draw,line35],
+assert.deepEqual(toggleMarketSelection(sameIdRepeated,pick('100|g6379|2.5|Exact')),[pick('100|g6379|2.5|Exact'),line35],
  'A new option removes every old duplicate from that market');
 // Different markets on the same fixture continue to build a normal COMBO.
 const distinct=[
