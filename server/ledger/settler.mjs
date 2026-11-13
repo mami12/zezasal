@@ -57,7 +57,7 @@ const round = (n) => Number(Number(n).toFixed(2));
  */
 export function unverifiedCompositeLine(line={},result={}){
  const name=String(line.market_name??line.marketName??'').trim();
- if(!/\b(?:and|with)\b|[&+]/i.test(name))return false;
+ if(!/\b(?:and|with)\b|&|(?<!\d)\+|\+(?=[a-z])/i.test(name))return false;
  if(!/\b(?:result|winner|goals?|total|double chance|both teams?|btts|1x2|corners?|cards?|shots?|fouls?|score)\b/i.test(name))
   return false;
  if(isHalfComboFamily(line)||isResultTotalMarket(name)||isTotalBttsMarket(name)||
@@ -77,7 +77,7 @@ export function unverifiedCompositeLine(line={},result={}){
 export function gradeHeldNativeCombo(line,result){
  const saved=line?.accepted_contract,reason=String(saved?.settlementHold??'');
  if(!['NATIVE_FINAL_RULE_UNMAPPED','NATIVE_HALF_COMBO_UNMAPPED',
-      'NATIVE_CONTRACT_REVIEW'].includes(reason))return null;
+      'NATIVE_PERIOD_GOAL_UNMAPPED','NATIVE_CONTRACT_REVIEW'].includes(reason))return null;
  if(String(saved.sourceProviderId??'').toUpperCase()!=='ZIZOBET')return null;
  const equal=(a,b)=>String(a??'')===String(b??'');
  if(!saved.providerMarketName||!saved.providerOutcomeName||
@@ -218,8 +218,8 @@ export function hasRequiredSettlementEvidence(line, result) {
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
   // property recognizer. They must use their numerical HT/FT count rule.
-  if(isPeriodGoalTotal(line))return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result)!==null;
   if(isHalfComboFamily(line))return gradeHalfCombination(parseHalfCombination(line,result),result)!==null;
+  if(isPeriodGoalTotal(line))return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result)!==null;
   if(isScoringPropMarket(line))return gradeScoringPropMarket(line,result)!==null;
   if(isHalfExactMarketFamily(line))return false; // FT counts are not 1H/2H corner/card facts
   if(isParityLikeMarket(line))return gradeParityMarket(line,result)!==null;
@@ -309,10 +309,10 @@ export function gradeLine(line, result) {
     return legacyHandicapResult(line,result);
   if(!Array.isArray(line.builder_legs)&&isParityLikeMarket(line))
     return gradeParityMarket(line,result);
-  if(!Array.isArray(line.builder_legs)&&isPeriodGoalTotal(line))
-    return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result);
   if(!Array.isArray(line.builder_legs)&&isHalfComboFamily(line))
     return gradeHalfCombination(parseHalfCombination(line,result),result);
+  if(!Array.isArray(line.builder_legs)&&isPeriodGoalTotal(line))
+    return gradePeriodGoalTotal(parsePeriodGoalTotal(line,result),result);
   if(!Array.isArray(line.builder_legs)&&isScoringPropMarket(line))
     return gradeScoringPropMarket(line,result);
   if(needsEvents(line)&&!Array.isArray(line.builder_legs))return gradeEventLine(line,result)??null;
