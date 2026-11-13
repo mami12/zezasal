@@ -78,6 +78,8 @@ export interface Match {
   /** live counters the feed reports with the match (shown in the market panel) */
   corners?: { home: number; away: number } | null;
   cards?: { home: number; away: number } | null;
+  yellowCards?: { home: number; away: number } | null;
+  redCards?: { home: number; away: number } | null;
   shots?: { home: number; away: number } | null;
   shotsOnTarget?: { home: number; away: number } | null;
   fouls?: { home: number; away: number } | null;
