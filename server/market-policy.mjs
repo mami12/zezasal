@@ -34,7 +34,7 @@ export function isRetiredPlayerOfferMarket(market){
 
  // Carded / sent off / keeper saves / fouls / assists / tackles / shots.
  if(/\b(?:to be|will be)\s+(?:yellow\s+carded|red\s+carded|carded|booked|sent\s+off)\b/.test(title)||
-    /\b(?:yellow\s+card|red\s+card|booking|sent\s+off|sending\s+off)\b/.test(title)||
+    /\b(?:yellow\s+cards?|red\s+cards?|booking|sent\s+off|sending\s+off)\b/.test(title)||
     /\b(?:shots?|shots?\s+on\s+(?:goal|target)|saves?|goalkeeper\s+saves?|fouls?|tackles?|assists?)\b/.test(title))return true;
 
  // Player-specific scorer specials (including 1H/2H, minute intervals,
