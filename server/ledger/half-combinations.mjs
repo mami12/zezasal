@@ -64,11 +64,11 @@ const quoteLine=line=>{
  return {line:nameLine??specified};
 };
 const names={
- 'result-total':/^(?:result|1x2|match result|full time result)\s+(?:and|&|\+)\s+(?:total|total goals?|goals? over\s*\/\s*under)$/,
- 'result-btts':/^(?:result|1x2|match result|full time result)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
- 'total-btts':/^(?:total|total goals?)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
+ 'result-total':/^(?:result|1x2|match result|full time result|match\s*bet)\s+(?:and|&|\+)\s+(?:totals?|total goals?|goals? over\s*\/\s*under)$/,
+ 'result-btts':/^(?:result|1x2|match result|full time result|match\s*bet)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
+ 'total-btts':/^(?:totals?|total goals?)\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
  'dc-btts':/^double chance\s+(?:and|&|\+)\s+(?:both teams? (?:to )?score|btts)$/,
- 'dc-total':/^double chance\s+(?:and|&|\+)\s+(?:total|total goals?)$/
+ 'dc-total':/^double chance\s+(?:and|&|\+)\s+(?:totals?|total goals?)$/
 };
 export function isHalfComboFamily(line){
  const name=stripLine(fold(line?.market_name??line?.marketName??line?.name));
