@@ -80,6 +80,9 @@ jobs:
       - name: Primary Next/First/Nth/2+ and 3+ scorer market family coverage
         if: always()
         run: node scripts/test-event-family-coverage.mjs
+      - name: Native Zizobet LIVE offers accept exact races numbered events and future minute bands
+        if: always()
+        run: node scripts/test-native-quoted-event-acceptance.mjs
       - name: Two independently verified LIVE payout decisions
         if: always()
         run: node scripts/test-verified-live-settlement.mjs
