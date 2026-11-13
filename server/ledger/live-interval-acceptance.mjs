@@ -75,6 +75,31 @@ export async function verifyLiveIntervalAcceptance(contract,match,{
  if(String(match?.service??'').toUpperCase()!=='LIVE')return contract;
  const bounds=intervalBounds(contract);
  if(!bounds)return contract;
+ if(nativeQuoteVerified===true){
+  // Offer presence, suspension and price freshness were already checked in
+  // bets.mjs. This helper only snapshots evidence for LATER settlement.
+  // Never query incident history or throw because LIVE clock/counters lag.
+  const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
+  const stamp=match.clock_at==null?NaN:new Date(match.clock_at).getTime();
+  const freshClock=Number.isFinite(clock)&&clock>=0&&Number.isFinite(stamp)&&
+    stamp<=at+5000&&at-stamp<=45000;
+  const counts=['goal','corner','card','foul'].includes(contract.event)
+    ?primaryLiveCounters(match,contract.event,{at}):null;
+  if(contract.kind==='nth-time'){
+    // Absolute Nth goal derives from the original quote and complete match
+    // chronology. Optional counters are evidence, never a purchase gate.
+    return freshClock&&counts?{...contract,entryBaseline:{home:counts.home,away:counts.away},
+      entryClockMinute:clock,entryObservedAt:new Date(at).toISOString()}:contract;
+  }
+  if(!remainingKinds.has(contract.kind))return contract;
+  // A future interval contains no incidents before this new acceptance.
+  if(freshClock&&clock<bounds.from)return contract;
+  // If it is already underway, old events must not be counted as new ones.
+  // An absent baseline makes settlement PENDING/review, not placement rejected.
+  if(!freshClock||!counts)return {...contract,entryEvidenceMissing:true};
+  return {...contract,entryBaseline:{home:counts.home,away:counts.away},
+    entryClockMinute:clock,entryObservedAt:new Date(at).toISOString()};
+ }
  const quoteAnchoredOrdinal=nativeQuoteVerified===true&&contract.kind==='nth-time'&&
    contract.event==='goal'&&Number.isSafeInteger(contract.target);
  const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
