@@ -74,6 +74,14 @@ try{
   assert.equal(next.liveContract?.target,1);
   const combined=await resolveSelection({outcomeId:id(quoted[4]),oddsAtPlacement:2.2});
   assert.equal(combined.price,2.2,'A native combo uses its own quoted price');
+  assert.equal(combined.settlementHold,null,'A recognized provider combo has a settlement rule');
+  const comboLine={market_name:combined.marketName,outcome_name:combined.outcomeName,
+    outcome_key:combined.outcomeKey,line:combined.line,period:combined.providerPeriod,builder_legs:null};
+  const finalHome={home_team:'Home',away_team:'Away',home_score:2,away_score:1};
+  assert.equal(gradeLine(comboLine,finalHome),'WON',
+    'The full native combo must satisfy both 1X2 and BTTS');
+  assert.equal(gradeLine(comboLine,{...finalHome,home_score:1,away_score:0}),'LOST',
+    'The combo is not a win if only the 1X2 leg succeeds');
 
   const user={id:randomUUID(),username:'native-quote-test',status:'ACTIVE',role:'PLAYER'};
   await db.query('insert into app_user(id,username,password_hash,role,balance) values($1,$2,$3,$4,1000)',
