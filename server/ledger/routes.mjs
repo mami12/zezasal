@@ -419,20 +419,19 @@ ledgerRouter.get(
     }
     if(!row)return res.status(404).json({message:'match not found'});
     matchReadAt=Date.now();
-    // somebody is looking at this match: make sure it gets its full market list (corners,
-    // cards, every total) on the next subscribe cycle, instead of base markets only
-    boostMatch(row.match_id);
-    // Explicit provider rotation: FotMob and configured statistical feeds get
-    // the first chance, then mapped AiScore is checked for a missing actor.
-    // This runs asynchronously; no network wait holds the market request open.
-    const warmStats=statsProviders.warm(row);
-    void Promise.resolve(warmStats).then(()=>footballInformation.warm(matchId))
-      .catch(error=>console.warn('[aiscore] selected match:',error.message));
-    // The quoted snapshot is local. Full provider markets refresh in the
-    // background and reach this match through the next odds push/REST poll.
-    // Do not block detail or tracker requests on provider HTTP/database writes.
-    req.app.locals.loadMatchDetail?.(row.match_id);
-    const [serialized] = await withOdds([row],Date.now(),{displayStats:true});
+    const marketOffset=Math.max(0,Math.floor(Number(req.query.marketOffset)||0));
+    const firstMarketPage=marketOffset===0;
+    // All pages read locally cached odds. Only the initial page may request
+    // a provider full-market refresh and actor enrichment; scrolling to a
+    // second category page must not start another provider/SQL load.
+    if(firstMarketPage){
+      boostMatch(row.match_id);
+      const warmStats=statsProviders.warm(row);
+      void Promise.resolve(warmStats).then(()=>footballInformation.warm(matchId))
+        .catch(error=>console.warn('[aiscore] selected match:',error.message));
+      req.app.locals.loadMatchDetail?.(row.match_id);
+    }
+    const [serialized] = await withOdds([row],Date.now(),{displayStats:firstMarketPage});
     oddsReadAt=Date.now();
     const match = toClientMatch(serialized);
     if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
