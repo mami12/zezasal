@@ -36,6 +36,17 @@ try{
  assert.equal(later.payload.frameAt,first.payload.frameAt,
   'Second poll must keep initial proposal evidence and confirmation age');
  assert.deepEqual(later.payload.contract,first.payload.contract);
+ // A genuinely different team scoreboard starts a new stable two-poll
+ // confirmation window; repeated identical scoreboard polls must not.
+ fixture={...fixture,provider_frame:{
+  ...frame(9),counts:{goal:2},teams:{goal:{home:2,away:0}}
+ },frame_at:new Date(now-500).toISOString()};
+ await createLiveSettlementPreviews({runQuery,now:()=>now});
+ const increment=await read();
+ assert.equal(increment.proposed_status,'WON');
+ assert.equal(increment.payload.frameAt,fixture.frame_at,
+  'Real score changes must replace old evidence even with the same verdict');
+ assert.equal(increment.payload.frame.teams.goal.home,2);
  // A genuinely changed verdict replaces the old proposal; it cannot be
  // paid from evidence that concerned a different immutable contract.
  contract={...contract,choice:'under'};
