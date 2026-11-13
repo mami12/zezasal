@@ -67,6 +67,40 @@ export function unverifiedCompositeLine(line={},result={}){
  if(goalTotalContract(line,result)||cornerTotalContract(line,result))return false;
  return true;
 }
+/**
+ * An accepted, formerly unmapped Zizobet combo can be repaired WITHOUT
+ * editing its contract or overriding a held wager. This is restricted to
+ * two fully decoded, financially gradeable FT/HT/2H components, with every
+ * field reconciled against the immutable accepted quote. All other holds
+ * remain PENDING. Existing WON/LOST and wallet rows are never rewritten.
+ */
+export function gradeHeldNativeCombo(line,result){
+ const saved=line?.accepted_contract,reason=String(saved?.settlementHold??'');
+ if(!['NATIVE_FINAL_RULE_UNMAPPED','NATIVE_HALF_COMBO_UNMAPPED',
+      'NATIVE_CONTRACT_REVIEW'].includes(reason))return null;
+ if(String(saved.sourceProviderId??'').toUpperCase()!=='ZIZOBET')return null;
+ const equal=(a,b)=>String(a??'')===String(b??'');
+ if(!saved.providerMarketName||!saved.providerOutcomeName||
+    !equal(saved.providerMarketName,line.market_name)||
+    !equal(saved.providerOutcomeName,line.outcome_name)||
+    !equal(saved.providerMarketKey,line.market_key)||
+    !equal(saved.providerOutcomeKey,line.outcome_key)||
+    !equal(saved.line,line.line))return null;
+ const rawPeriod=Number(saved.providerPeriod??0);
+ if(![0,1,2].includes(rawPeriod)||
+    (line.period!=null&&Number(line.period)!==rawPeriod))return null;
+ const frozen={
+  market_name:saved.providerMarketName,
+  outcome_name:saved.providerOutcomeName,
+  outcome_key:saved.providerOutcomeKey,
+  line:String(saved.line??''),period:rawPeriod
+ };
+ const contract=parseHalfCombination(frozen,{
+  home:saved.homeTeamName??result?.home_team,
+  away:saved.awayTeamName??result?.away_team
+ });
+ return contract?gradeHalfCombination(contract,result):null;
+}
 /** Keyset round-robin for PENDING work, not OFFSET (which shifts as tickets
  * settle). An old unresolved line must not monopolize every short pass.
  * The UUID primary key gives a deterministic total order across restarts.
@@ -173,7 +207,8 @@ const periodScores=(line,result)=>{
 export function hasRequiredSettlementEvidence(line, result) {
   // A native quote awaiting rule review must never be graded by a
   // coincidentally similar legacy market-name fallback.
-  if(line?.accepted_contract?.settlementHold)return false;
+  if(line?.accepted_contract?.settlementHold)
+    return gradeHeldNativeCombo(line,result)!==null;
   line=withFrozenPeriod(line);
   if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
   if(!Array.isArray(line.builder_legs)&&unverifiedCompositeLine(line,result))return false;
@@ -261,7 +296,8 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
-  if(line?.accepted_contract?.settlementHold)return null;
+  if(line?.accepted_contract?.settlementHold)
+    return gradeHeldNativeCombo(line,result);
   line=withFrozenPeriod(line);
   // Never score a two-condition native quote by matching only the first
   // recognized word. A provider-aligned unknown contract remains PENDING.
@@ -815,7 +851,8 @@ export async function settleMatch(matchId) {
   const unresolved=[];
   let graded = 0;
   for (const line of lines) {
-    if(line?.accepted_contract?.settlementHold){
+    if(line?.accepted_contract?.settlementHold&&
+       gradeHeldNativeCombo(line,result)===null){
       unresolved.push({line,result});
       continue;
     }
