@@ -77,6 +77,7 @@ assert.equal(await settle(home,['away']),'LOST','Away corner must never win a ho
 assert.equal(await settle(total,['away']),'WON');
 assert.equal(await settle(away,['away']),'WON');
 assert.equal(await settle(home,[]),'LOST');
-assert.equal(await settle(home,['home'],18),null,'Coverage gap must remain PENDING');
+assert.equal(await settle(home,['home'],18),'WON','A verified in-window corner proves Over 0.5 even before the interval ends');
+assert.equal(await settle(home,[],18),null,'An absent corner cannot be assumed before verified interval completion');
 assert.equal(await settle(liveContract(line(homeName,'Under')),['away']),'WON');
 console.log('PASS scoped interval market parsing, acceptance and settlement');
