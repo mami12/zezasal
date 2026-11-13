@@ -15,10 +15,20 @@ export function deliveryCategory(m={}){
  return 'Other';
 }
 export const offeredMarket=(m,match)=>!isExcludedOfferMarket(m)&&marketIsEnabled(m,match);
-export function detailProjection(match,category='all'){
+export function detailProjection(match,category='all',page){
  const markets=(match.markets??[]).filter(m=>offeredMarket(m,match)),sets=Object.fromEntries(CATEGORIES.map(c=>[c,new Set()]));
  for(const m of markets){const key=[m.extId??m.key,m.name,m.period??0].join('|');sets.all.add(key);sets[deliveryCategory(m)].add(key);}
- return {...match,marketCategories:Object.fromEntries(Object.entries(sets).map(([k,s])=>[k,s.size])),markets:category==='all'?markets:markets.filter(m=>deliveryCategory(m)===category),marketCount:markets.length};
+ let selected=category==='all'?markets:markets.filter(m=>deliveryCategory(m)===category);
+ if(page?.search){
+  const needle=page.search.toLocaleLowerCase();
+  selected=selected.filter(m=>[m.name,m.line,...(m.outcomes??[]).map(o=>o.name)].some(value=>
+    String(value??'').toLocaleLowerCase().includes(needle)));
+ }
+ const total=selected.length,offset=page?Math.min(total,Math.max(0,page.offset||0)):0;
+ const limit=page?Math.max(1,page.limit||40):total;
+ return {...match,marketCategories:Object.fromEntries(Object.entries(sets).map(([k,s])=>[k,s.size])),
+  markets:page?selected.slice(offset,offset+limit):selected,marketCount:markets.length,
+  ...(page?{marketPagination:{total,offset,nextOffset:Math.min(total,offset+limit),hasMore:offset+limit<total}}:{})};
 }
 const numeric=v=>/^\d{1,16}$/.test(String(v??''))?String(v):null;
 export function normalizeScope(value){

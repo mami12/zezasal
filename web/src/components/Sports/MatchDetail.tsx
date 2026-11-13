@@ -119,6 +119,10 @@ export default function MatchDetail() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [requestSearch,setRequestSearch]=useState('');
   const [categoryLoading,setCategoryLoading]=useState(false);
+  const [marketLoadingMore,setMarketLoadingMore]=useState(false);
+  const [hasMoreMarkets,setHasMoreMarkets]=useState(false);
+  const moreMarketsRef=useRef<(()=>void)|null>(null);
+  const marketSentinel=useRef<HTMLDivElement|null>(null);
   const [categoryTotals,setCategoryTotals]=useState<Record<string,number>>({});
   const [requestError,setRequestError]=useState<{id:string;notFound:boolean;httpStatus:number|null;timedOut:boolean}|null>(null);
   const requestedCategory=requestSearch||activeTab==='favorites'?'all':activeTab;
@@ -142,87 +146,106 @@ export default function MatchDetail() {
   // expiry should rebuild all market groups, not an unrelated second counter.
   const liveMarketMatch = useMemo(
     () => match && String(match.id)===id ? (match.status==='ENDED'?match:liveMatch(match, patch)) : null,
-    [match,id,patch?.homeScore,patch?.awayScore,patch?.scoreAt,patch?.currentMinute,patch?.period,patch?.status,patch?.isSuspended,patch?.corners,patch?.cards,patch?.shots,patch?.shotsOnTarget,patch?.fouls],
+    [match,id,patch?.homeScore,patch?.awayScore,patch?.scoreAt,patch?.currentMinute,patch?.period,patch?.status,patch?.isSuspended,patch?.corners,patch?.cards,patch?.yellowCards,patch?.redCards,patch?.shots,patch?.shotsOnTarget,patch?.fouls],
   );
 
   useEffect(() => {
-    if (!id) return;
-    let active = true;
-    const requestState = {controller: null as AbortController | null};
-    let sequence = 0;
-    let fullMarketTimer: number | null = null;
-    let fullMarketAttempts = 0;
-    const refresh = (force = false) => {
-      if (force) fullMarketAttempts = 0;
-      if (fullMarketTimer !== null) {
-        window.clearTimeout(fullMarketTimer);
-        fullMarketTimer = null;
-      }
-      if (!active) return;
-      // A manual retry cancels the stale request and starts a brand-new HTTP
-      // attempt. Automatic 20s refreshes instead avoid overlapping requests.
-      if (requestState.controller) {
-        if (!force) return;
-        requestState.controller.abort();
-      }
-      const current = new AbortController();
-      requestState.controller = current;
-      const showLoading = sequence === 0 || force;
-      const requestId = ++sequence;
-      // Background 20s snapshots must not hide the current market grid.
-      if (showLoading) setCategoryLoading(true);
-      apiClient.get(`/matches/${id}`, {
-        signal: current.signal,
-        timeout: 12000,
-        params: { category: requestedCategory, _snapshot: Date.now() },
-      }).then(res => {
-        if (!active || requestId !== sequence || current.signal.aborted) return;
-        if (String(res.data?.id) !== id) throw new Error('MATCH_RESPONSE_MISMATCH');
+    if(!id)return;
+    let active=true,sequence=0,busy=false,refreshQueued=false,nextOffset=0,more=false,loadedOnce=false;
+    let fullMarketTimer:number|null=null,fullMarketAttempts=0;
+    const controller=new AbortController();
+    const PAGE=40;
+    setMarkets([]);setCategoryLoading(true);setMarketLoadingMore(false);setHasMoreMarkets(false);
+    const fetchPage=async(offset:number,first=false)=>{
+      if(!active||busy)return;
+      busy=true;
+      if(offset>0)setMarketLoadingMore(true);
+      else if(first)setCategoryLoading(true);
+      const requestId=++sequence;
+      try{
+        const res=await apiClient.get(`/matches/${id}`,{
+          signal:controller.signal,timeout:12000,
+          params:{category:requestedCategory,q:requestSearch,
+            marketLimit:PAGE,marketOffset:offset,_snapshot:Date.now()},
+        });
+        if(!active||requestId!==sequence)return;
+        if(String(res.data?.id)!==id)throw new Error('MATCH_RESPONSE_MISMATCH');
         setRequestError(null);
         acceptMatches([res.data]);
-        setMatch(res.data);
-        setCategoryTotals(res.data.marketCategories ?? {});
-        if (requestedCategory === 'Popular' && res.data.marketCategories?.Popular === 0) {
-          const next = CATEGORY_ORDER.find(category => res.data.marketCategories[category] > 0);
-          if (next) setActiveTab(next);
+        // Later market pages intentionally omit expensive incident enrichment.
+        // Retain the confirmed first-page supplemental timeline on the same
+        // fixture rather than making player/card/foul details vanish on scroll.
+        setMatch(previous=>offset>0&&previous!==null&&previous.id===res.data.id
+          ?{...res.data,supplementalEvents:previous.supplementalEvents??res.data.supplementalEvents}
+          :res.data);
+        setCategoryTotals(res.data.marketCategories??{});
+        if(requestedCategory==='Popular'&&res.data.marketCategories?.Popular===0){
+          const next=CATEGORY_ORDER.find(category=>res.data.marketCategories[category]>0);
+          if(next)setActiveTab(next);
         }
-        setMarkets(res.data?.markets ?? []);
-        // Both LIVE and PREMATCH start from the cheap board offer. Follow the
-        // one selected full-market fetch until Zizobet confirms its snapshot.
-        // No back/re-enter and no fetch for unrelated fixtures.
-        if (res.data?.fullMarketsReady === false && fullMarketAttempts < 16) {
-          fullMarketAttempts++;
-          fullMarketTimer = window.setTimeout(() => refresh(), 1800);
-        }
-      }).catch(error => {
-        if (!active || requestId !== sequence || current.signal.aborted ||
-            error?.code === 'ERR_CANCELED') return;
-        const httpStatus = Number(error?.response?.status);
-        setRequestError({
-          id,
-          notFound: httpStatus === 404,
-          httpStatus: Number.isInteger(httpStatus) && httpStatus > 0 ? httpStatus : null,
-          timedOut: error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT',
+        const incoming=res.data?.markets??[];
+        setMarkets(previous=>{
+          if(first)return incoming;
+          const ids=new Set(incoming.map((market:Market)=>market.id));
+          return offset===0?[...incoming,...previous.filter(market=>!ids.has(market.id))]:
+            [...previous,...incoming.filter((market:Market)=>!previous.some(old=>old.id===market.id))];
         });
-      }).finally(() => {
-        if (!active || requestId !== sequence) return;
-        if (requestState.controller === current) requestState.controller = null;
-        setCategoryLoading(false);
-      });
+        loadedOnce=true;
+        const pagination=res.data.marketPagination;
+        nextOffset=pagination?.nextOffset??offset+incoming.length;
+        more=pagination?.hasMore===true;
+        setHasMoreMarkets(more);
+        // Only the displayed match requests full provider offers; a temporary
+        // base-only snapshot never erases already loaded market pages.
+        if(res.data.fullMarketsReady===false&&fullMarketAttempts<16){
+          fullMarketAttempts++;
+          if(fullMarketTimer!==null)window.clearTimeout(fullMarketTimer);
+          fullMarketTimer=window.setTimeout(()=>{fullMarketTimer=null;refresh();},1800);
+        }
+      }catch(error:any){
+        if(!active||error?.code==='ERR_CANCELED')return;
+        // A delayed background refresh or later scroll page is not a reason
+        // to erase a valid market grid already rendered for this fixture.
+        if(!loadedOnce){
+          const httpStatus=Number(error?.response?.status);
+          setRequestError({id,notFound:httpStatus===404,
+            httpStatus:Number.isInteger(httpStatus)&&httpStatus>0?httpStatus:null,
+            timedOut:error?.code==='ECONNABORTED'||error?.code==='ETIMEDOUT'});
+        }else console.warn('[match detail] background market page failed',error?.message);
+      }finally{
+        busy=false;
+        if(active){
+          setCategoryLoading(false);setMarketLoadingMore(false);
+          if(refreshQueued){refreshQueued=false;void fetchPage(0);}
+        }
+      }
     };
-    refreshRef.current = refresh;
-    refresh();
-    // After the full snapshot arrives, normal selected-match updates suffice.
-    // While waiting, the short, bounded polling above takes priority.
-    const timer = window.setInterval(() => refresh(), 20_000);
-    return () => {
-      active = false;
-      if (refreshRef.current === refresh) refreshRef.current = null;
-      requestState.controller?.abort();
-      if (fullMarketTimer !== null) window.clearTimeout(fullMarketTimer);
+    const refresh=(force=false)=>{
+      if(force){fullMarketAttempts=0;if(fullMarketTimer!==null){window.clearTimeout(fullMarketTimer);fullMarketTimer=null;}}
+      if(busy){refreshQueued=true;return;}
+      void fetchPage(0,false);
+    };
+    refreshRef.current=refresh;
+    moreMarketsRef.current=()=>{if(active&&!busy&&more)void fetchPage(nextOffset);};
+    void fetchPage(0,true);
+    const timer=window.setInterval(()=>refresh(),20_000);
+    return()=>{
+      active=false;refreshRef.current=null;moreMarketsRef.current=null;
+      controller.abort();
+      if(fullMarketTimer!==null)window.clearTimeout(fullMarketTimer);
       window.clearInterval(timer);
     };
-  }, [id,requestedCategory, acceptMatches]);
+  },[id,requestedCategory,requestSearch,acceptMatches]);
+
+  useEffect(()=>{
+    const el=marketSentinel.current,root=el?.closest('[data-sportsbook-scroll]');
+    if(!el||!root||!hasMoreMarkets)return;
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)&&!marketLoadingMore)moreMarketsRef.current?.();
+    },{root,rootMargin:'800px 0px'});
+    observer.observe(el);
+    return()=>observer.disconnect();
+  },[hasMoreMarkets,marketLoadingMore,markets.length,requestedCategory]);
 
   useEffect(() => {
     if(lastRefreshVersion.current===refreshVersion) return;
@@ -529,6 +552,9 @@ export default function MatchDetail() {
             );
           }}))}/>
         ))}
+      </div>
+      <div ref={marketSentinel} className="flex min-h-2 items-center justify-center py-2" role={marketLoadingMore?'status':undefined}>
+        {marketLoadingMore&&<span className="text-xs text-text-secondary">{t('common.loading')}</span>}
       </div>
     </div>
   );

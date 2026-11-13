@@ -28,7 +28,42 @@ try{
  assert.equal(filterPublishedRows(rows,{q:'Home3'})[0].match_id,3);
  await pool.query("update app_user set status='FROZEN' where id=$1",[admin.id]);assert.equal((await call('PUT',endpoint,admin,{settings:{prematchLimit:0}})).status,403);assert.equal((await call('GET',endpoint,admin)).status,403);await pool.query("update app_user set status='ACTIVE' where id=$1",[admin.id]);
  assert.equal(Number((await pool.query("select count(*) n from app_admin_audit where action='UPDATE BOARD_SETTINGS'")).rows[0].n),1);
- const unlimited=await call('PUT',endpoint,admin,{settings:{prematchLimit:0}});assert.equal(unlimited.body.summary.visiblePrematch,4);assert.equal((await call('GET','/matches?view=board')).body.length,5);await call('PUT',endpoint,admin,{settings:{prematchLimit:1}});
+ const unlimited=await call('PUT',endpoint,admin,{settings:{prematchLimit:0}});assert.equal(unlimited.body.summary.visiblePrematch,4);assert.equal((await call('GET','/matches?view=board')).body.length,5);
+ // The old array response remains untouched, even when legacy consumers
+ // supply limit=. Progressive clients explicitly opt in with page=1.
+ assert.equal(Array.isArray((await call('GET','/matches?view=board&limit=1')).body),true);
+ const pages=await Promise.all([0,2,4].map(offset=>call('GET','/matches?view=board&page=1&limit=2&offset='+offset)));
+ assert.ok(pages.every(result=>result.status===200));
+ assert.equal(pages[0].body.total,5);
+ assert.equal(pages[0].body.items.length,2);
+ assert.equal(pages[0].body.nextOffset,2);
+ assert.equal(pages[0].body.hasMore,true);
+ assert.equal(pages[2].body.hasMore,false);
+ const loaded=pages.flatMap(result=>result.body.items.map(item=>String(item.id)));
+ assert.equal(new Set(loaded).size,5,'Every fixture is loaded once across all pages');
+ assert.deepEqual([...loaded].sort(),['1','2','3','4','5']);
+ const favorites=await call('GET','/matches?view=board&page=1&limit=2&offset=0&favoriteIds=3,5');
+ assert.deepEqual(favorites.body.items.map(item=>item.id).sort(),['3','5']);
+ assert.equal(favorites.body.hasMore,false);
+ const searched=await call('GET','/matches?view=board&page=1&limit=2&offset=0&q=Home1');
+ assert.deepEqual(searched.body.items.map(item=>item.id),['1']);
+ const {detailProjection}=await import('../server/market-delivery.mjs');
+ const offers=Array.from({length:7},(_,i)=>({
+   extId:'zz-market-'+i,name:'Total Goals '+i,line:String(i),
+   outcomes:[{key:'over',name:i===6?'Special player selection':'Over',price:2}],
+ }));
+ const fixtureDetail={id:'3',markets:offers};
+ const firstMarkets=detailProjection(fixtureDetail,'all',{limit:3,offset:0});
+ const nextMarkets=detailProjection(fixtureDetail,'all',{limit:3,offset:3});
+ assert.equal(firstMarkets.marketPagination.total,7);
+ assert.equal(firstMarkets.marketPagination.hasMore,true);
+ assert.deepEqual([...firstMarkets.markets,...nextMarkets.markets].map(m=>m.extId),
+   offers.slice(0,6).map(m=>m.extId),'The selected market contract survives across catalog pages');
+ assert.equal(firstMarkets.marketCategories.all,7,'Category count remains full while page is partial');
+ assert.equal(detailProjection(fixtureDetail,'Goals',{limit:3,offset:0}).marketPagination.total,7);
+ const marketSearch=detailProjection(fixtureDetail,'all',{limit:3,offset:0,search:'special player'});
+ assert.deepEqual(marketSearch.markets.map(m=>m.extId),['zz-market-6']);
+ await call('PUT',endpoint,admin,{settings:{prematchLimit:1}});
  setBoardSettings({prematchLimit:0});await refreshBoardSettings();assert.equal(boardSettings().prematchLimit,1);
  // Verify the database-backed catalogue also bypasses the old pagination cap.
  await upsertMatches([{...fixture(901,'italy','Serie A'),is_hot:false,is_real:true,status:'prematch'}]);assert.equal((await getDatabaseMatches({catalog:true})).length,1);

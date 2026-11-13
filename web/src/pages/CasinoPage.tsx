@@ -126,107 +126,66 @@ export default function CasinoPage() {
 
   if (!gameId) {
     return (
-      <div className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#160b24] via-[#10081a] to-[#0c0514] text-white">
+      <div className="flex min-h-[100dvh] flex-col bg-[#0d1420] text-slate-100">
         <Header />
-        <main className="mx-auto w-full max-w-[1360px] flex-1 px-3 pb-16 pt-5 sm:px-6">
+        <main className="mx-auto w-full max-w-[1360px] flex-1 px-3 pb-16 pt-4 sm:px-6 sm:pt-6">
           {/* Top Bar Navigation & Controls */}
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="mb-5 flex min-w-0 flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
             <Link
               to="/"
-              className="group inline-flex items-center gap-2.5 rounded-full border border-purple-500/30 bg-[#25133c]/80 px-5 py-2.5 text-xs font-bold text-purple-200 shadow-lg shadow-purple-950/40 backdrop-blur-xl transition-all duration-300 hover:border-purple-400 hover:bg-[#381c5a] hover:text-white hover:shadow-purple-700/25 active:scale-95 self-start"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-700 bg-[#151d2b] px-3 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:text-white self-start"
             >
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 transition-all duration-300 group-hover:bg-purple-500/40 group-hover:text-white group-hover:-translate-x-0.5">
+              <div className="flex h-5 w-5 items-center justify-center text-slate-300">
                 <ArrowLeft size={14} />
               </div>
               <span className="tracking-wide">{t("Kthehu te sporti")}</span>
             </Link>
 
-            {/* Category Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-full border border-purple-500/30 bg-[#1e0f2f]/80 backdrop-blur-xl shadow-lg shadow-purple-950/30">
-              <button
-                type="button"
-                onClick={() => setActiveTab('all')}
-                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === 'all'
-                    ? 'bg-gradient-to-r from-[#7F00FF] to-[#a85cff] text-white shadow-md shadow-purple-900/50'
-                    : 'text-purple-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                Të gjitha ({ALL_GAMES.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('popular')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === 'popular'
-                    ? 'bg-gradient-to-r from-[#7F00FF] to-[#a85cff] text-white shadow-md shadow-purple-900/50'
-                    : 'text-purple-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Flame size={14} className="text-amber-400" />
-                <span>Popullore</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('fruits')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === 'fruits'
-                    ? 'bg-gradient-to-r from-[#7F00FF] to-[#a85cff] text-white shadow-md shadow-purple-900/50'
-                    : 'text-purple-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Cherry size={14} className="text-rose-400" />
-                <span>Fruta & Hot</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('slots')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === 'slots'
-                    ? 'bg-gradient-to-r from-[#7F00FF] to-[#a85cff] text-white shadow-md shadow-purple-900/50'
-                    : 'text-purple-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <BookOpen size={14} className="text-amber-300" />
-                <span>Aventurë & Slots</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('demo')}
-                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === 'demo'
-                    ? 'bg-gradient-to-r from-[#7F00FF] to-[#a85cff] text-white shadow-md shadow-purple-900/50'
-                    : 'text-purple-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                Demo
-              </button>
+            {/* Single-line swipeable categories: mobile never wraps into
+                uneven rows or pushes the search field off-screen. */}
+            <div className="w-full min-w-0 overflow-hidden md:max-w-[570px] md:flex-1" role="region" aria-label="Kategoritë e lojërave">
+              <div role="tablist" aria-label="Filtro lojërat" className="flex w-full min-w-0 items-center gap-1 overflow-x-auto overscroll-x-contain rounded-lg border border-slate-700/70 bg-[#151d2b] p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {([
+                  {id:'all',title:'Të gjitha',icon:null},
+                  {id:'popular',title:'Popullore',icon:<Flame size={14}/>},
+                  {id:'fruits',title:'Fruta & Hot',icon:<Cherry size={14}/>},
+                  {id:'slots',title:'Slots',icon:<BookOpen size={14}/>},
+                  {id:'demo',title:'Demo',icon:null},
+                ] as const).map(tab=>(
+                  <button key={tab.id} type="button" role="tab"
+                    aria-selected={activeTab===tab.id}
+                    onClick={()=>setActiveTab(tab.id)}
+                    className={`inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3.5 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-300 ${activeTab===tab.id?'bg-slate-200 text-slate-950':'text-slate-300 hover:bg-white/10 hover:text-white'}`}>
+                    {tab.icon}<span>{tab.title}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Search Input */}
-            <div className="relative min-w-[220px] sm:w-64">
+            <div className="relative w-full min-w-0 sm:w-56">
               <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-300/70" />
               <input
                 type="text"
                 placeholder="Kërko lojën..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-full border border-purple-500/30 bg-[#1e0f2f]/80 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder-purple-300/50 shadow-md backdrop-blur-xl transition-all focus:border-purple-400 focus:bg-[#25133c] focus:outline-none focus:ring-1 focus:ring-purple-400"
+                className="w-full w-full min-h-10 rounded-lg border border-slate-700 bg-[#151d2b] py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500"
               />
             </div>
           </div>
 
           {/* Modern Games Grid */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {filteredGames.map((game) => (
               <Link
                 key={game.id}
                 to={`/casino/${game.id}`}
                 onClick={() => { void requestCasinoLandscape(); }}
-                className="group relative flex flex-col overflow-hidden rounded-3xl border border-purple-500/20 bg-gradient-to-b from-[#241239]/90 to-[#140a20]/95 shadow-xl shadow-purple-950/40 backdrop-blur-md transition-all duration-300 hover:-translate-y-1.5 hover:border-purple-400/60 hover:shadow-2xl hover:shadow-purple-900/40"
+                className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-700/80 bg-[#151e2b] shadow-sm transition-colors hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300"
               >
                 {/* Visual Image Container with 16/10 aspect */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/40">
+                <div className="relative aspect-[16/11] w-full overflow-hidden bg-black/50">
                   <img
                     src={game.demo ? '/app/casino-original/prophecy-ra-demo/assets/card/background.webp' : casinoAssetUrl(game.background)}
                     alt=""
@@ -298,21 +257,21 @@ export default function CasinoPage() {
                 </div>
 
                 {/* Card Info Bottom */}
-                <div className="flex flex-1 flex-col justify-between border-t border-purple-500/20 bg-[#140a20]/95 p-4">
+                <div className="flex min-w-0 flex-1 flex-col justify-between border-t border-slate-700/70 bg-[#151e2b] p-2.5 sm:p-4">
                   <div className="mb-3">
-                    <h2 className="truncate text-sm font-black text-white group-hover:text-amber-300 transition-colors sm:text-base">
+                    <h2 className="truncate text-xs font-semibold text-slate-100 sm:text-sm">
                       {game.title}
                     </h2>
-                    <p className="mt-0.5 truncate text-[11px] font-medium text-purple-200/70">
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-slate-400 sm:text-xs">
                       {game.subtitle}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-purple-500/15">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80">
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-700/60">
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[10px]">
                       {game.demo ? 'Kredi Demo' : 'Para Reale'}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-400/30 px-3 py-1 text-[11px] font-extrabold text-purple-200 group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-black transition-all duration-300">
+                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-600 px-2 py-1 text-[10px] font-semibold text-slate-200 transition-colors group-hover:bg-slate-200 group-hover:text-slate-950">
                       <span>Luaj</span>
                       <Play size={10} fill="currentColor" />
                     </span>
@@ -336,7 +295,7 @@ export default function CasinoPage() {
             </div>
           )}
 
-          <div className="mt-8 rounded-2xl border border-purple-500/20 bg-[#1e102f]/60 p-4 text-center text-xs text-purple-300/80 backdrop-blur-md">
+          <div className="mt-8 rounded-lg border border-slate-700/70 bg-[#151d2b] p-4 text-center text-xs text-slate-400">
             <p>
               {t("Lojërat e kazinosë përdorin të njëjtin bilanc me sportbastet. Fitimet shtohen menjëherë në llogarinë tuaj.")}
             </p>
@@ -348,7 +307,7 @@ export default function CasinoPage() {
 
   if (gameId && hiddenGames.includes(gameId)) {
     return (
-      <div className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#160b24] via-[#10081a] to-[#0c0514] text-white">
+      <div className="flex min-h-[100dvh] flex-col bg-[#0d1420] text-slate-100">
         <Header />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center p-6 text-center">
           <div className="rounded-3xl border border-purple-500/30 bg-[#241239]/90 p-8 shadow-2xl backdrop-blur-md">

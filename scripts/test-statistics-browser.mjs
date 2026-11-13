@@ -27,22 +27,37 @@ try{
  await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.fixtureFeed?.connected===true,{timeout:60000})
   .catch(error=>{throw new Error('React statistics fixture could not establish authenticated socket: '+errors.join(' | ')+'; '+error.message);});
- assert.equal(await page.$('.zshop-tracker'),null,'unknown live counters do not fabricate values');
+ assert.equal(await page.$('[data-testid="match-tracker"]'),null,'unknown live counters do not fabricate values');
  assert.equal(await page.$$eval('[data-stat="goal-intervals"] .zs-interval-cell',els=>els.length),6,'match details render the six 15-minute bins');
  assert.ok((await page.$eval('[data-stat="fouls"]',el=>el.textContent)).includes('7')&&(await page.$eval('[data-stat="fouls"]',el=>el.textContent)).includes('11'));
  assert.ok((await page.$eval('[data-stat="goal-intervals"]',el=>el.textContent)).includes('31–45+'));
  const emit=stats=>io.emit('match:info',{match_id:'A',stats,at:new Date().toISOString()});
  emit({home:{shotsOnTarget:0,fouls:2},away:{shotsOnTarget:1,fouls:3}});
  await page.waitForFunction(()=>document.body.textContent.includes('Goditje në portë')&&document.body.textContent.includes('Faulle'));
- assert.deepEqual(await page.$$eval('.zshop-tracker-stat strong',els=>els.map(el=>el.textContent)),['0 - 1','2 - 3']);
+ const stat=key=>page.$eval('[data-stat-key="'+key+'"]',el=>[...el.querySelectorAll('strong')].map(node=>node.textContent));
+ assert.deepEqual(await stat('shotsOnTarget'),['0','1']);
+ assert.deepEqual(await stat('fouls'),['2','3']);
  for(const width of [1366,390,320]){await page.setViewport({width,height:800});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'responsive stat row');}
  emit({home:{yellow:1,red:0},away:{yellow:0,red:0}});
  await page.waitForFunction(()=>window.fixtureFeed.livePatches.A?.cards?.home===1);
- assert.ok((await page.$$eval('.zshop-tracker-stat strong',els=>els.map(el=>el.textContent))).includes('1 - 0'));
- assert.ok((await page.$eval('.zshop-tracker',el=>el.textContent)).includes('Goditjet në portë'),'unrelated card update preserves shot facts');
+ assert.deepEqual(await stat('yellowCards'),['1','0']);
+ assert.deepEqual(await stat('redCards'),['0','0']);
+ assert.deepEqual(await stat('shotsOnTarget'),['0','1'],'unrelated card update preserves shot facts');
  emit({home:{shotsOnTarget:3},away:{shotsOnTarget:4}});
- await page.waitForFunction(()=>document.body.textContent.includes('3 - 4'));
- assert.ok((await page.$eval('.zshop-tracker',el=>el.textContent)).includes('2 - 3'),'unrelated shot update preserves foul facts');
+ await page.waitForFunction(()=>[...document.querySelectorAll('[data-stat-key="shotsOnTarget"] strong')].map(el=>el.textContent).join(',')==='3,4');
+ assert.deepEqual(await stat('shotsOnTarget'),['3','4']);
+ assert.deepEqual(await stat('fouls'),['2','3'],'unrelated shot update preserves foul facts');
+ io.emit('match:info',{match_id:'A',at:new Date().toISOString(),events:[
+   {id:'goal-11',matchId:'A',type:'goal',minute:11,team:'home',text:'Goal',player:'Scorer Alpha'},
+   {id:'yellow-15',matchId:'A',type:'yellow_card',minute:15,team:'away',text:'Yellow card',player:'Booked Beta'},
+   {id:'foul-17',matchId:'A',type:'foul',minute:17,team:'home',text:'Foul',player:'Fouler Alpha'},
+   {id:'red-23',matchId:'A',type:'red_card',minute:23,team:'away',text:'Red card',player:'Sent Off Beta'}
+ ]});
+ await page.waitForFunction(()=>document.querySelector('.zshop-tracker-events')?.textContent?.includes('Scorer Alpha')&&
+  document.querySelector('.zshop-tracker-events')?.textContent?.includes('Booked Beta'));
+ const rendered=await page.$eval('.zshop-tracker-events',el=>el.textContent);
+ for(const name of ['Scorer Alpha','Booked Beta','Fouler Alpha','Sent Off Beta'])assert.ok(rendered.includes(name),name);
+ assert.ok(rendered.includes('Karton i verdhë')&&rendered.includes('Karton i kuq'),'Distinct booked/sent-off labels');
  assert.deepEqual(errors,[]);
  console.log('PASS actual socket statistics UI: missing vs real zero, SOT/foul values, partial unrelated updates, responsive1366/390/320 and no runtime errors');
 }finally{await browser?.close();io?.close();await vite?.close();if(server){server.closeAllConnections?.();await new Promise(r=>server.close(r));}}

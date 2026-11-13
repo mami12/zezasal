@@ -221,6 +221,9 @@ jobs:
           npm run test:quote-dedup
           node scripts/test-static-cache.mjs
           node scripts/test-board-speed.mjs
+      - name: Progressive match and market pagination contract
+        if: always()
+        run: node scripts/test-board-settings-api.mjs
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 15

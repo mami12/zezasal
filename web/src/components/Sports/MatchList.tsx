@@ -40,6 +40,12 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
   const onVisible=useCallback((ids:string[])=>setVisibleIds(old=>old.join()===ids.join()?old:ids),[]);
   useFeedScope('board',{boardIds:visibleIds});
   const [loading, setLoading] = useState(true);
+  const [loadingMore,setLoadingMore]=useState(false);
+  const [hasMore,setHasMore]=useState(false);
+  const nextPageRef=useRef<(()=>void)|null>(null);
+  const pageSentinel=useRef<HTMLDivElement|null>(null);
+  const [debouncedSearch,setDebouncedSearch]=useState(searchTerm);
+  useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedSearch(searchTerm.trim()),250);return()=>clearTimeout(timer);},[searchTerm]);
   const [dateFilter, setDateFilter] = useState<DateFilter | 'all'>('all');
   useEffect(()=>setDateFilter('all'),[viewMode]);
   const { t, lang } = useLanguage();
@@ -50,51 +56,79 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
   const refreshRef = useRef<(() => void) | null>(null);
   const lastRefreshVersion = useRef(refreshVersion);
 
+  // Fetch only one page. The visible-row socket subscriptions are managed
+  // independently by ViewportList and remain active when additional rows load.
   useEffect(() => {
     const controller=new AbortController();
-    let active=true, busy=false, queued=false;
-    const refresh=async()=> {
-      if(!active) return;
-      if(busy) {queued=true;return;}
+    let active=true,busy=false,refreshQueued=false,nextOffset=0,more=false;
+    const PAGE=24;
+    setMatches([]);setVisibleIds([]);setLoading(true);setHasMore(false);setLoadingMore(false);
+    const paramsFor=(offset:number)=>{
+      const params:Record<string,string|number>={view:'board',page:1,_snapshot:Date.now(),limit:PAGE,offset};
+      if(tournamentId)params.tournamentId=tournamentId;
+      if(categoryId)params.categoryId=categoryId;
+      if(sportId)params.sportId=sportId;
+      if(isLiveOnly)params.status='LIVE';
+      if(viewMode==='prematch')params.status='PREMATCH';
+      if((viewMode==='all'||viewMode==='prematch')&&dateFilter!=='all')params.day=dateFilter;
+      if(debouncedSearch)params.q=debouncedSearch;
+      if(viewMode==='favorites')params.favoriteIds=favorites.slice(0,100).join(',')||'none';
+      return params;
+    };
+    const fetchPage=async(offset:number,first=false)=>{
+      if(!active||busy)return;
       busy=true;
-      try {
-        const params:any={view:'board', _snapshot:Date.now()};
-        if(tournamentId) params.tournamentId=tournamentId;
-        if(categoryId) params.categoryId=categoryId;
-        if(sportId) params.sportId=sportId;
-        if(isLiveOnly) params.status='LIVE';
-        if(viewMode==='prematch')params.status='PREMATCH';
-        if((viewMode==='all'||viewMode==='prematch')&&dateFilter!=='all')params.day=dateFilter;
-        // Finished favorites are fetched by ID from durable final results.
-        // The ordinary board endpoint remains unchanged and excludes ended games.
-        const historyRequest=viewMode==='favorites'&&favorites.length
+      if(offset>0)setLoadingMore(true);
+      try{
+        const historyRequest=offset===0&&viewMode==='favorites'&&favorites.length
           ?apiClient.get('/matches/favorites',{params:{ids:favorites.slice(0,100).join(',')},signal:controller.signal})
-            .then(res=>Array.isArray(res.data)?res.data:[]).catch(()=>[])
+             .then(res=>Array.isArray(res.data)?res.data:[]).catch(()=>[])
           :Promise.resolve([]);
         const [res,finished]=await Promise.all([
-          apiClient.get('/matches',{params,signal:controller.signal}),historyRequest,
+          apiClient.get('/matches',{params:paramsFor(offset),signal:controller.signal}),historyRequest,
         ]);
-        if(active) {
-          const snapshot=Array.isArray(res.data)?res.data:[];
-          acceptMatches(snapshot);
-          const archivedIds=new Set(finished.map((m:any)=>String(m.id)));
-          setMatches([...snapshot.filter((m:any)=>!archivedIds.has(String(m.id))),...finished]);
-        }
-      } catch(error) {if(active) console.error('Failed to fetch matches:',error);}
-      finally {
+        if(!active)return;
+        const page=Array.isArray(res.data)?{items:res.data,nextOffset:offset+res.data.length,hasMore:false}:res.data;
+        const rows=Array.isArray(page?.items)?page.items:[];
+        acceptMatches(rows);
+        const archivedIds=new Set(finished.map((row:any)=>String(row.id)));
+        const incoming=[...rows.filter((row:any)=>!archivedIds.has(String(row.id))),...finished];
+        setMatches(previous=>{
+          if(first)return incoming;
+          const incomingIds=new Set(incoming.map((row:any)=>String(row.id)));
+          return offset===0?[...incoming,...previous.filter(row=>!incomingIds.has(String(row.id)))]:
+            [...previous,...incoming.filter(row=>!previous.some(old=>String(old.id)===String(row.id)))];
+        });
+        nextOffset=Number.isFinite(Number(page?.nextOffset))?Number(page.nextOffset):offset+rows.length;
+        more=page?.hasMore===true;
+        setHasMore(more);
+      }catch(error){
+        if(active)console.error('Failed to fetch matches:',error);
+      }finally{
         busy=false;
-        if(active) {
-          setLoading(false);
-          if(queued) {queued=false;void refresh();}
-        }
+        if(active){setLoading(false);setLoadingMore(false);if(refreshQueued){refreshQueued=false;void fetchPage(0);}}
       }
     };
-    refreshRef.current=()=>void refresh();
-    setLoading(true);
-    void refresh();
-    const interval=window.setInterval(()=>void refresh(),30000);
-    return ()=>{active=false;refreshRef.current=null;controller.abort();window.clearInterval(interval);};
-  }, [tournamentId, categoryId, sportId, isLiveOnly,viewMode,dateFilter, acceptMatches,favorites]);
+    const refresh=()=>{if(busy){refreshQueued=true;return;}void fetchPage(0);};
+    refreshRef.current=refresh;
+    nextPageRef.current=()=>{if(active&&!busy&&more)void fetchPage(nextOffset);};
+    void fetchPage(0,true);
+    const interval=window.setInterval(refresh,30000);
+    return()=>{active=false;refreshRef.current=null;nextPageRef.current=null;controller.abort();window.clearInterval(interval);};
+  }, [tournamentId, categoryId, sportId, isLiveOnly,viewMode,dateFilter, debouncedSearch,acceptMatches,favorites]);
+
+  // An observer with prefetch margin avoids loading on every pixel of scroll.
+  // The first page already contains more than a phone screen, and further
+  // pages are requested only as the user approaches the bottom.
+  useEffect(()=>{
+    const el=pageSentinel.current,root=el?.closest('[data-sportsbook-scroll]');
+    if(!el||!root||!hasMore)return;
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)&&!loadingMore)nextPageRef.current?.();
+    },{root,rootMargin:'700px 0px'});
+    observer.observe(el);
+    return()=>observer.disconnect();
+  },[hasMore,loadingMore,matches.length,viewMode]);
 
   // A collector cycle must not cancel a slow request. Coalesce changes behind
   // its response; only an actual filter change or unmount aborts that request.
@@ -285,6 +319,9 @@ export default function MatchList({ tournamentId, categoryId, sportId, isLiveOnl
       )}
 
       <div className="zshop-league"><ViewportList items={entries} onVisible={onVisible}/></div>
+      <div ref={pageSentinel} className="flex min-h-2 items-center justify-center py-2" role={loadingMore?'status':undefined}>
+        {loadingMore&&<span className="text-xs text-text-secondary">{t('common.loading')}</span>}
+      </div>
 
     </div>
   );
