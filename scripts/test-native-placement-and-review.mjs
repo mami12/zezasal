@@ -48,7 +48,8 @@ const quoted=[
  make(999112,'Anytime Goalscorer','Player X'),
  make(999113,'Total corners in minutes 11-20 (10-minute interval)','Over','0.5'),
  make(999114,'Next Goal','1'),
- make(999115,'1X2 + BTTS','1 & Yes')
+ make(999115,'1X2 + BTTS','1 & Yes'),
+ make(999120,'Silva, Bernardo - Shots on goal (incl. extra time)','Over','0.5')
 ];
 const id=row=>[matchId,row.marketKey,row.line,row.outcomeKey].join('|');
 try{
@@ -66,6 +67,9 @@ try{
     status:'scheduled',raw:{provider:'ZIZOBET',nativeId:75149063}
   }]);
   odds.applyRows(quoted);
+  await assert.rejects(resolveSelection({outcomeId:id(quoted[5]),oddsAtPlacement:2.2}),
+    error=>error?.code==='MARKET_NOT_OFFERED',
+    'An old cached retired Zizobet player quote must never pass wallet validation');
   const unknown=await resolveSelection({outcomeId:id(quoted[0]),oddsAtPlacement:2.2});
   assert.equal(unknown.settlementHold,'NATIVE_FINAL_RULE_UNMAPPED');
   assert.equal(unknown.liveContract,null);
