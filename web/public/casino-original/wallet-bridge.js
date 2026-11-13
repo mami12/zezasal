@@ -3,6 +3,18 @@
  const config=window.casinoWalletConfig||{};
  const embedded=window.parent!==window;
  const notify=(type,data={})=>{if(embedded)window.parent.postMessage({type,...data},window.location.origin);};
+ // Casino spins also need stable retry IDs on HTTP LAN/mobile browsers.
+ // crypto.randomUUID() is often absent outside secure origins.
+ const newRequestId=()=>{
+  const cryptoApi=window.crypto;
+  if(typeof cryptoApi?.randomUUID==='function')return cryptoApi.randomUUID();
+  if(typeof cryptoApi?.getRandomValues!=='function')
+   throw new Error('Secure random numbers are unavailable for payment requests.');
+  const bytes=cryptoApi.getRandomValues(new Uint8Array(16));
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,n=>n.toString(16).padStart(2,'0')).join('');
+  return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+ };
  let pending=0;
  let pixiUnit=0,pixiCash=0,pixiAwaitingSpin=false;
  function pixiResponse(data){
@@ -183,7 +195,7 @@
     target.pathname=config.agtApi;
     if(['spin','freespin','double','save'].includes(target.searchParams.get('action'))){
      const fingerprint=target.pathname+'?'+['action','gamename','li','di','amount','color'].map(key=>key+'='+target.searchParams.get(key)).join('&');
-     const entry=retryIds.get(fingerprint)||{requestId:crypto.randomUUID(),active:0,definitive:false};
+     const entry=retryIds.get(fingerprint)||{requestId:newRequestId(),active:0,definitive:false};
      retryIds.set(fingerprint,entry);
      this.__casinoRetry={fingerprint,entry};
      target.searchParams.set('request_id',entry.requestId);

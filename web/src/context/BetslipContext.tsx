@@ -5,6 +5,7 @@ import { BetSelection } from '../types';
 import { apiClient } from '../api/client';
 import { buildBetslipColumns, MIN_TOTAL_STAKE_CENTS, previewColumnPayouts, splitStakeCents, stakeToCents } from '../utils/betslipColumns';
 import { toggleMarketSelection } from '../../../server/ledger/selection-market.mjs';
+import {createClientRequestId} from '../utils/clientRequestId.mjs';
 
 interface BetslipContextType {
   selections: BetSelection[];
@@ -95,7 +96,7 @@ export const BetslipProvider = ({ children }: { children: React.ReactNode }) => 
     // If a response is lost, retry the SAME request ID: server will return
     // the original ticket, not charge the wallet again.
     if (!pendingBet.current || pendingBet.current.fingerprint !== fingerprint) {
-      pendingBet.current = { requestId: crypto.randomUUID(), fingerprint };
+      pendingBet.current = { requestId: createClientRequestId(), fingerprint };
     }
     const clientRequestId = pendingBet.current.requestId;
     setIsPlacingBet(true);
