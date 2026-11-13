@@ -4,6 +4,7 @@ import {apiClient} from '../../api/client';
 import {useAuth} from '../../context/AuthContext';
 import {useLanguage} from '../../context/LanguageContext';
 import {useNavigate} from 'react-router-dom';
+import {createClientRequestId} from '../../utils/clientRequestId.mjs';
 
 type Preview={counts:Record<string,number>;accounts:number;totalBalance:number;accountsWithBalance:number};
 export default function FinancialReset(){
@@ -13,7 +14,7 @@ export default function FinancialReset(){
  const load=async()=>{setLoading(true);try{const r=await apiClient.get('/admin/financial-reset/preview');setPreview(r.data);setError('');}catch(e:any){setError(e.response?.data?.message||tr('Nuk u ngarkua përmbledhja.','Preview could not be loaded.'));}finally{setLoading(false);}};
  useEffect(()=>{void load();},[]);
  useEffect(()=>{if(!open)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';const frame=requestAnimationFrame(()=>dialog.current?.querySelector<HTMLInputElement>('input')?.focus());const listener=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!busy)setOpen(false);if(e.key==='Tab'){const all=Array.from(dialog.current?.querySelectorAll<HTMLElement>('input,button:not(:disabled)')||[]);const first=all[0],last=all[all.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};document.addEventListener('keydown',listener);return()=>{cancelAnimationFrame(frame);document.body.style.overflow=previous;document.removeEventListener('keydown',listener);trigger.current?.focus();};},[open,busy]);
- const begin=()=>{const key=`financial-reset-pending:${user?.id}`;requestId.current=sessionStorage.getItem(key)||crypto.randomUUID();setCode('');setConfirmation('');setError('');setOpen(true);};
+ const begin=()=>{const key=`financial-reset-pending:${user?.id}`;requestId.current=sessionStorage.getItem(key)||createClientRequestId();setCode('');setConfirmation('');setError('');setOpen(true);};
  const submit=async(e:FormEvent)=>{e.preventDefault();if(busy)return;setBusy(true);setError('');const key=`financial-reset-pending:${user?.id}`;sessionStorage.setItem(key,requestId.current);try{
   const r=await apiClient.post('/admin/financial-reset',{code,confirmation,requestId:requestId.current});
   sessionStorage.removeItem(key);setSuccess(r.data);setOpen(false);setCode('');setConfirmation('');
