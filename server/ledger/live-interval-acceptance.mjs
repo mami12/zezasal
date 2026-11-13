@@ -69,20 +69,32 @@ async function currentCounters(match,event,{execute,at,clock}){
  * chronological fact is counted only if its within-team ordinal exceeds the
  * frozen count AND its minute is inside the offered interval.
  */
-export async function verifyLiveIntervalAcceptance(contract,match,{execute,at=Date.now()}={}){
+export async function verifyLiveIntervalAcceptance(contract,match,{
+ execute,at=Date.now(),nativeQuoteVerified=false
+}={}){
  if(String(match?.service??'').toUpperCase()!=='LIVE')return contract;
  const bounds=intervalBounds(contract);
  if(!bounds)return contract;
+ const quoteAnchoredOrdinal=nativeQuoteVerified===true&&contract.kind==='nth-time'&&
+   contract.event==='goal'&&Number.isSafeInteger(contract.target);
  const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
  const stamp=match.clock_at==null?NaN:new Date(match.clock_at).getTime();
- if(!Number.isFinite(clock)||!Number.isFinite(stamp)||stamp>at+5000||at-stamp>45000)
+ if(!Number.isFinite(clock)||!Number.isFinite(stamp)||stamp>at+5000||at-stamp>45000){
+  // The explicitly quoted match-wide Nth goal keeps its exact number and
+  // minute band. Missing a momentary clock update does not change that
+  // original offer. At settlement we require a confirmed incident timeline.
+  if(quoteAnchoredOrdinal)return contract;
   throw invalid('Mungon ora LIVE e freskët e Zizobet.');
+ }
  if(!['goal','corner','card','foul'].includes(contract.event))
   throw invalid('Lloji i ngjarjes nuk është i verifikueshëm.');
  // No expensive incident-history query. Only a live counter may be needed.
  if(clock>=bounds.toExclusive){enforce('DECIDED');}
  const counts=await currentCounters(match,contract.event,{execute,at,clock});
- if(!counts)throw invalid('Mungojnë numëruesit LIVE të konfirmuar të Zizobet për këtë ngjarje.');
+ if(!counts){
+  if(quoteAnchoredOrdinal)return contract;
+  throw invalid('Mungojnë numëruesit LIVE të konfirmuar të Zizobet për këtë ngjarje.');
+ }
  if(contract.kind==='nth-time'){
   enforce(assessInterval(contract,{clock,goalTotal:counts.home+counts.away}));
   // Preserve the GLOBAL goal ordinal and its current match-wide score.
