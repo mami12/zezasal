@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {resolveMarketTitle} from '../server/zizobet/normalize.mjs';
 import {liveContract} from '../server/ledger/live-contract-rules.mjs';
 import {frozenLiveContract} from '../server/ledger/live-contract-context.mjs';
+import {verifyLiveIntervalAcceptance} from '../server/ledger/live-interval-acceptance.mjs';
 import {gradeStoredEventContract} from '../server/ledger/match-event-facts.mjs';
 
 const line=(market_name,outcome_name='Over',raw='0.5')=>({market_name,outcome_name,line:raw});
@@ -43,10 +44,12 @@ assert.deepEqual(frozenLiveContract(line(homeName),live,at),home);
 for(const minute of [16,18])assert.deepEqual(
  frozenLiveContract(line(homeName),{...live,match_time_ms:minute*60000},at),home,
  'An in-progress fixed interval can still be offered for future incidents: '+minute);
-assert.throws(
- ()=>frozenLiveContract(line(homeName),{...live,match_time_ms:21*60000},at),
- error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED',
- 'A genuinely finished minute range cannot accept a NEW live ticket');
+await assert.rejects(
+ ()=>verifyLiveIntervalAcceptance(frozenLiveContract(line(homeName),
+  {...live,match_time_ms:21*60000},at),
+  {...live,match_time_ms:21*60000},{at}),
+ error=>error?.code==='MARKET_DECIDED',
+ 'An expired generic minute range cannot accept a NEW live ticket');
 assert.throws(()=>frozenLiveContract(line(homeName),
  {...live,clock_at:new Date(at-120000).toISOString()},at),
  error=>error?.code==='MARKET_EVIDENCE_UNSUPPORTED');
