@@ -48,6 +48,8 @@ export interface LivePatch {
   awayTeam?: string;
   corners?: { home: number; away: number } | null;
   cards?: { home: number; away: number } | null;
+  yellowCards?: { home: number; away: number } | null;
+  redCards?: { home: number; away: number } | null;
   shots?: { home: number; away: number } | null;
   shotsOnTarget?: { home: number; away: number } | null;
   fouls?: { home: number; away: number } | null;
@@ -193,6 +195,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
         homeScore: match.homeScore, awayScore: match.awayScore, scoreAt: match.scoreAt ?? undefined,
         clockAt: match.clockAt, phaseAt: match.phaseAt, snapshotAt: match.snapshotAt, updatedAt: match.updatedAt ?? match.snapshotAt ?? '',
         period: match.period, corners: match.corners, cards: match.cards,
+        yellowCards: match.yellowCards, redCards: match.redCards,
         shots:match.shots,shotsOnTarget:match.shotsOnTarget,fouls:match.fouls,
         marketCount: (match as any).marketCount, isSuspended: match.isSuspended,
         homeTeam: match.homeTeam, awayTeam: match.awayTeam,
@@ -424,6 +427,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
           phaseAt: m.phaseAt,
           corners: cornersOf(m.stats),
           cards: cardsOf(m.stats),
+          yellowCards:counterOf(m.stats,'yellow'),redCards:counterOf(m.stats,'red'),
           shots:counterOf(m.stats,'shots'),shotsOnTarget:counterOf(m.stats,'shotsOnTarget'),fouls:counterOf(m.stats,'fouls'),
           isSuspended: typeof m.suspended==='boolean'?m.suspended:undefined,
           snapshotAt: m.snapshotAt ?? (payload as any).at,
@@ -475,6 +479,7 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
         isSuspended: typeof info.has_open_odds === 'boolean' ? info.has_open_odds === false : undefined,
         corners: cornersOf(info.stats),
         cards: cardsOf(info.stats),
+        yellowCards:counterOf(info.stats,'yellow'),redCards:counterOf(info.stats,'red'),
         shots:counterOf(info.stats,'shots'),shotsOnTarget:counterOf(info.stats,'shotsOnTarget'),fouls:counterOf(info.stats,'fouls'),
         snapshotAt: at,
         updatedAt: info.updated_at ? new Date(info.updated_at).toISOString() : at,
