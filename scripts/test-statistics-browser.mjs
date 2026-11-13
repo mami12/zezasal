@@ -47,6 +47,17 @@ try{
  await page.waitForFunction(()=>[...document.querySelectorAll('[data-stat-key="shotsOnTarget"] strong')].map(el=>el.textContent).join(',')==='3,4');
  assert.deepEqual(await stat('shotsOnTarget'),['3','4']);
  assert.deepEqual(await stat('fouls'),['2','3'],'unrelated shot update preserves foul facts');
+ io.emit('match:info',{match_id:'A',at:new Date().toISOString(),events:[
+   {id:'goal-11',matchId:'A',type:'goal',minute:11,team:'home',text:'Goal',player:'Scorer Alpha'},
+   {id:'yellow-15',matchId:'A',type:'yellow_card',minute:15,team:'away',text:'Yellow card',player:'Booked Beta'},
+   {id:'foul-17',matchId:'A',type:'foul',minute:17,team:'home',text:'Foul',player:'Fouler Alpha'},
+   {id:'red-23',matchId:'A',type:'red_card',minute:23,team:'away',text:'Red card',player:'Sent Off Beta'}
+ ]});
+ await page.waitForFunction(()=>document.querySelector('.zshop-tracker-events')?.textContent?.includes('Scorer Alpha')&&
+  document.querySelector('.zshop-tracker-events')?.textContent?.includes('Booked Beta'));
+ const rendered=await page.$eval('.zshop-tracker-events',el=>el.textContent);
+ for(const name of ['Scorer Alpha','Booked Beta','Fouler Alpha','Sent Off Beta'])assert.ok(rendered.includes(name),name);
+ assert.ok(rendered.includes('Karton i verdhë')&&rendered.includes('Karton i kuq'),'Distinct booked/sent-off labels');
  assert.deepEqual(errors,[]);
  console.log('PASS actual socket statistics UI: missing vs real zero, SOT/foul values, partial unrelated updates, responsive1366/390/320 and no runtime errors');
 }finally{await browser?.close();io?.close();await vite?.close();if(server){server.closeAllConnections?.();await new Promise(r=>server.close(r));}}
