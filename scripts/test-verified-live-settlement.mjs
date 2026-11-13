@@ -136,6 +136,16 @@ assert.equal(verifiedSecondLiveDecision(timedProof(
  timeWindow,frameFor('goal',1,0,11),frameFor('goal',1,0,11)),{now}),null,
  'Events first observed after the interval cannot be assigned to it');
 assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0,8),frameFor('goal',1,0,11)),{now}),'WON',
+ 'An in-window proven goal remains WON after interval closes before second confirmation');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ {...timeWindow,choice:'under'},frameFor('goal',1,0,8),
+ frameFor('goal',1,0,11),'LOST'),{now}),'LOST',
+ 'An in-window lost UNDER remains lost when the second read arrives past the boundary');
+assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0,8),frameFor('goal',2,0,11)),{now}),null,
+ 'A new count after the window cannot be attributed to the earlier interval');
+assert.equal(verifiedSecondLiveDecision(timedProof(
  {...timeWindow,from:10,to:20},frameFor('goal',1,0,11),
  frameFor('goal',1,0,11)),{now}),null,
  'A fixture score cannot prove a goal inside an unstarted future interval');
