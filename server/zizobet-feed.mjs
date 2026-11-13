@@ -1,4 +1,5 @@
 import {isBoardOddsRow} from './ledger/board-projection.mjs';
+import {isRetiredPlayerOfferMarket} from './market-policy.mjs';
 import {CACHE,META,get,decode,startMqtt} from './zizobet/transport.mjs';
 import {rowOf,infoOf,oddsOf,isZizoId,OFFSET} from './zizobet/normalize.mjs';
 import {collectEventEvidence} from './zizobet/event-collector.mjs';
@@ -65,7 +66,7 @@ export function startZizoFeed({onMatch,onInfo,onOdds,onStatus,onCycle,onMarketDe
     provider:'ZIZOBET',scope:'PREMATCH',id,
     name:definition.Name??definition.name,definition
    }))
-  ];
+  ].filter(def=>!isRetiredPlayerOfferMarket({name:def.name}));
   void Promise.resolve().then(()=>onMarketDefinitions(archivalDefinitions))
    .catch(e=>console.warn('[zizobet] native market catalog archive:',e.message));
  }
