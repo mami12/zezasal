@@ -85,7 +85,12 @@ export async function verifyLiveIntervalAcceptance(contract,match,{execute,at=Da
  if(!counts)throw invalid('Mungojnë numëruesit LIVE të konfirmuar të Zizobet për këtë ngjarje.');
  if(contract.kind==='nth-time'){
   enforce(assessInterval(contract,{clock,goalTotal:counts.home+counts.away}));
-  return contract; // GLOBAL goal ordinal; never convert it to interval counts
+  // Preserve the GLOBAL goal ordinal and its current match-wide score.
+  // A new first/second/third goal can only be inferred from two later primary
+  // frames when the frozen total was exactly target-1 and its clock falls
+  // inside the advertised minute band. Never rewrite it as interval goal #1.
+  return {...contract,entryBaseline:{home:counts.home,away:counts.away},
+   entryClockMinute:clock,entryObservedAt:new Date(at).toISOString()};
  }
  enforce(assessInterval(contract,{clock}));
  if(!remainingKinds.has(contract.kind))return contract;
