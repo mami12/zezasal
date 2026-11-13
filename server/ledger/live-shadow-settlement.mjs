@@ -32,8 +32,11 @@ export async function createLiveSettlementPreviews({
   if(!Number.isFinite(placedAt)||!Number.isFinite(frameAt)||frameAt<placedAt||frameAt>now()+5000||
      (!frame.ended&&now()-frameAt>120000)||
      Number(row.open_recovery_gaps)>0){await clear(row.line_id);held++;continue;}
-  const timeline=gradeLiveContract(contract,frame,{ended:frame.ended===true});
   const delta=gradeFromAcceptedCounters(contract,frame);
+  // Timed LIVE quotes carry a frozen purchase baseline. A pre-purchase
+  // incident in the provider timeline must never supply a new-bet verdict.
+  const timed=['window','window-total'].includes(contract?.kind)&&contract.entryBaseline!=null;
+  const timeline=timed?null:gradeLiveContract(contract,frame,{ended:frame.ended===true});
   const status=timeline&&delta&&timeline!==delta?null:timeline??delta;
   if(!['WON','LOST','VOID'].includes(status)){await clear(row.line_id);held++;continue;}
   const evidence={contract,frame:{source:frame.source,clock:frame.clock,counts:frame.counts,
@@ -44,8 +47,11 @@ export async function createLiveSettlementPreviews({
    'values($1,$2,$3,$4::jsonb,now()) '+
    'on conflict(line_id) do update set proposed_status=excluded.proposed_status, '+
    'payload=excluded.payload,updated_at=excluded.updated_at '+
+   // Keep the original evidence and proposal timestamp while the verdict
+   // stays unchanged. The independent second poll must not reset its own
+   // five-second confirmation clock on every provider update.
    "where app_live_settlement_preview.proposed_status is distinct from excluded.proposed_status "+
-   "or app_live_settlement_preview.payload->>'frameAt' is distinct from excluded.payload->>'frameAt'",
+   "or app_live_settlement_preview.payload->'contract' is distinct from excluded.payload->'contract'",
    [row.line_id,row.match_id,status,JSON.stringify(evidence)]);
   proposed++;
  }
