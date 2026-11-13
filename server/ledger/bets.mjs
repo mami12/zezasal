@@ -105,19 +105,28 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   );
   // Use the provider's own parameters for quoted dynamic markets; a translated
   // display title is not a settlement rule or a reliable interval boundary.
-  const row = selectedRow ? nativeZizobetContractRow(selectedRow) : null;
-  if (!row) throw badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.');
-  // The exact native server-side offer, not a browser title, authorizes
-  // deferred settlement-evidence checks. Malformed quote IDs fail above.
-  const nativeQuoteVerified=String(row.provider_id??'').toUpperCase()==='ZIZOBET'&&
-    /^zz\d+@/.test(String(row.market_key??''));
-  let settlementHold=null;
+  if (!selectedRow)throw Object.assign(
+    badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.'),
+    {code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
+  // Server-matched provider origin, not a particular display-key regex,
+  // determines whether the Zizobet offer is authoritative for placement.
+  // Unreadable native parameters require settlement review, not rejection.
+  const nativeQuoteVerified=String(selectedRow.provider_id??'').toUpperCase()==='ZIZOBET';
+  let settlementHold=null, row=selectedRow;
+  try{row=nativeZizobetContractRow(selectedRow);}
+  catch(error){
+    if(!nativeQuoteVerified||error?.code!=='MARKET_EVIDENCE_UNSUPPORTED')throw error;
+    settlementHold='NATIVE_PARAMETERS_UNMAPPED';
+  }
   const holdNative=reason=>{
     if(!nativeQuoteVerified)return false;
     settlementHold??=reason;
     return true;
   };
-  if(isExcludedOfferMarket(row))throw Object.assign(badRequest('Ky treg nuk ofrohet.'),{code:'MARKET_NOT_OFFERED',outcomeId:selection.outcomeId});
+  // Zizobet itself decides which native markets are offered. A local
+  // category/name exclusion is not a provider suspension.
+  if(!nativeQuoteVerified&&isExcludedOfferMarket(row))
+    throw Object.assign(badRequest('Ky treg nuk ofrohet.'),{code:'MARKET_NOT_OFFERED',outcomeId:selection.outcomeId});
   await assertMarketEnabled(row,executor,match);
   const nativeOffer=isYbetsNativeOffer(row,match);
   // Offer decisions depend on provider state and explicit admin policy.
@@ -218,7 +227,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(!playerGoalSpecial&&!holdNative('NATIVE_PLAYER_GOAL_UNMAPPED'))
       throw Object.assign(badRequest('Mungon emri i lojtarit ose limiti i saktë i golave.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-    if(String(match.service??'').toUpperCase()==='LIVE'&&
+    if(!nativeQuoteVerified&&String(match.service??'').toUpperCase()==='LIVE'&&
        playerGoalSpecial?.mode==='period'){
       const now=Date.now(),stamp=Date.parse(match.clock_at??'');
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
@@ -234,7 +243,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // a stale Anytime Goalscorer quote can be bought after that player scored,
   // even though the 2+/3+ quotes were correctly blocked.
   const playerGoalContract=playerGoalSpecial??parsePlayerGoalContract(row);
-  if(playerGoalContract&&String(match.service??'').toUpperCase()==='LIVE'){
+  if(!nativeQuoteVerified&&playerGoalContract&&String(match.service??'').toUpperCase()==='LIVE'){
     const observed=Date.now();
     // A fresh primary 0-0 proves no player has scored; on 1+ goals use the
     // reconciled, confirmed named incidents before accepting a quote.
@@ -267,7 +276,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(!periodGoalContract&&!holdNative('NATIVE_PERIOD_GOAL_UNMAPPED'))
       throw Object.assign(badRequest('Tregu i golave ka limit ose pjesë të paidentifikuar.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-    if(String(match.service??'').toUpperCase()==='LIVE'&&periodGoalContract?.half===1){
+    if(!nativeQuoteVerified&&String(match.service??'').toUpperCase()==='LIVE'&&periodGoalContract?.half===1){
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
       const clockAt=Date.parse(match.clock_at??'');
       if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
@@ -285,7 +294,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       throw Object.assign(badRequest('Opsioni i kombinimit nuk përputhet me rezultatin dhe totalin e tregut.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
     const liveCombo=String(match.service??'').toUpperCase()==='LIVE';
-    if(liveCombo&&halfComboContract?.half===1){
+    if(!nativeQuoteVerified&&liveCombo&&halfComboContract?.half===1){
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
       const clockAt=Date.parse(match.clock_at??'');
       if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
@@ -390,7 +399,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // whether Race to X Cards has already ended at LIVE placement.
   let raceCornerSnapshot=null;
   const liveMatch=String(match.service??'').toUpperCase()==='LIVE';
-  if(liveMatch&&!primaryLiveCounters(match,'corner')&&(/\brace to \d+ corners?\b|\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+corners?\b/i.test(raceName))){
+  if(!nativeQuoteVerified&&liveMatch&&!primaryLiveCounters(match,'corner')&&(/\brace to \d+ corners?\b|\b(?:next|first|\d+(?:st|nd|rd|th)?)\s+corners?\b/i.test(raceName))){
     try{
       const {rows}=await executor(`select count_home,count_away,through_minute,observed_at,confirmed_at from app_match_event_coverage
         where match_id=$1 and provider='zizobet' and kind='corner' and confirmed_at is not null limit 1`,[matchId]);
@@ -404,7 +413,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     }catch{ /* missing coverage means no historical fallback */ }
   }
   let raceCardSnapshot=null;
-  if(((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence||
+  if(!nativeQuoteVerified&&((isRace&&/\brace to \d+ cards?\b/i.test(raceName))||isCardSequence||
        (isHalfIncident&&/\b(?:cards?|bookings?)\b/i.test(raceName)))&&
      String(match.service??'').toUpperCase()==='LIVE'&&!primaryLiveCounters(match,'card')){
     try{
@@ -419,7 +428,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // into a wager on a future event.
   let playerCardSnapshot=null;
   const playerCard=parsePlayerCardContract(row);
-  if(playerCard&&String(match.service??'').toUpperCase()==='LIVE'){
+  if(!nativeQuoteVerified&&playerCard&&String(match.service??'').toUpperCase()==='LIVE'){
     try{
       const {rows:coverage}=await executor(
         "select through_minute,observed_at,confirmed_at from app_match_event_coverage "+
@@ -526,7 +535,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // no payout rule for. Do not take the stake and then hold it forever as
   // PENDING: verify the actual final-result grader before charging the wallet.
   // Frozen chronological contracts are handled separately by the fact grader.
-  if(!nativeOffer&&!contract){
+  if(!nativeQuoteVerified&&!nativeOffer&&!contract){
     const {hasFinalSettlementRule}=await import('./market-settlement-preflight.mjs');
     if(!hasFinalSettlementRule({...row,market_name:row.market_name??raceName,
        outcome_name:row.outcome_name??parsed.outcomeKey,
