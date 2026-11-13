@@ -97,7 +97,7 @@ export default function PitchTracker({matchId,homeTeam,awayTeam,eventsOnly=false
     </div>;
   });
 
-  return <section className="mt-3 overflow-hidden rounded-lg border border-slate-700/80 bg-[#121b28] text-slate-100"
+  return <section data-testid="match-tracker" className="mt-3 overflow-hidden rounded-lg border border-slate-700/80 bg-[#121b28] text-slate-100"
     aria-label={english?'Live match statistics':'Statistikat e ndeshjes'}>
     <button type="button" onClick={()=>setOpen(value=>!value)} aria-expanded={open}
       className="flex min-h-11 w-full items-center justify-between gap-3 bg-[#1b2736] px-3 py-2.5 text-left text-sm font-semibold sm:px-4">
@@ -112,7 +112,7 @@ export default function PitchTracker({matchId,homeTeam,awayTeam,eventsOnly=false
           <span className="truncate text-center" title={awayTeam}>{awayTeam}</span>
         </div>
         <div className="divide-y divide-slate-700/50 rounded-md border border-slate-700/60">
-          {rows.map(({key,label,value})=><div key={key} className="grid grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-2 px-2 py-2">
+          {rows.map(({key,label,value})=><div key={key} data-stat-key={key} className="grid grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-2 px-2 py-2">
             <strong className="text-center font-mono text-sm font-semibold tabular-nums">{value.home}</strong>
             <span className="text-center text-xs text-slate-300">{label}</span>
             <strong className="text-center font-mono text-sm font-semibold tabular-nums">{value.away}</strong>
@@ -123,13 +123,17 @@ export default function PitchTracker({matchId,homeTeam,awayTeam,eventsOnly=false
         <div className="bg-[#192332] px-3 py-2 text-xs font-semibold text-slate-300 sm:px-4">
           {english?'Match events':'Ngjarjet e ndeshjes'}
         </div>
-        {eventRows(mainEvents,false)}
+        <div className="zshop-tracker-events" role="region" tabIndex={0} aria-label={english?'Main match event history':'Historiku i ngjarjeve'}>
+          {eventRows(mainEvents,false)}
+        </div>
       </div>}
       {supplementary.length>0&&<div className="border-t border-slate-700/70">
         <div className="bg-[#192332] px-3 py-2 text-xs font-semibold text-slate-300 sm:px-4">
           {english?'Supplemental verified incidents':'Ngjarje të verifikuara nga API shtesë'}
         </div>
-        {eventRows(supplementary,true)}
+        <div className="zshop-tracker-events" role="region" tabIndex={0} aria-label={english?'Supplemental provider event history':'Historiku nga API-të shtesë'}>
+          {eventRows(supplementary,true)}
+        </div>
       </div>}
     </>}
   </section>;
