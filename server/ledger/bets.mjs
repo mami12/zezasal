@@ -547,11 +547,17 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       settlementHold='NATIVE_FINAL_RULE_UNMAPPED';
   }
   const snapshotAt=Date.now();
+  const kickoffAt=Date.parse(match.start_at??'');
+  const unstartedPrematch=String(match.service??'').toUpperCase()==='PREMATCH'&&
+    Number.isFinite(kickoffAt)&&kickoffAt>snapshotAt;
+  const zero={home:0,away:0};
+  // The future PREMATCH fixture has not begun: zero is real. A LIVE
+  // missing counter is unknown, never a manufactured 0-0.
   const acceptedCounters={
-    goal:primaryLiveCounters(match,'goal',{at:snapshotAt}),
-    corner:primaryLiveCounters(match,'corner',{at:snapshotAt}),
-    card:primaryLiveCounters(match,'card',{at:snapshotAt}),
-    foul:primaryLiveCounters(match,'foul',{at:snapshotAt})
+    goal:unstartedPrematch?zero:primaryLiveCounters(match,'goal',{at:snapshotAt}),
+    corner:unstartedPrematch?zero:primaryLiveCounters(match,'corner',{at:snapshotAt}),
+    card:unstartedPrematch?zero:primaryLiveCounters(match,'card',{at:snapshotAt}),
+    foul:unstartedPrematch?zero:primaryLiveCounters(match,'foul',{at:snapshotAt})
   };
   return {
     matchId: String(matchId),
@@ -568,7 +574,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     homeTeamName:match.home,awayTeamName:match.away,
     kickoffAt:match.start_at??null,offerObservedAt:row.updated_at??null,
     acceptedLiveSnapshot:{
-      scoreHome:match.home_score??null,scoreAway:match.away_score??null,
+      scoreHome:unstartedPrematch?0:match.home_score??null,
+      scoreAway:unstartedPrematch?0:match.away_score??null,
       scoreObservedAt:match.score_at??null,clockMilliseconds:match.match_time_ms??null,
       clockObservedAt:match.clock_at??null,feedPhase:match.feed_status??null,
       feedPhaseObservedAt:match.feed_status_at??null,
