@@ -6,6 +6,8 @@ import {persistProviderMarketDefinitions} from './ledger/provider-offer-archive.
 import express from 'express';
 import cors from 'cors';
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { withBrowserUuidCompat } from './browser-uuid-compat.mjs';
 import {randomUUID} from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -898,6 +900,18 @@ app.use('/app/api', ledgerRouter);
 
 const webDist = fileURLToPath(new URL('../web/dist/', import.meta.url));
 if (existsSync(webDist)) {
+  // The previous compiled JS may still call crypto.randomUUID() even after
+  // source files are updated. Serve a compatibility bootstrap in the HTML
+  // BEFORE that cached JS executes. This also covers direct /app/index.html
+  // and SPA deep links without adding calls to the normal odds APIs.
+  const serveClientShell=async (_req,res,next)=>{
+    try {
+      const html=await readFile(path.join(webDist,'index.html'),'utf8');
+      res.setHeader('Cache-Control','no-store, max-age=0');
+      return res.type('html').send(withBrowserUuidCompat(html));
+    } catch(error){return next(error);}
+  };
+  app.get(['/app','/app/','/app/index.html'],serveClientShell);
   // Serve the original game files (demo entry index.html AND real-wallet entry
   // index-real.html) without SPA fallback. If an asset is missing, return a
   // real 404 instead of React's index.html with a misleading 200.
@@ -930,10 +944,7 @@ if (existsSync(webDist)) {
   app.use('/app/casino-original/fortune-teller',express.static(path.join(webDist,'casino-original/fortune-teller'),{fallthrough:false,setHeaders:staticCacheHeaders}));
   app.use('/app', express.static(webDist,{setHeaders:staticCacheHeaders}));
   // deep links (/app/login, /app/admin, ...) fall through to the SPA shell
-  app.get(/^\/app(?!\/api)(\/.*)?$/, (_req, res) => {
-    res.setHeader('Cache-Control','no-store, max-age=0');
-    return res.sendFile(path.join(webDist, 'index.html'));
-  });
+  app.get(/^\/app(?!\/api)(\/.*)?$/,serveClientShell);
   console.log(`[app] serving the React app from ${webDist}`);
 } else {
   app.get('/app', (_req, res) =>
