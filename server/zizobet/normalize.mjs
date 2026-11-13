@@ -129,7 +129,7 @@ export function oddsOf(row,quotes,meta,live,open=true){
   let name=resolveMarketTitle(live&&id===18639?'Correct score [{score}]':rawName,q,{intervalWidth:measuredWidth});if(!name)continue;
   if(live&&id===602)name='1X2';
   name=name.replace(/\bHometeam\b/gi,'Home team').replace(/\bAwayteam\b/gi,'Away team');
-  if(isRetiredPlayerOfferMarket({name}))continue;
+  if(isRetiredPlayerOfferMarket({name,pl:q.pl}))continue;
   if(q.pl&&!name.includes(String(q.pl)))name+=' · '+q.pl;
   const fullResult=(live&&id===602)||(!live&&id===448);
   const fullTotal=(live&&id===603)||(!live&&id===537);
