@@ -107,6 +107,16 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // display title is not a settlement rule or a reliable interval boundary.
   const row = selectedRow ? nativeZizobetContractRow(selectedRow) : null;
   if (!row) throw badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.');
+  // The exact native server-side offer, not a browser title, authorizes
+  // deferred settlement-evidence checks. Malformed quote IDs fail above.
+  const nativeQuoteVerified=String(row.provider_id??'').toUpperCase()==='ZIZOBET'&&
+    /^zz\d+@/.test(String(row.market_key??''));
+  let settlementHold=null;
+  const holdNative=reason=>{
+    if(!nativeQuoteVerified)return false;
+    settlementHold??=reason;
+    return true;
+  };
   if(isExcludedOfferMarket(row))throw Object.assign(badRequest('Ky treg nuk ofrohet.'),{code:'MARKET_NOT_OFFERED',outcomeId:selection.outcomeId});
   await assertMarketEnabled(row,executor,match);
   const nativeOffer=isYbetsNativeOffer(row,match);
@@ -116,7 +126,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw Object.assign(badRequest('Combot janë çaktivizuar nga administrata.'), {code:'COMBOS_DISABLED'});
   }
   // Never accept an expired contract even if a stale client still shows it.
-  if (isDecidedLiveOutcome(match, {
+  if (!nativeQuoteVerified && isDecidedLiveOutcome(match, {
     name: row.market_name, line: row.line, period: row.period,
     outcome_name: row.outcome_name, outcome_key: row.outcome_key,
   })) {
@@ -144,11 +154,13 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   // HT/FT is two explicit 1-X-2 results. Decode the provider selection
   // now rather than charging the wallet for an unknowable text label.
   if(isHtFtMarket(row.market_name)&&
-     !parseHtFtOutcome(row.outcome_name,row.outcome_key))
+     !parseHtFtOutcome(row.outcome_name,row.outcome_key)&&
+     !holdNative('NATIVE_HTFT_UNMAPPED'))
     throw Object.assign(badRequest('Opsioni Pjesa e parë / Fundi i ndeshjes nuk u njoh.'),{
       code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   if(isDcBttsMarket(row.market_name)&&
-     !parseDcBttsOutcome(row.outcome_name,row.outcome_key))
+     !parseDcBttsOutcome(row.outcome_name,row.outcome_key)&&
+     !holdNative('NATIVE_DC_BTTS_UNMAPPED'))
     throw Object.assign(badRequest('Kombinimi Double Chance + BTTS nuk ka opsion të identifikueshëm.'),{
       code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   // admin overrides win over the feed: a suspended match/market/outcome blocks the bet, and
@@ -203,11 +215,11 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   let playerGoalSpecial=null;
   if(isPlayerGoalSpecial(row)){
     playerGoalSpecial=parsePlayerGoalSpecial(row);
-    if(!playerGoalSpecial)
+    if(!playerGoalSpecial&&!holdNative('NATIVE_PLAYER_GOAL_UNMAPPED'))
       throw Object.assign(badRequest('Mungon emri i lojtarit ose limiti i saktë i golave.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
     if(String(match.service??'').toUpperCase()==='LIVE'&&
-       playerGoalSpecial.mode==='period'){
+       playerGoalSpecial?.mode==='period'){
       const now=Date.now(),stamp=Date.parse(match.clock_at??'');
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
       const clock=match.match_time_ms==null?null:Number(match.match_time_ms)/60000;
@@ -241,7 +253,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         [matchId])).rows;
       verified=playerGoalLiveGuard(playerGoalContract,coverage,facts,match,{now:observed});
     }
-    if(!verified.allowed)
+    if(!verified.allowed&&!holdNative('NATIVE_PLAYER_HISTORY_UNVERIFIED'))
       throw Object.assign(badRequest('Golashënuesi LIVE nuk ka kronologji të freskët ose tregu ka përfunduar.'),{
         code:verified.reason==='PLAYER_GOAL_MARKET_ALREADY_DECIDED'?
           'MARKET_DECIDED':'MARKET_EVIDENCE_UNSUPPORTED',
@@ -252,10 +264,10 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   let periodGoalContract=null;
   if(isPeriodGoalTotal(row)){
     periodGoalContract=parsePeriodGoalTotal(row,{home:match.home,away:match.away});
-    if(!periodGoalContract)
+    if(!periodGoalContract&&!holdNative('NATIVE_PERIOD_GOAL_UNMAPPED'))
       throw Object.assign(badRequest('Tregu i golave ka limit ose pjesë të paidentifikuar.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-    if(String(match.service??'').toUpperCase()==='LIVE'&&periodGoalContract.half===1){
+    if(String(match.service??'').toUpperCase()==='LIVE'&&periodGoalContract?.half===1){
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
       const clockAt=Date.parse(match.clock_at??'');
       if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
@@ -269,11 +281,11 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   let halfComboContract=null;
   if(isHalfComboFamily(row)){
     halfComboContract=parseHalfCombination(row,{home:match.home,away:match.away});
-    if(!halfComboContract)
+    if(!halfComboContract&&!holdNative('NATIVE_HALF_COMBO_UNMAPPED'))
       throw Object.assign(badRequest('Opsioni i kombinimit nuk përputhet me rezultatin dhe totalin e tregut.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
     const liveCombo=String(match.service??'').toUpperCase()==='LIVE';
-    if(liveCombo&&halfComboContract.half===1){
+    if(liveCombo&&halfComboContract?.half===1){
       const phase=String(match.feed_status??match.phase??'').toLowerCase();
       const clockAt=Date.parse(match.clock_at??'');
       if(!Number.isFinite(clockAt)||Date.now()-clockAt>45000||clockAt-Date.now()>5000||
@@ -296,7 +308,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       selected===String(match.home??'').trim().toLowerCase()||
       selected===String(match.away??'').trim().toLowerCase():
       /^(?:over|under)(?:\b|\s)/.test(selected);
-    if(!stat?.supported||!validChoice)
+    if((!stat?.supported||!validChoice)&&!holdNative('NATIVE_STATISTIC_UNMAPPED'))
       throw Object.assign(badRequest('Këtij tregu i mungon një rregull i verifikuar për statistikën.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
   }
@@ -314,11 +326,12 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       const currentAway=match.away_score==null?null:Number(match.away_score);
       const stamp=Date.parse(match.score_at??match.scoreAt??'');
       if(currentHome!==baseHome||currentAway!==baseAway||
-         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)
+         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)&&
+         !holdNative('NATIVE_REST_SCORE_UNVERIFIED'))
         throw Object.assign(badRequest('Rezultati ka ndryshuar. Rifresko koeficientin për këtë treg.'),{
           code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
     }else if(baseHome!==0||baseAway!==0){
-      throw Object.assign(badRequest('Kjo kuotë kërkon një rezultat LIVE të verifikuar.'),{
+      if(!holdNative('NATIVE_REST_SCORE_PREMATCH_MISMATCH'))throw Object.assign(badRequest('Kjo kuotë kërkon një rezultat LIVE të verifikuar.'),{
         code:'SELECTION_UNAVAILABLE',outcomeId:selection?.outcomeId});
     }
   }
@@ -332,10 +345,10 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       o.market_key===row.market_key&&String(o.line??'')===String(row.line??''))
       .map(o=>String(o.outcome_name??'').trim().match(/^(\d{1,2})\s*[:\-]\s*(\d{1,2})$/))
       .filter(Boolean).map(m=>[Number(m[1]),Number(m[2])]);
-    if(!grid.length||grid.length>500)
+    if((!grid.length||grid.length>500)&&!holdNative('NATIVE_SCORE_GRID_UNAVAILABLE'))
       throw Object.assign(badRequest('Mungon lista e rezultateve të këtij tregu.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-    correctScoreGrid=grid;
+    if(grid.length&&grid.length<=500)correctScoreGrid=grid;
   }
 
   // Use the SAME grammar for 1/X/2 sibling-offer detection that will
@@ -449,32 +462,33 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   let handicapContract=null;
   if(isHandicapMarket(row)){
     handicapContract=parseHandicapContract(row,{teams:match,drawOffered:handicapDrawOffered});
-    if(!handicapContract)
+    if(!handicapContract&&!holdNative('NATIVE_HANDICAP_UNMAPPED'))
       throw Object.assign(badRequest('Handikapi nuk ka opsion të qartë ose kërkon pagesë pjesore 0.25/0.75.'),{
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
     const liveHandicap=String(match.service??'').toUpperCase()==='LIVE';
-    if(liveHandicap){
+    if(liveHandicap&&handicapContract){
       // Live Asian Handicap often means goals AFTER acceptance, whereas
       // corner spreads/other providers may use the entire match. Only an
       // explicitly labelled remaining-match market has unambiguous scope.
-      if(!handicapContract.rest||handicapContract.event!=='goal'||handicapContract.half!==0)
+      if((!handicapContract.rest||handicapContract.event!=='goal'||handicapContract.half!==0)&&
+         !holdNative('NATIVE_LIVE_HANDICAP_UNMAPPED'))
         throw Object.assign(badRequest('Mungon rregulli i furnizuesit për handikapin LIVE.'),{
           code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
       const stamp=Date.parse(match.score_at??'');
       const h=match.home_score==null?null:Number(match.home_score);
       const a=match.away_score==null?null:Number(match.away_score);
       if(!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0||
-         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)
+         !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)&&
+         !holdNative('NATIVE_HANDICAP_BASELINE_UNVERIFIED'))
         throw Object.assign(badRequest('Rezultati LIVE nuk është i konfirmuar për handikapin.'),{
           code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId});
-      handicapContract={...handicapContract,baseline:{home:h,away:a}};
+      if(!settlementHold)handicapContract={...handicapContract,baseline:{home:h,away:a}};
     }
   }
   let contract;
   // Server-only authorization after the actual Zizobet quote, price,
   // suspension, freshness and operator restrictions were all verified.
-  const nativeQuoteVerified=String(row.provider_id??'').toUpperCase()==='ZIZOBET'&&
-    /^zz\d+@/.test(String(row.market_key??''));
+
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
@@ -491,6 +505,12 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       execute:executor,nativeQuoteVerified
     });
   } catch(error) {
+    if(nativeQuoteVerified&&['MARKET_EVIDENCE_UNSUPPORTED','MARKET_DECIDED'].includes(error?.code)){
+      // Keep the offer's exact native terms and hold it for review. Do not
+      // invent a settlement rule, baseline, or automatic payout.
+      settlementHold??='NATIVE_CONTRACT_REVIEW';
+      contract=null;
+    }else{
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
       error.marketName=row.market_name??parsed.marketKey;
@@ -499,7 +519,9 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       error.message=`${error.marketName} (${error.outcomeName}): ${error.message}`;
     }
     throw error;
+    }
   }
+  if(contract?.entryEvidenceMissing)holdNative('NATIVE_INTERVAL_BASELINE_UNVERIFIED');
   // A provider can quote a valid price for a market that this deployment has
   // no payout rule for. Do not take the stake and then hold it forever as
   // PENDING: verify the actual final-result grader before charging the wallet.
@@ -514,6 +536,23 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
         code:'MARKET_EVIDENCE_UNSUPPORTED',outcomeId:selection?.outcomeId,
         marketName:row.market_name, outcomeName:row.outcome_name});
   }
+  // Native offers without a known grading rule still place, but must not
+  // settle from a generic name-based fallback.
+  if(nativeQuoteVerified&&!contract&&!settlementHold){
+    const {hasFinalSettlementRule}=await import('./market-settlement-preflight.mjs');
+    if(!hasFinalSettlementRule({...row,market_name:row.market_name??raceName,
+      outcome_name:row.outcome_name??parsed.outcomeKey,
+      outcome_key:row.outcome_key??parsed.outcomeKey},
+      {home:match.home,away:match.away}))
+      settlementHold='NATIVE_FINAL_RULE_UNMAPPED';
+  }
+  const snapshotAt=Date.now();
+  const acceptedCounters={
+    goal:primaryLiveCounters(match,'goal',{at:snapshotAt}),
+    corner:primaryLiveCounters(match,'corner',{at:snapshotAt}),
+    card:primaryLiveCounters(match,'card',{at:snapshotAt}),
+    foul:primaryLiveCounters(match,'foul',{at:snapshotAt})
+  };
   return {
     matchId: String(matchId),
     marketKey: parsed.marketKey,
@@ -532,11 +571,13 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       scoreHome:match.home_score??null,scoreAway:match.away_score??null,
       scoreObservedAt:match.score_at??null,clockMilliseconds:match.match_time_ms??null,
       clockObservedAt:match.clock_at??null,feedPhase:match.feed_status??null,
-      feedPhaseObservedAt:match.feed_status_at??null
+      feedPhaseObservedAt:match.feed_status_at??null,
+      counters:acceptedCounters
     },
     matchName: `${match.home} vs ${match.away}`,
     price,
-    liveContract:contract,
+    liveContract:settlementHold?null:contract,
+    settlementHold,
   };
 }
 
@@ -623,7 +664,8 @@ export async function revalidateSelections(selections, lines, resolve = resolveS
     const current = await resolve({...selection,oddsAtPlacement:old.price,odds:old.price},{executor});
     const changed = frozenSelectionPrice(current.price) !== frozenSelectionPrice(old.price) ||
       JSON.stringify(current.builderLegs ?? null) !== JSON.stringify(old.builderLegs ?? null) ||
-      JSON.stringify(current.liveContract ?? null) !== JSON.stringify(old.liveContract ?? null);
+      JSON.stringify(current.liveContract ?? null) !== JSON.stringify(old.liveContract ?? null) ||
+      current.settlementHold !== old.settlementHold;
     if (changed) {
       throw Object.assign(badRequest('Koeficienti ka ndryshuar gjatë vendosjes së bastit.'), {
         code:'ODDS_CHANGED', outcomeId:selection.outcomeId, oldOdds:old.price,newOdds:current.price,
@@ -652,14 +694,17 @@ async function persistLiveContracts(runQuery,ticketId,lines){
    homeTeamName:line.homeTeamName??null,awayTeamName:line.awayTeamName??null,
    kickoffAt:line.kickoffAt??null,offerObservedAt:line.offerObservedAt??null,
    acceptedLiveSnapshot:line.acceptedLiveSnapshot??null,
-   liveTerms:line.liveContract??null,builderLegs:line.builderLegs??null
+   liveTerms:line.liveContract??null,builderLegs:line.builderLegs??null,
+   settlementHold:line.settlementHold??null
   };
   const updated=await runQuery(`update app_ticket_line
-   set live_contract=$1::jsonb,accepted_contract=$2::jsonb
+   set live_contract=$1::jsonb,accepted_contract=$2::jsonb,
+       settlement_reason=case when $8::text is not null then 'NATIVE_RULE_REVIEW' else settlement_reason end
    where ticket_id=$3 and match_id=$4 and market_key=$5
     and line=$6 and outcome_key=$7 and accepted_contract is null`,
    [line.liveContract?JSON.stringify(line.liveContract):null,JSON.stringify(accepted),
-    ticketId,line.matchId,line.marketKey,String(line.line??''),line.outcomeKey]);
+    ticketId,line.matchId,line.marketKey,String(line.line??''),line.outcomeKey,
+    line.settlementHold??null]);
   if(updated.rowCount!==1)throw Object.assign(new Error('Kontrata origjinale e biletës nuk u ruajt.'),{status:409});
  }
 }
