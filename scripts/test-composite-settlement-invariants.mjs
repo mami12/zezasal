@@ -5,7 +5,7 @@
  */
 import './fixtures/isolated-casino-env.mjs';
 import assert from 'node:assert/strict';
-import {gradeLine,hasRequiredSettlementEvidence,unverifiedCompositeLine} from '../server/ledger/settler.mjs';
+import {gradeLine,hasRequiredSettlementEvidence,unverifiedCompositeLine,gradeHeldNativeCombo} from '../server/ledger/settler.mjs';
 import {isHalfComboFamily,parseHalfCombination,gradeHalfCombination} from '../server/ledger/half-combinations.mjs';
 
 const title='Double Chance And Total Goals';
@@ -81,6 +81,74 @@ assert.equal(gradeLine(simple(title+' (1.5)','12 / Under'),result(1,0)),'WON');
 assert.equal(gradeLine(simple(title+' (1.5)','12 / Over'),result(1,1)),'LOST');
 assert.equal(gradeLine(simple(title+' (1.5)','12 / Under'),result(1,1)),'LOST');
 
+// The two real-world FT 0-1 tickets cannot both stay PENDING once a verified
+// result is saved. Historical NATIVE_FINAL_RULE_UNMAPPED snapshots are also
+// recoverable, but ONLY if the immutable original quote can be proved.
+const final01=result(0,1);
+const quotedCases=[
+ ['Matchbet and Totals (2.5)','Away and under','WON'],
+ ['Matchbet and Totals (2.5)','Away and over','LOST'],
+ ['Matchbet and Totals (2.5)','Draw and under','LOST'],
+ ['Matchbet and both teams to score','Draw / Yes','LOST'],
+ ['Matchbet and both teams to score','Away / No','WON'],
+ ['Matchbet and both teams to score','Away / Yes','LOST'],
+ ['Matchbet and both teams to score','Draw / No','LOST'],
+ ['Matchbet and both teams to score','Home / Yes','LOST'],
+ ['Double Chance And Total Goals (1.5)','12 / Over','LOST'],
+ ['Double Chance And Total Goals (1.5)','12 / Under','WON'],
+];
+const historical=(line,hold='NATIVE_FINAL_RULE_UNMAPPED')=>({
+ ...line,market_key:'zz998@frozen',outcome_key:line.outcome_name,period:0,
+ accepted_contract:{
+  version:1,providerMarketName:line.market_name,providerOutcomeName:line.outcome_name,
+  providerMarketKey:'zz998@frozen',providerOutcomeKey:line.outcome_name,
+  providerPeriod:0,line:line.line,sourceProviderId:'ZIZOBET',
+  homeTeamName:'Dinoko City FC',awayTeamName:'Soweto Super United FC',
+  settlementHold:hold
+ }
+});
+for(const [market,selection,expected] of quotedCases){
+ const row=simple(market,selection);
+ assert.equal(isHalfComboFamily(row),true,'Every provider combined family must be identified');
+ assert.equal(gradeLine(row,final01),expected,market+' / '+selection);
+ assert.equal(hasRequiredSettlementEvidence(row,final01),true);
+ for(const hold of ['NATIVE_FINAL_RULE_UNMAPPED','NATIVE_HALF_COMBO_UNMAPPED','NATIVE_CONTRACT_REVIEW']){
+  const stored=historical(row,hold);
+  assert.equal(gradeHeldNativeCombo(stored,final01),expected);
+  assert.equal(gradeLine(stored,final01),expected,'A recovered held ticket is gradeable from its original exact quote');
+  assert.equal(hasRequiredSettlementEvidence(stored,final01),true);
+  assert.equal(gradeLine({...stored,accepted_contract:{...stored.accepted_contract,
+    providerOutcomeKey:'unrelated'}},final01),null,'Tampered provider code cannot recover');
+  assert.equal(gradeLine({...stored,accepted_contract:{...stored.accepted_contract,
+    line:'17.5'}},final01),null,'Changed provider numeric threshold cannot recover');
+  assert.equal(gradeLine({...stored,accepted_contract:{...stored.accepted_contract,
+    sourceProviderId:'OTHER'}},final01),null,'Unknown provider cannot inherit recovery');
+ }
+}
+assert.equal(gradeLine(historical(simple('Unknown Special','Unknown Option')),final01),null);
+assert.equal(hasRequiredSettlementEvidence(historical(simple('Unknown Special','Unknown Option')),final01),false);
+assert.equal(gradeLine(historical(simple('Matchbet and Totals (2.5)','Away and under'),'NATIVE_PLAYER_HISTORY_UNVERIFIED'),final01),null);
+
+// Every combined 1X2+totals and 1X2+BTTS must obey both conditions for
+// a grid of verified full-time scores, not just the exact customer ticket.
+let matchbetCases=0;
+for(let h=0;h<7;h++)for(let a=0;a<7;a++)
+ for(const outcome of ['Home','Away','Draw'])for(const direction of ['over','under']){
+  const score=result(h,a),total=h+a,winning=h>a?'Home':h<a?'Away':'Draw';
+  const expected=winning===outcome&&(direction==='over'?total>2.5:total<2.5)?'WON':'LOST';
+  const row=simple('Matchbet and Totals (2.5)',outcome+' and '+direction);
+  assert.equal(gradeLine(row,score),expected,JSON.stringify({h,a,outcome,direction}));
+  matchbetCases++;
+ }
+for(let h=0;h<7;h++)for(let a=0;a<7;a++)
+ for(const outcome of ['Home','Away','Draw'])for(const yes of ['Yes','No']){
+  const score=result(h,a),winning=h>a?'Home':h<a?'Away':'Draw';
+  const expected=winning===outcome&&((h>0&&a>0)===(yes==='Yes'))?'WON':'LOST';
+  const row=simple('Matchbet and both teams to score',outcome+' / '+yes);
+  assert.equal(gradeLine(row,score),expected,JSON.stringify({h,a,outcome,yes}));
+  matchbetCases++;
+ }
+
 // Unknown or conflicting native conditions MUST NOT be graded as a single
 // recognized leg. They may be offered and accepted, but settlement is PENDING.
 for(const row of [
@@ -101,4 +169,4 @@ assert.equal(unverifiedCompositeLine(simple('Double Chance And Total Goals Speci
 assert.equal(gradeLine(simple('Double Chance','12'),live),'WON');
 assert.equal(gradeLine(simple('Total Goals','Over','1.5'),live),'WON');
 assert.equal(gradeLine(simple('Total Goals','Under','1.5'),live),'LOST');
-console.log('PASS '+cases+' full-score/half-score complementary DC+totals invariants, frozen terms, unknown composite PENDING, independent markets unchanged.');
+console.log('PASS '+cases+' DC-total plus '+matchbetCases+' Matchbet scoring-grid/half-score complementary DC+totals invariants, frozen terms, unknown composite PENDING, independent markets unchanged.');
