@@ -131,6 +131,8 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
   const needsSportsFeed=shouldConnectSportsFeed(pathname,isAuthenticated);
   const outcomeStore=useRef(createOutcomeStore());
   const [oddsDeltas, setOddsDeltas] = useState<Record<string, OddsDelta>>({});
+   // A same-price newer native observation still advances the quote timestamp.
+   const publishedOddsAt=useRef<Record<string,number>>({});
   const [livePatches, setLivePatches] = useState<Record<string, LivePatch>>({});
   const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
   const [connected, setConnected] = useState(false);
@@ -324,7 +326,11 @@ export function LiveFeedProvider({ children }: { children: ReactNode }) {
           const changedQuote=materialQuoteChange(prevQuoteFacts.current[outcomeId],fingerprint);
           prevQuoteFacts.current[outcomeId]=fingerprint;
           prevOdds.current[outcomeId] = next;
-          if(!changedQuote)continue;
+          // The quote timestamp is material to native price authority.
+          // Without this re-anchor, a newer REST quote can incorrectly mask
+          // a subsequently reconfirmed equal-price socket observation.
+          if(!changedQuote&&incomingAt<=(publishedOddsAt.current[outcomeId]??0))continue;
+          publishedOddsAt.current[outcomeId]=incomingAt;
           deltas[outcomeId] = { outcomeId, newOdds: next, direction: before === undefined || next >= before ? 'up' : 'down', at: incomingAt, changed:before !== undefined && before !== next,priceValidUntil:outcome.priceValidUntil,quoteSuspended:outcome.quoteSuspended };
         }
 

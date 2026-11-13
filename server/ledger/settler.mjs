@@ -153,6 +153,9 @@ const periodScores=(line,result)=>{
  * inventing a win/loss or immediately refunding a valid winning proposition.
  */
 export function hasRequiredSettlementEvidence(line, result) {
+  // A native quote awaiting rule review must never be graded by a
+  // coincidentally similar legacy market-name fallback.
+  if(line?.accepted_contract?.settlementHold)return false;
   line=withFrozenPeriod(line);
   if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
@@ -237,6 +240,7 @@ export function hasRequiredSettlementEvidence(line, result) {
  * VOID is allowed only for a proved settlement-rule push/cancellation.
  */
 export function gradeLine(line, result) {
+  if(line?.accepted_contract?.settlementHold)return null;
   line=withFrozenPeriod(line);
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
@@ -663,6 +667,7 @@ export function firstHalfScoreOnly(line){
   'ODD_EVEN','CLEAN_SHEET','HALF_RESULT_BTTS','BANDS_EXACT'].includes(family);
 }
 export function gradeAtVerifiedHalfTime(line,half){
+ if(line?.accepted_contract?.settlementHold)return null;
  if(!firstHalfScoreOnly(line)||half?.confirmed_at==null)return null;
  // A live half-time quote taken AFTER the HT result was already archived
  // must never receive an automatic payout from that known past result.
@@ -784,6 +789,10 @@ export async function settleMatch(matchId) {
   const unresolved=[];
   let graded = 0;
   for (const line of lines) {
+    if(line?.accepted_contract?.settlementHold){
+      unresolved.push({line,result});
+      continue;
+    }
     let status=null;
     // A frozen event contract is graded against PostgreSQL provider facts,
     // never parsed from a translated/displayed name at settlement time.
@@ -880,6 +889,7 @@ export async function settleClosedCornerWindows({runQuery=query,loadEvidence=loa
      and l.market_name ~* 'corner'
      and l.market_name ~* '(minute|from)'
      and l.live_contract is null
+     and coalesce(l.accepted_contract->>'settlementHold','')=''
      and not exists(select 1 from app_settlement_override o where o.line_id=l.id)
    order by l.match_id,l.id`);
  const cache=new Map(),tickets=new Set();let graded=0;

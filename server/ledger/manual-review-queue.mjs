@@ -9,6 +9,10 @@ const nowDate=value=>{const n=new Date(value).getTime();return Number.isFinite(n
 export function reviewReason(row,now=Date.now()){
  if(row.line_status==='VOID')return 'VOID_NEEDS_CONFIRMATION';
  if(row.line_status!=='PENDING'||row.ticket_status!=='PENDING')return null;
+ // Native offers accepted without a proven settlement rule are visible to
+ // staff immediately, even while their match is still LIVE.
+ if(row.accepted_contract?.settlementHold||row.settlement_reason==='NATIVE_RULE_REVIEW')
+  return 'NATIVE_CONTRACT_REVIEW';
  const market=text(row.market_name);
  const review=row.statistics_review;
  if(row.result_id!=null){
@@ -29,6 +33,7 @@ export async function manualReviewQueue({runQuery=query,limit=150,now=Date.now()
  const cap=Math.min(300,Math.max(1,Math.trunc(Number(limit)||150)));
  const rows=(await runQuery(`select l.id as line_id,l.ticket_id,l.match_id,l.market_key,l.line,l.outcome_key,
     l.outcome_name,l.market_name,l.match_name,l.status as line_status,l.odds_at_placement,
+    l.accepted_contract,l.settlement_reason,
     t.status as ticket_status,t.placed_at,t.stake,t.original_potential_payout,
     u.username,r.match_id as result_id,r.home_score,r.away_score,
     sr.payload as statistics_review,m.status as match_status,m.feed_status,
@@ -44,7 +49,8 @@ export async function manualReviewQueue({runQuery=query,limit=150,now=Date.now()
     where l.status in ('PENDING','VOID')
       and t.status not in ('CANCELLED','REVERTED','CASHED_OUT')
       and (o.line_id is null or o.status='PENDING')
-      and (l.status='VOID' or r.match_id is not null or t.placed_at<now()-interval '6 hours')
+      and (l.status='VOID' or r.match_id is not null or t.placed_at<now()-interval '6 hours'
+        or coalesce(l.accepted_contract->>'settlementHold','')<>'')
     order by case when l.status='VOID' then 0 else 1 end,t.placed_at desc
     limit $1`,[cap*3])).rows;
  const items=[];

@@ -16,6 +16,9 @@ const aliases=(name,known)=>[
 ].flatMap(([side,values])=>values.filter(Boolean).map(v=>[side,norm(v)]));
 export function isPeriodGoalTotal(line){
  const name=norm(line?.market_name??line?.marketName??line?.name);
+ // A word-prefix like "goal" must never turn "Goalscorer" into a team
+ // goal-total contract: it is an individual-player proposition.
+ if(/\b(?:goals?scorers?|scorers?|player|scorer)\b/.test(name))return false;
  if(/(?:\bgoals?\b|\bgoal line\b|\btotal\b)/.test(name)&&
     /\b(?:player|scorer|asian|handicap|minutes?|corner|card|shots?|foul|result|btts|both|race|next|first goal|last goal|odd|even)\b/.test(name))return false;
  return /(?:^|\b)(?:total goals?|goals? total|team [12] goals?|goals?|goal line|over\s*\/\s*under)/.test(name)||

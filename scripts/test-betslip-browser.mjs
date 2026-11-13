@@ -12,6 +12,7 @@ const root = fileURLToPath(new URL('../web', import.meta.url));
 const fixture = `<!doctype html><html><body><div id="root"></div><script type="module">
 import React from '/src/../node_modules/.vite/deps/react.js';
 import {createRoot} from '/src/../node_modules/.vite/deps/react-dom_client.js';
+import {MemoryRouter} from 'react-router-dom';
 import {BetslipProvider,useBetslip} from '/src/context/BetslipContext.tsx';
 import {LanguageProvider} from '/src/context/LanguageContext.tsx';
 import {AuthProvider} from '/src/context/AuthContext.tsx';
@@ -32,9 +33,9 @@ function BuilderButtonFixture(){
   window.builderQuote=quote;window.setBuilderQuote=setQuote;
   return React.createElement('div',{id:'fixture-combo'},React.createElement(OddsButton,quote));
 }
-createRoot(document.getElementById('root')).render(React.createElement(LanguageProvider,null,
+createRoot(document.getElementById('root')).render(React.createElement(MemoryRouter,null,React.createElement(LanguageProvider,null,
   React.createElement(AuthProvider,null,React.createElement(BetslipProvider,null,
-    React.createElement(LiveFeedProvider,null,React.createElement(Probe),React.createElement(BuilderButtonFixture),React.createElement('span',{id:'fixture-clock'},React.createElement(LiveMatchTime,{minute:12,second:10,seconds:true})),React.createElement(Betslip))))));
+    React.createElement(LiveFeedProvider,null,React.createElement(Probe),React.createElement(BuilderButtonFixture),React.createElement('span',{id:'fixture-clock'},React.createElement(LiveMatchTime,{minute:12,second:10,seconds:true})),React.createElement(Betslip)))))));
 </script></body></html>`;
 // Resolve React through Vite's dependency optimizer rather than a fixed cache filename.
 const html = fixture.replace("'/src/../node_modules/.vite/deps/react.js'", "'react'")
@@ -67,7 +68,7 @@ const makeTickets = body => {
 try {
   vite = await createServer({ root, configFile: false, plugins: [(await import('@vitejs/plugin-react')).default()],
     server: { middlewareMode: true, hmr: false, fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] } },
-    appType: 'custom', optimizeDeps: { include: ['react', 'react-dom/client', 'axios', 'lucide-react'] },
+    appType: 'custom', optimizeDeps: { include: ['react', 'react-dom/client', 'react-router-dom', 'axios', 'lucide-react'] },
   });
   const app = express();
   app.use(express.json());
@@ -403,7 +404,12 @@ try {
   const idleClock=await page.evaluate(()=>({text:document.querySelector('#fixture-clock').textContent,renders:window.probeRenders}));
   await page.waitForFunction(text=>document.querySelector('#fixture-clock').textContent!==text,{},idleClock.text);
   assert.equal(await page.evaluate(()=>window.probeRenders),idleClock.renders,'clock ticks must not redraw the shared odds/slip consumers');
-  const explosive = Array.from({ length: 12 }, (_, index) => [selection(`M${index}`, `M${index}1`, 2), selection(`M${index}`, `M${index}over`, 3, `M${index}-total`, 'Over')]).flat();
+  // Five genuinely alternative source markets create 2^5=32 SYSTEM columns.
+  // Two different markets in one match do NOT expand into alternatives.
+  const explosive = Array.from({ length: 5 }, (_, index) => [
+    selection(`M${index}`, `M${index}1`, 2, `M${index}-1x2`, '1'),
+    selection(`M${index}`, `M${index}2`, 3, `M${index}-1x2`, '2')
+  ]).flat();
   await page.evaluate(rows => { window.slip.clearAll(); rows.forEach(row => window.slip.addSelection(row)); }, explosive);
   await page.waitForFunction(() => window.slip.columnsOverflow);
   assert.equal((await snapshot()).columns.length, 0);
