@@ -62,7 +62,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const quoteAnchoredOrdinal=nativeActive&&contract.kind==='nth-time';
  // Numbered First/Next #2/#3 offers use the absolute match ordinal.
  // Bare "Next Goal" is different: its target requires the CURRENT score.
- const explicitSequence=/^(?:next\\s+(?:goal|corner|card|booking)\\s+\\d{1,3}(?:st|nd|rd|th)?|(?:(?:who|which team)\\s+(?:scores|takes|wins)\\s+(?:the\\s+)?)?(?:first|second|third|\\d{1,3}(?:st|nd|rd|th)?)\\s+(?:goal|corner|card|booking)|(?:(?:who|which team)\\s+(?:scores|takes|wins)\\s+(?:the\\s+)?)?(?:goal|corner|card|booking)\\s+\\d{1,3})\\b/i.test(name);
+ const explicitSequence=/^(?:next\s+(?:goal|corner|card|booking)\s+\d{1,3}(?:st|nd|rd|th)?|(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?(?:first|second|third|\d{1,3}(?:st|nd|rd|th)?)\s+(?:goal|corner|card|booking)|(?:(?:who|which team)\s+(?:scores|takes|wins)\s+(?:the\s+)?)?(?:goal|corner|card|booking)\s+\d{1,3})\b/i.test(name);
  const quoteAnchoredSequence=nativeActive&&contract.kind==='sequence'&&explicitSequence;
 
  const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
