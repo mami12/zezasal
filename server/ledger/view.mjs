@@ -248,6 +248,8 @@ export function toClientMatch(m) {
     liveMinuteSource: m.minuteSource ?? null,
     corners: pair('corners'),
     cards: cardPair,
+    yellowCards: pair('yellow'),
+    redCards: pair('red'),
     shots: pair('shots'),
     shotsOnTarget: pair('shotsOnTarget'),
     fouls: pair('fouls'),
