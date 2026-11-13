@@ -22,37 +22,33 @@ The server reconstructs the contract and validates prices, freshness, suspension
 and the persisted combo switch again before any wallet debit. A changed price
 requires acceptance; a browser price is never an authority.
 
-## Alternative columns
+## One outcome per exact market (current policy)
 
-Selecting more than one outcome from the same match automatically changes the
-betslip to **System**. Each column contains exactly one selection per match.
-The server generates the complete Cartesian expansion from source match IDs;
-it rejects duplicate, missing or forged columns. Up to 24 columns and 20 matches
-per column are supported. Different outcomes in the same market can be alternatives.
+The current betslip allows **one outcome from each match/market/line**.
+Selecting `X` after `1` in the same 1X2 market **replaces** `1`.
+Selecting Under after Over on the exact same 2.5 total replaces Over.
+Different markets on the same match (for example 1X2 + BTTS, or
+Over 2.5 + Over 3.5) remain distinct source contracts and can be combined.
 
-The minimum is **100 LEK for the whole slip**, including every column. The amount
-stays unchanged as picks are added or removed. Two columns receive 50 + 50;
-three receive 33.34 + 33.33 + 33.33. Remaining cents go to the first columns in
-visible order. The wallet debit always equals the entered total.
+Automatic System columns from alternatives of one market are **no longer
+created**. The server rejects such duplicate-market selections across the
+**entire logical ticket**, including `/app/api/bets/place-columns`, even
+when submitted as separate columns or with forged browser identifiers.
+The ordinary placement and booking APIs enforce the same market identity.
+Rejected requests never debit the wallet or create a funded ticket.
 
-For 100 LEK, picks 5.00 and 2.10 on one match plus 15.18 on another produce:
+**Historical System tickets:** The database, receipts, payouts, and financial
+reconciliation for previously accepted multi-column tickets stay supported.
+The historical-column integration fixture is isolated from the public endpoint;
+it does not re-enable alternative columns for new player wagers.
 
-| Column | Stake | Odds | Conditional return |
-| --- | ---: | ---: | ---: |
-| 1 | 50.00 | 75.90 | 3795.00 |
-| 2 | 50.00 | 31.878 | 1593.90 |
+### Historical column settlement
 
-If both columns win, their returns sum to 5388.90. The per-column minimum/maximum
-is labelled as conditional; no return is guaranteed. Mutually exclusive outcomes
-cannot all win. Each column is stored as a System ticket with an `AUTO:i/n` marker,
-and its receipt shows the group total and column stake. Booking multiple columns
-remains disabled; placing a funded system is supported.
-
-All columns, wallet movements, manager commissions and the retry key commit
-atomically. Failed validation creates no partial funded slip. Retry keys are
-checked across both ordinary and system placement endpoints. Legacy clients
-without the explicit `totalStake` contract must refresh rather than having an
-old per-column amount silently reinterpreted.
+The preserved historical system-colums implementation split a 100 LEK total
+stake into 50 + 50 across two alternatives, up to 24 columns. Each historic
+column and its idempotent financial transactions continue to settle normally;
+existing paid tickets are not rewritten. That old arithmetic is retained only
+for integrity, refund, audit and regression of already-funded tickets.
 
 ## Verification
 
