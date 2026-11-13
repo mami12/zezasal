@@ -146,6 +146,10 @@ assert.equal(verifiedSecondLiveDecision(timedProof(
  timeWindow,frameFor('goal',1,0,8),frameFor('goal',2,0,11)),{now}),null,
  'A new count after the window cannot be attributed to the earlier interval');
 assert.equal(verifiedSecondLiveDecision(timedProof(
+ timeWindow,frameFor('goal',1,0,8),
+ {...frameFor('goal',1,0,11),source:'aiscore'}),{now}),null,
+ 'A second poll from a non-primary provider cannot confirm a LIVE payout even after the window closes');
+assert.equal(verifiedSecondLiveDecision(timedProof(
  {...timeWindow,from:10,to:20},frameFor('goal',1,0,11),
  frameFor('goal',1,0,11)),{now}),null,
  'A fixture score cannot prove a goal inside an unstarted future interval');
