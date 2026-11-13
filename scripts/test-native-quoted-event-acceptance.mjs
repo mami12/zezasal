@@ -55,16 +55,17 @@ const futureAccepted=await verifyLiveIntervalAcceptance(futureRule,future,{
 });
 assert.equal(futureAccepted?.kind,'window-total');
 assert.ok(!futureAccepted.entryBaseline,'No fictitious zero corner baseline');
-await assert.rejects(()=>verifyLiveIntervalAcceptance(futureRule,
+const running=await verifyLiveIntervalAcceptance(futureRule,
   {...future,match_time_ms:15*60000},{
-    nativeQuoteVerified:true,at:now,execute:async()=>({rows:[]})
-  }),error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED',
-  'An already-running band cannot omit its pre-purchase incident baseline');
+    nativeQuoteVerified:true,at:now,execute:()=>{throw Error('No history fetch at placement');}
+  });
+assert.equal(running?.entryEvidenceMissing,true,
+  'A live running interval without entry counters is accepted for later settlement review');
 
 // Bare NEXT has no absolute ordinal: without current provider counters its
 // target CANNOT be identified, even though a named Next Goal 2nd can.
-assert.throws(()=>frozenLiveContract(offer('Next Goal','1',true),missing,now),
- error=>error.code==='MARKET_EVIDENCE_UNSUPPORTED');
+assert.equal(frozenLiveContract(offer('Next Goal','1',true),missing,now),null,
+  'Bare Next Goal with unknown current ordinal is an unmapped settlement hold, not a placement veto');
 const liveReady={
  ...missing,home_score:1,away_score:0,match_time_ms:12*60000,
  clock_at:new Date(now),score_at:new Date(now)

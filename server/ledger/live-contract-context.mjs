@@ -33,7 +33,8 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const hasTeam=name=>name&&(' '+market.replace(/[^\p{L}\p{N}]+/gu,' ')+' ').includes(' '+name.replace(/[^\p{L}\p{N}]+/gu,' ')+' ');
  const homeNamed=hasTeam(home),awayNamed=hasTeam(away);
  const windowMarket=/\b(?:minutes?|mins?|within|before|until)\b/.test(market)&&['yes','no','po','jo'].includes(label);
- if(windowMarket&&homeNamed&&awayNamed)throw fail('Nuk identifikohet një skuadër e vetme për intervalin.');
+ if(windowMarket&&homeNamed&&awayNamed&&line.nativeQuoteVerified!==true)
+  throw fail('Nuk identifikohet një skuadër e vetme për intervalin.');
  const windowSide=windowMarket&&(homeNamed||awayNamed)?(homeNamed?'home team':'away team'):null;
  const namedLine=windowSide?{...line,market_name:windowSide+' '+market}:line;
  const prepared=selected?{...line,outcome_name:selected,outcomeName:selected}:namedLine;
@@ -46,14 +47,30 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  }:cardSnapshot?{home:safe(cardSnapshot.count_home),away:safe(cardSnapshot.count_away)}:null;
  const contract=liveContract(prepared,{clock,counts:{goal:goals,corner:corners,card:verifiedCards},teams:match});
  const name=String(line.market_name??line.marketName??'');
- if(service==='PREMATCH'&&!scheduled)throw fail('Ndeshja prematch nuk ka fillim të ardhshëm të verifikuar.');
+ if(service==='PREMATCH'&&!scheduled&&line.nativeQuoteVerified!==true)
+  throw fail('Ndeshja prematch nuk ka fillim të ardhshëm të verifikuar.');
  if(!contract){
+  // No parser or evidence rule may veto a currently active Zizobet offer.
+  // The original provider parameters are still frozen on the accepted ticket.
+  if(line.nativeQuoteVerified===true)return null;
   if(/\b(?:45|90)\+\s*min\.?/i.test(name)&&/\b(?:corners?|goals?|cards?)\b/i.test(name))
     throw fail('Intervali përfshin 45+/90+ me kohë shtesë; mungon verifikimi i minutave sipas pjesës së ndeshjes.');
   if(eventish(name))throw fail('Ky treg nuk ka kusht të verifikueshëm në këtë moment.');
   return null;
  }
  const live=String(match.service??'').toUpperCase()==='LIVE';
+ if(line.nativeQuoteVerified===true){
+  // Placement authority is the actual provider quote. Freeze counters only
+  // when Zizobet supplied them; unknown LIVE counters remain unknown.
+  // Historical eligibility, clock, score and event-order checks belong to
+  // settlement, never to this acceptance path.
+  const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
+    contract.event==='card'?verifiedCards:null;
+  if(live&&['sequence','race'].includes(contract.kind)&&
+     current?.home!=null&&current?.away!=null)
+    return {...contract,baseline:{home:current.home,away:current.away}};
+  return contract;
+ }
  // Set only by resolveSelection AFTER matching an active, fresh server-side
  // Zizobet offer. An explicit race or absolute Nth-goal contract needs
  // its original provider target, not a new pre-debit SQL timeline query.
