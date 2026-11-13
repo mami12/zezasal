@@ -471,10 +471,15 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     }
   }
   let contract;
+  // Server-only authorization after the actual Zizobet quote, price,
+  // suspension, freshness and operator restrictions were all verified.
+  const nativeQuoteVerified=String(row.provider_id??'').toUpperCase()==='ZIZOBET'&&
+    /^zz\d+@/.test(String(row.market_key??''));
   try {
     contract=frozenLiveContract({...row,market_name:raceName||parsed.marketKey,
       outcome_name:row.outcome_name??parsed.outcomeKey,
-      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCornerSnapshot,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered},match);
+      raceNoneOffered,sequenceNoneOffered,lastNoneOffered,halfNoneOffered,raceCornerSnapshot,raceCardSnapshot,playerCardSnapshot,cornerDrawOffered,
+      nativeQuoteVerified},match);
     if(correctScoreGrid) contract={version:1,kind:'correct-score-grid',grid:correctScoreGrid};
     if(handicapContract)contract=handicapContract;
     if(halfComboContract)contract=halfComboContract;
@@ -482,7 +487,9 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     if(periodGoalContract)contract=periodGoalContract;
     // PREMATCH starts at zero without a history query. A started LIVE
     // interval is checked against confirmed primary incidents, not its start minute.
-    contract=await verifyLiveIntervalAcceptance(contract,match,{execute:executor});
+    contract=await verifyLiveIntervalAcceptance(contract,match,{
+      execute:executor,nativeQuoteVerified
+    });
   } catch(error) {
     if(error?.code==='MARKET_EVIDENCE_UNSUPPORTED'){
       error.outcomeId=selection?.outcomeId;
