@@ -151,7 +151,7 @@ export default function MatchDetail() {
 
   useEffect(() => {
     if(!id)return;
-    let active=true,sequence=0,busy=false,refreshQueued=false,nextOffset=0,more=false;
+    let active=true,sequence=0,busy=false,refreshQueued=false,nextOffset=0,more=false,loadedOnce=false;
     let fullMarketTimer:number|null=null,fullMarketAttempts=0;
     const controller=new AbortController();
     const PAGE=40;
@@ -185,6 +185,7 @@ export default function MatchDetail() {
           return offset===0?[...incoming,...previous.filter(market=>!ids.has(market.id))]:
             [...previous,...incoming.filter((market:Market)=>!previous.some(old=>old.id===market.id))];
         });
+        loadedOnce=true;
         const pagination=res.data.marketPagination;
         nextOffset=pagination?.nextOffset??offset+incoming.length;
         more=pagination?.hasMore===true;
@@ -198,10 +199,14 @@ export default function MatchDetail() {
         }
       }catch(error:any){
         if(!active||error?.code==='ERR_CANCELED')return;
-        const httpStatus=Number(error?.response?.status);
-        setRequestError({id,notFound:httpStatus===404,
-          httpStatus:Number.isInteger(httpStatus)&&httpStatus>0?httpStatus:null,
-          timedOut:error?.code==='ECONNABORTED'||error?.code==='ETIMEDOUT'});
+        // A delayed background refresh or later scroll page is not a reason
+        // to erase a valid market grid already rendered for this fixture.
+        if(!loadedOnce){
+          const httpStatus=Number(error?.response?.status);
+          setRequestError({id,notFound:httpStatus===404,
+            httpStatus:Number.isInteger(httpStatus)&&httpStatus>0?httpStatus:null,
+            timedOut:error?.code==='ECONNABORTED'||error?.code==='ETIMEDOUT'});
+        }else console.warn('[match detail] background market page failed',error?.message);
       }finally{
         busy=false;
         if(active){
