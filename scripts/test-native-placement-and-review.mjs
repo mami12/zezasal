@@ -93,7 +93,8 @@ try{
   assert.equal(rows.length,1);
   assert.equal(rows[0].accepted_contract.settlementHold,'NATIVE_FINAL_RULE_UNMAPPED');
   assert.equal(rows[0].accepted_contract.nativeMarketId,'999111');
-  assert.equal(rows[0].accepted_contract.acceptedLiveSnapshot.counters.corner,null);
+  assert.deepEqual(rows[0].accepted_contract.acceptedLiveSnapshot.counters.corner,{home:0,away:0});
+  assert.equal(rows[0].accepted_contract.acceptedLiveSnapshot.scoreHome,0);
   assert.equal(rows[0].settlement_reason,'NATIVE_RULE_REVIEW');
   assert.equal(rows[0].live_contract,null);
   const final={home_score:2,away_score:1,half_home_score:1,half_away_score:0};
