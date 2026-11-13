@@ -146,7 +146,7 @@ export default function MatchDetail() {
   // expiry should rebuild all market groups, not an unrelated second counter.
   const liveMarketMatch = useMemo(
     () => match && String(match.id)===id ? (match.status==='ENDED'?match:liveMatch(match, patch)) : null,
-    [match,id,patch?.homeScore,patch?.awayScore,patch?.scoreAt,patch?.currentMinute,patch?.period,patch?.status,patch?.isSuspended,patch?.corners,patch?.cards,patch?.shots,patch?.shotsOnTarget,patch?.fouls],
+    [match,id,patch?.homeScore,patch?.awayScore,patch?.scoreAt,patch?.currentMinute,patch?.period,patch?.status,patch?.isSuspended,patch?.corners,patch?.cards,patch?.yellowCards,patch?.redCards,patch?.shots,patch?.shotsOnTarget,patch?.fouls],
   );
 
   useEffect(() => {
