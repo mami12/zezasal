@@ -83,6 +83,9 @@ jobs:
       - name: Two independently verified LIVE payout decisions
         if: always()
         run: node scripts/test-verified-live-settlement.mjs
+      - name: Preserve LIVE proposal timestamps across repeated provider polls
+        if: always()
+        run: node scripts/test-live-preview-anchoring.mjs
       - name: Real SQL ticket-and-wallet flow for LIVE and PREMATCH accumulator
         if: always()
         run: node scripts/test-live-settlement-money-flow.mjs
