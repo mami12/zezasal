@@ -35,7 +35,7 @@ export async function createLiveSettlementPreviews({
   const delta=gradeFromAcceptedCounters(contract,frame);
   // Timed LIVE quotes carry a frozen purchase baseline. A pre-purchase
   // incident in the provider timeline must never supply a new-bet verdict.
-  const timed=['window','window-total'].includes(contract?.kind)&&contract.entryBaseline!=null;
+  const timed=['window','window-total','nth-time'].includes(contract?.kind)&&contract.entryBaseline!=null;
   const timeline=timed?null:gradeLiveContract(contract,frame,{ended:frame.ended===true});
   const status=timeline&&delta&&timeline!==delta?null:timeline??delta;
   if(!['WON','LOST','VOID'].includes(status)){await clear(row.line_id);held++;continue;}
