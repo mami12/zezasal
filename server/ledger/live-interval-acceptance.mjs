@@ -93,6 +93,13 @@ export async function verifyLiveIntervalAcceptance(contract,match,{
  const counts=await currentCounters(match,contract.event,{execute,at,clock});
  if(!counts){
   if(quoteAnchoredOrdinal)return contract;
+  // A future, not-yet-started interval needs no purchase-time cumulative
+  // baseline: ALL its incidents will be after acceptance. Confirmed primary
+  // history later grades the full quoted band. This never applies to an
+  // interval already under way, where pre-bet incidents must be excluded.
+  const futureNativeBand=nativeQuoteVerified===true&&
+    remainingKinds.has(contract.kind)&&clock<bounds.from;
+  if(futureNativeBand)return contract;
   throw invalid('Mungojnë numëruesit LIVE të konfirmuar të Zizobet për këtë ngjarje.');
  }
  if(contract.kind==='nth-time'){
