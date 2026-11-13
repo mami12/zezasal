@@ -678,16 +678,27 @@ export async function revalidateSelections(selections, lines, resolve = resolveS
   const results = await Promise.allSettled(selections.map(async (selection,index) => {
     const old = lines[index];
     const current = await resolve({...selection,oddsAtPlacement:old.price,odds:old.price},{executor});
+    // Revalidation is provider-offer/price authority, not an eligibility
+    // check on how the score, clock or incident counters changed while the
+    // wallet lock was awaited. A removed/suspended quote already throws in
+    // resolveSelection, and a changed price still requires explicit consent.
     const changed = frozenSelectionPrice(current.price) !== frozenSelectionPrice(old.price) ||
-      JSON.stringify(current.builderLegs ?? null) !== JSON.stringify(old.builderLegs ?? null) ||
-      JSON.stringify(current.liveContract ?? null) !== JSON.stringify(old.liveContract ?? null) ||
-      current.settlementHold !== old.settlementHold;
+      JSON.stringify(current.builderLegs ?? null) !== JSON.stringify(old.builderLegs ?? null);
     if (changed) {
       throw Object.assign(badRequest('Koeficienti ka ndryshuar gjatë vendosjes së bastit.'), {
         code:'ODDS_CHANGED', outcomeId:selection.outcomeId, oldOdds:old.price,newOdds:current.price,
         outcomeName:current.outcomeName,marketName:current.marketName,matchName:current.matchName,
       });
     }
+    // Freeze the last verified provider offer and its real purchase-time
+    // counters, never an earlier browser/request snapshot.
+    Object.assign(old,{
+      liveContract:current.liveContract??null,
+      settlementHold:current.settlementHold??null,
+      acceptedLiveSnapshot:current.acceptedLiveSnapshot??null,
+      offerObservedAt:current.offerObservedAt??null,
+      nativeParameters:current.nativeParameters??null
+    });
   }));
   const rejected = results.find(result => result.status === 'rejected');
   if (rejected) throw rejected.reason;
