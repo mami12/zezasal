@@ -513,14 +513,14 @@ export function serializeMatch(row, oddsRows = [], now = Date.now()) {
 }
 
 /** loads current odds for the given match rows and serialises everything */
-export async function withOdds(rows, now = Date.now(),{board=false,displayStats=false}={}) {
+export async function withOdds(rows, now = Date.now(),{board=false,displayStats=false,skipOdds=false}={}) {
   if(displayStats&&!board)for(const row of rows)statsProviders.warm(row);
   const ids = rows.map((r) => r.match_id);
   // prices are served from memory by default (no DB read on the board path);
   // ODDS_STORE=db restores the previous behaviour
   const byMatch = new Map(),counts=new Map(),decisions=new Map(),rowsById=new Map(rows.map((r)=>[r.match_id,r]));
   const inspect=board?o=>{if(o.price==null&&o.suspended===true)return;const key=o.match_id+'|'+o.market_key+'|'+o.market_name;let allowed=decisions.get(key);if(allowed===undefined){allowed=!isExcludedOfferMarket(o)&&marketIsEnabled(o,rowsById.get(o.match_id));decisions.set(key,allowed);}if(allowed){if(!counts.has(o.match_id))counts.set(o.match_id,new Set());counts.get(o.match_id).add(o.market_key+'|'+o.line);}}:undefined;
-  const odds = config.oddsStore === 'db' ? await getOddsFromDb(ids) : getOddsFromMemory(ids,board?isBoardOddsRow:undefined,inspect);
+  const odds = skipOdds?[]:config.oddsStore === 'db' ? await getOddsFromDb(ids) : getOddsFromMemory(ids,board?isBoardOddsRow:undefined,inspect);
   decisions.clear();
   for (const o of odds) {
     const key=o.match_id+'|'+o.market_key+'|'+o.market_name,decision=decisions.get(key)??{allowed:!isExcludedOfferMarket(o)&&marketIsEnabled(o,rowsById.get(o.match_id)),board:isBoardOddsRow(o)};decisions.set(key,decision);
