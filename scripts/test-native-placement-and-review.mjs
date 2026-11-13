@@ -8,6 +8,7 @@ import {LEDGER_SQL} from '../server/ledger/schema.mjs';
 import {SCHEMA_SQL} from '../server/schema.mjs';
 import {resolveSelection,placeBet} from '../server/ledger/bets.mjs';
 import {gradeLine,hasRequiredSettlementEvidence,recalcTicket} from '../server/ledger/settler.mjs';
+import {refreshMarketCatalog} from '../server/ledger/market-catalog-store.mjs';
 import {reviewReason} from '../server/ledger/manual-review-queue.mjs';
 import {DEFAULT_LIVE_RISK_SETTINGS,setLiveRiskSettings,liveRiskSettings} from '../server/live-risk-settings.mjs';
 import {setFeedMode,getFeedMode,FEED_LIVE} from '../server/idle-mode.mjs';
@@ -49,6 +50,7 @@ const quoted=[
 ];
 const id=row=>[matchId,row.marketKey,row.line,row.outcomeKey].join('|');
 try{
+  await refreshMarketCatalog({initialize:true,database:{query:(sql,args)=>db.query(sql,args)}});
   await overrides.refresh(true);
   matches.clear();
   matches.upsert([{
