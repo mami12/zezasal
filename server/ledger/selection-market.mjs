@@ -41,15 +41,26 @@ export function selectionMarketIdentity(selection) {
   return null;
 }
 
-/** Multiple outcomes from ONE market are separate column alternatives.
- * Different markets on the SAME match remain combined on one ticket.
- * Clicking the exact same quoted outcome again removes only that outcome.
+/** A logical slip may contain ONE outcome per exact market/line/period.
+ * Different markets on the SAME match are allowed; different quoted lines
+ * remain independent. Clicking another outcome REPLACES the previous one.
+ * Historical columns already paid out remain intact in the database.
  */
 export function toggleMarketSelection(previous, selection) {
-  if (previous.some(pick => pick.outcomeId === selection.outcomeId)) {
-    return previous.filter(pick => pick.outcomeId !== selection.outcomeId);
+  const sameOutcome = previous.some(pick => pick.outcomeId === selection.outcomeId);
+  const identity = selectionMarketIdentity(selection);
+  if (identity === null) {
+    return sameOutcome
+      ? previous.filter(pick => pick.outcomeId !== selection.outcomeId)
+      : [...previous, selection];
   }
-  return [...previous, selection];
+  const first = previous.findIndex(pick => selectionMarketIdentity(pick) === identity);
+  // Remove all duplicate-market picks from an older client state as well.
+  const remaining = previous.filter(pick => selectionMarketIdentity(pick) !== identity);
+  if (sameOutcome) return remaining;
+  if (first === -1) return [...remaining, selection];
+  remaining.splice(Math.min(first,remaining.length), 0, selection);
+  return remaining;
 }
 
 /** Guard the entire logical slip, including alternatives split into columns. */
