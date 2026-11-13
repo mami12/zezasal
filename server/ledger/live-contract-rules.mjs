@@ -669,8 +669,8 @@ export function gradeLiveContract(contract,evidence={}, {ended=false,scopeEnded=
  * shadow decisions until the provider's live results have been validated.
  */
 export function gradeFromAcceptedCounters(contract,frame={}){
- if(!contract||!['sequence','race','window','window-total'].includes(contract.kind))return null;
- const timed=['window','window-total'].includes(contract.kind);
+ if(!contract||!['sequence','race','window','window-total','nth-time'].includes(contract.kind))return null;
+ const timed=['window','window-total','nth-time'].includes(contract.kind);
  // A timed bet placed during an interval is about incidents AFTER purchase.
  // Its accepted cumulative counters are frozen in entryBaseline. A later
  // observation INSIDE that same window can prove an irreversible positive
@@ -690,6 +690,21 @@ export function gradeFromAcceptedCounters(contract,frame={}){
    h=nonNeg(after?.home),a=nonNeg(after?.away);
   if([bh,ba,h,a].some(v=>v===null)||h<bh||a<ba)return null;
   const deltaHome=h-bh,deltaAway=a-ba;
+  if(contract.kind==='nth-time'){
+   // Goal N means the Nth goal of the entire fixture, never the first goal
+   // since this selection. Only the sole new goal from accepted N-1 -> N
+   // inside the advertised window can decide without a full event timeline.
+   if(contract.event!=='goal'||!Number.isSafeInteger(contract.target)||
+      bh+ba!==contract.target-1||h+a!==contract.target||
+      deltaHome+deltaAway!==1)return null;
+   const scoringSide=deltaHome===1?'home':deltaAway===1?'away':null;
+   if(!scoringSide)return null;
+   if(contract.choice==='none')return 'LOST';
+   if(contract.choice==='range')return 'WON';
+   if(contract.choice==='team-window'&&['home','away'].includes(contract.side))
+     return scoringSide===contract.side?'WON':'LOST';
+   return null;
+  }
   const count=contract.side==='home'?deltaHome:
    contract.side==='away'?deltaAway:
     contract.side==null?deltaHome+deltaAway:null;
