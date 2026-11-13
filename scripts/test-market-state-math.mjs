@@ -104,6 +104,15 @@ assert.throws(()=>frozenLiveContract({market_name:'Race to 7 Corners',outcome_na
  live(60,'corner',7,0),at),/përfunduar/i);
 const firstGoal={version:1,kind:'nth-time',event:'goal',target:1,side:'home',
  choice:'team-window',from:6,to:10};
+const firstFrozen=await verifyLiveIntervalAcceptance(firstGoal,live(6,'goal',0,0),{at});
+assert.deepEqual(firstFrozen.entryBaseline,{home:0,away:0});
+assert.equal(firstFrozen.entryClockMinute,6);
+assert.equal(firstFrozen.target,1,'The match-wide first goal must not become first goal since purchase');
+const secondFrozen=await verifyLiveIntervalAcceptance({...firstGoal,target:2},
+ live(6,'goal',1,0),{at});
+assert.deepEqual(secondFrozen.entryBaseline,{home:1,away:0});
+assert.equal(secondFrozen.target,2);
+
 assert.equal(assessInterval(firstGoal,{clock:0,goalTotal:0}),'OPEN');
 assert.equal(assessInterval(firstGoal,{clock:6,goalTotal:0}),'OPEN');
 assert.equal(assessInterval(firstGoal,{clock:2,goalTotal:1}),'DECIDED');
