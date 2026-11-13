@@ -375,7 +375,7 @@ ledgerRouter.get(
 
     // Pagination is opt-in: preserve existing API consumers, but never
     // serialize all 300+ odds boards for a browser showing its first screen.
-    const paged=req.query.limit!==undefined;
+    const paged=String(req.query.page??'')==='1';
     const limit=paged?Math.min(60,Math.max(1,Math.floor(Number(req.query.limit)||24))):allRows.length;
     const offset=paged?Math.min(10000,Math.max(0,Math.floor(Number(req.query.offset)||0))):0;
     const rows=paged?allRows.slice(offset,offset+limit):allRows;
