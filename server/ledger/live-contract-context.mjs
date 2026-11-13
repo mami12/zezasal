@@ -94,7 +94,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       status:400,code:'MARKET_DECIDED'});
  }
  if(live&&(contract.kind==='race'||contract.kind==='sequence')){
-  if(contract.event==='card'&&!primaryCards){
+  if(contract.event==='card'&&!primaryCards&&!quoteAnchoredRace){
    const observed=time(cardSnapshot?.observed_at);
    const confirmed=time(cardSnapshot?.confirmed_at);
    const through=cardSnapshot?.through_minute==null?null:Number(cardSnapshot.through_minute);
