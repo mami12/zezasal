@@ -172,7 +172,12 @@ export default function MatchDetail() {
         if(String(res.data?.id)!==id)throw new Error('MATCH_RESPONSE_MISMATCH');
         setRequestError(null);
         acceptMatches([res.data]);
-        setMatch(res.data);
+        // Later market pages intentionally omit expensive incident enrichment.
+        // Retain the confirmed first-page supplemental timeline on the same
+        // fixture rather than making player/card/foul details vanish on scroll.
+        setMatch(previous=>offset>0&&previous?.id===res.data.id
+          ?{...res.data,supplementalEvents:previous.supplementalEvents??res.data.supplementalEvents}
+          :res.data);
         setCategoryTotals(res.data.marketCategories??{});
         if(requestedCategory==='Popular'&&res.data.marketCategories?.Popular===0){
           const next=CATEGORY_ORDER.find(category=>res.data.marketCategories[category]>0);
