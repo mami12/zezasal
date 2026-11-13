@@ -175,7 +175,7 @@ export default function MatchDetail() {
         // Later market pages intentionally omit expensive incident enrichment.
         // Retain the confirmed first-page supplemental timeline on the same
         // fixture rather than making player/card/foul details vanish on scroll.
-        setMatch(previous=>offset>0&&previous?.id===res.data.id
+        setMatch(previous=>offset>0&&previous!==null&&previous.id===res.data.id
           ?{...res.data,supplementalEvents:previous.supplementalEvents??res.data.supplementalEvents}
           :res.data);
         setCategoryTotals(res.data.marketCategories??{});
