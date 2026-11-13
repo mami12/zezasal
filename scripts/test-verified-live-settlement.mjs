@@ -88,6 +88,42 @@ const timedRow={...row,live_contract:timed,proposed_status:'WON',
  provider_frame:timedFrame};
 assert.equal(verifiedSecondLiveDecision(timedRow,{now}),null,
  'A past goal inside the quoted window is not proof of an event after LIVE purchase');
+// A goal ordinal is global to the fixture. A double-poll single-goal
+// transition from target-1 to target proves the result inside an OPEN minute
+// band; two goals without a chronology must not guess the second scorer.
+const goalInBand={version:1,kind:'nth-time',event:'goal',target:1,
+ choice:'team-window',side:'home',from:6,to:10,
+ entryBaseline:{home:0,away:0},entryClockMinute:6};
+const numberedFrame=(h,a,clock)=>({source:'zizobet',clock,
+ teams:{goal:{home:h,away:a}},counts:{goal:h+a},
+ events:[],coverage:{},ended:false});
+const numberedRow=(c,first,second,expected='WON')=>({
+ ...row,live_contract:c,proposed_status:expected,
+ payload:{contract:c,frame:first,frameAt:row.payload.frameAt},
+ provider_frame:second
+});
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ goalInBand,numberedFrame(1,0,8),numberedFrame(1,0,11)),{now}),'WON',
+ 'The first goal was reported within minute 6-10 before final verification');
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ {...goalInBand,side:'away'},numberedFrame(1,0,8),numberedFrame(1,0,9),'LOST'),{now}),'LOST',
+ 'The other team does not win a verified first-goal interval');
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ {...goalInBand,choice:'none',side:undefined},
+ numberedFrame(1,0,8),numberedFrame(1,0,9),'LOST'),{now}),'LOST',
+ 'Neither loses when the exact Nth goal occurs inside the window');
+const goal2={...goalInBand,target:2,entryBaseline:{home:1,away:0},side:'away'};
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ goal2,numberedFrame(1,1,8),numberedFrame(1,1,9)),{now}),'WON',
+ 'The first match goal is baseline and away scores global goal #2');
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ {...goal2,entryBaseline:{home:0,away:0}},
+ numberedFrame(1,1,8),numberedFrame(1,1,9)),{now}),null,
+ 'Two events between snapshots do not reveal who scored goal #2');
+assert.equal(verifiedSecondLiveDecision(numberedRow(
+ goalInBand,numberedFrame(1,0,11),numberedFrame(1,0,12)),{now}),null,
+ 'A goal first observed after minute 10 is not attributed to minute 6-10');
+
 const player={version:1,kind:'player-goal',event:'goal',playerName:'Alice',choice:true};
 const playerRow={...row,live_contract:player,proposed_status:'WON',
  payload:{contract:player,frame,frameAt:row.payload.frameAt},provider_frame:frame};
