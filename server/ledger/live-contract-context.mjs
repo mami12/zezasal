@@ -54,10 +54,16 @@ export function frozenLiveContract(line,match={},at=Date.now()){
   return null;
  }
  const live=String(match.service??'').toUpperCase()==='LIVE';
+ // Set only by resolveSelection AFTER matching an active, fresh server-side
+ // Zizobet offer. An explicit race or absolute Nth-goal contract needs
+ // its original provider target, not a new pre-debit SQL timeline query.
+ const nativeActive=live&&line.nativeQuoteVerified===true;
+ const quoteAnchoredRace=nativeActive&&contract.kind==='race';
+ const quoteAnchoredOrdinal=nativeActive&&contract.kind==='nth-time';
 
  const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
   contract.event==='card'?verifiedCards:null;
- if(live&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
+ if(live&&!quoteAnchoredRace&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
   const observedAt=time(match.score_at);
   const clockAt=time(match.clock_at);
   if((contract.event==='goal'&&(goals.home==null||goals.away==null||observedAt===null||
@@ -101,7 +107,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       through<Math.floor(clock))
      throw fail('Mungojnë numëruesit e konfirmuar të kartonëve LIVE.');
   }
-  if(current?.home==null||current?.away==null)
+  if((current?.home==null||current?.away==null)&&!quoteAnchoredRace)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
  }
  if(live&&(contract.kind==='half-total'||contract.kind==='half-exact-count'||contract.kind==='half-parity'||
@@ -164,13 +170,14 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  if(contract.kind==='sequence'&&current?.home!=null&&current?.away!=null&&
     contract.target<=current.home+current.away)throw fail('Goli/korneri i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='nth-time'&&current?.home!=null&&current?.away!=null&&
-    contract.target<=current.home+current.away)throw fail('Goli i kërkuar ka ndodhur tashmë.');
+    contract.target<=current.home+current.away&&!quoteAnchoredOrdinal)
+    throw fail('Goli i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='race'&&current?.home!=null&&current?.away!=null&&
     (current.home>=contract.target||current.away>=contract.target))throw fail('Gara e golave/kornerave ka përfunduar.');
  // An interval being in progress is not, by itself, a settled market.
  // The bet resolver checks verified primary incidents before acceptance and
  // rejects only completed propositions or missing required history.
- if(live&&['window-total','interval-leader','interval-result','window','nth-time'].includes(contract.kind)){
+ if(live&&!quoteAnchoredOrdinal&&['window-total','interval-leader','interval-result','window','nth-time'].includes(contract.kind)){
   const clockAt=time(match.clock_at);
   if(clock===null||clockAt===null||at-clockAt>45000||clockAt-at>5000)
    throw fail('Mungon ora live e freskët për intervalin.');
