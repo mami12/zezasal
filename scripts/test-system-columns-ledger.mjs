@@ -55,7 +55,9 @@ const resolve = async pick => {
   if (pick.outcomeId === failResolution?.id) throw Object.assign(new Error(failResolution.message), { status: 400, code: failResolution.code });
   const line = source.get(pick.outcomeId); assert.ok(line, 'test fixture selection exists'); return { ...line };
 };
-const place = createColumnsPlacer({ database, runQuery, getTicket, resolve });
+// Historical system batches remain readable, refundable and settleable.
+// Exercise the old funded-column math only inside this isolated integration.
+const place = createColumnsPlacer({ database, runQuery, getTicket, resolve,allowHistoricalSystemAlternatives:true });
 const selections = [...source.keys()].slice(0, 3).map(outcomeId => ({ outcomeId, oddsAtPlacement: source.get(outcomeId).price }));
 const input = user => ({ user, totalStake: 100, selections, clientRequestId: randomUUID() });
 try {
@@ -171,7 +173,7 @@ try {
       return client.query(text, params);
     } };
   } };
-  const failingPlace = createColumnsPlacer({ database: failingDatabase, runQuery, getTicket, resolve });
+  const failingPlace = createColumnsPlacer({ database: failingDatabase, runQuery, getTicket, resolve,allowHistoricalSystemAlternatives:true });
   const beforeTickets = await count('app_ticket'), beforeTransactions = await count('app_transaction'), beforeReports = await count('app_manager_commission'), beforeManager = await balance(managerId);
   await assert.rejects(failingPlace(input(failingUser)), /injected/);
   assert.equal(await count('app_ticket'), beforeTickets); assert.equal(await count('app_transaction'), beforeTransactions);
