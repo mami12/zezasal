@@ -28,7 +28,7 @@ export function isRetiredPlayerOfferMarket(market){
  const individual=(
    !!String(market?.player??market?.pl??market?.nativeParameters?.pl??'').trim()||
    /\b(?:player|goalscorer|goal scorer|goalkeeper|goal keeper|scorer)\b/.test(title)||
-   /^(?!\d)(?!total\b)[\p{L}][\p{L}'., -]{1,95}\s+(?:to\s+|\-\s+|will\s+)/u.test(title)
+   /^(?!\d)(?!total\b)[\p{L}][\p{L}'., -]{1,95}\s+(?:to\s+|-\s+|will\s+)/u.test(title)
  );
  if(!individual)return false;
 
