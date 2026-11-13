@@ -49,6 +49,24 @@ const legacyHandicapResult=(line,result)=>{
 };
 
 const round = (n) => Number(Number(n).toFixed(2));
+/**
+ * Never downgrade a correlated provider offer to one familiar constituent.
+ * An unknown "A AND B" is PENDING unless its entire compound contract
+ * is parsed by a specific settlement grader. In particular, reading
+ * "Double Chance And Total Goals" as plain DC paid BOTH 12/Over and 12/Under.
+ */
+export function unverifiedCompositeLine(line={},result={}){
+ const name=String(line.market_name??line.marketName??'').trim();
+ if(!/\b(?:and|with)\b|[&+]/i.test(name))return false;
+ if(!/\b(?:result|winner|goals?|total|double chance|both teams?|btts|1x2|corners?|cards?|shots?|fouls?|score)\b/i.test(name))
+  return false;
+ if(isHalfComboFamily(line)||isResultTotalMarket(name)||isTotalBttsMarket(name)||
+    isFirstHalfResultBtts(name)||isResultBttsMarket(name)||isDcBttsMarket(name))
+  return false;
+ // Named team totals are one condition, not two unrelated outcomes.
+ if(goalTotalContract(line,result)||cornerTotalContract(line,result))return false;
+ return true;
+}
 /** Keyset round-robin for PENDING work, not OFFSET (which shifts as tickets
  * settle). An old unresolved line must not monopolize every short pass.
  * The UUID primary key gives a deterministic total order across restarts.
@@ -158,6 +176,9 @@ export function hasRequiredSettlementEvidence(line, result) {
   if(line?.accepted_contract?.settlementHold)return false;
   line=withFrozenPeriod(line);
   if (!result||scoreValue(result.home_score)===null||scoreValue(result.away_score)===null)return false;
+  if(!Array.isArray(line.builder_legs)&&unverifiedCompositeLine(line,result))return false;
+  if(line.live_contract?.kind==='half-combo')
+   return gradeHalfCombination(line.live_contract,result)!==null;
   // Explicit team/half propositions use only verified HT and FT scoreboards.
   // Do not send these through the old general event/total fallback.
   // Exact team/period goal quotes overlap the broad historical scoring
@@ -242,6 +263,11 @@ export function hasRequiredSettlementEvidence(line, result) {
 export function gradeLine(line, result) {
   if(line?.accepted_contract?.settlementHold)return null;
   line=withFrozenPeriod(line);
+  // Never score a two-condition native quote by matching only the first
+  // recognized word. A provider-aligned unknown contract remains PENDING.
+  if(!Array.isArray(line.builder_legs)&&unverifiedCompositeLine(line,result))return null;
+  if(!Array.isArray(line.builder_legs)&&line.live_contract?.kind==='half-combo')
+    return gradeHalfCombination(line.live_contract,result);
   if(!Array.isArray(line.builder_legs)&&isHalfExactMarketFamily(line))return null;
   if(!Array.isArray(line.builder_legs)&&isHandicapMarket(line))
     return legacyHandicapResult(line,result);
