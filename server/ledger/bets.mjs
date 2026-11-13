@@ -325,7 +325,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       const currentHome=match.home_score==null?null:Number(match.home_score);
       const currentAway=match.away_score==null?null:Number(match.away_score);
       const stamp=Date.parse(match.score_at??match.scoreAt??'');
-      if(currentHome!==baseHome||currentAway!==baseAway||
+      if((currentHome!==baseHome||currentAway!==baseAway||
          !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)&&
          !holdNative('NATIVE_REST_SCORE_UNVERIFIED'))
         throw Object.assign(badRequest('Rezultati ka ndryshuar. Rifresko koeficientin për këtë treg.'),{
@@ -477,7 +477,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
       const stamp=Date.parse(match.score_at??'');
       const h=match.home_score==null?null:Number(match.home_score);
       const a=match.away_score==null?null:Number(match.away_score);
-      if(!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0||
+      if((!Number.isSafeInteger(h)||h<0||!Number.isSafeInteger(a)||a<0||
          !Number.isFinite(stamp)||Date.now()-stamp>90000||stamp-Date.now()>5000)&&
          !holdNative('NATIVE_HANDICAP_BASELINE_UNVERIFIED'))
         throw Object.assign(badRequest('Rezultati LIVE nuk është i konfirmuar për handikapin.'),{
