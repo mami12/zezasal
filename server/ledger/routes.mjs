@@ -363,22 +363,27 @@ ledgerRouter.get(
     const service = status === 'LIVE' ? 'LIVE' : status === 'PREMATCH' ? 'PREMATCH' : null;
 
     const selected = await publishedBoard();
-    const rows = filterPublishedRows(filterFixtureRowsByDay(selected.rows,req.query.day),{
+    const fixtureIds=req.query.favoriteIds===undefined?null:new Set(
+      String(req.query.favoriteIds).split(',').filter(value=>/^\d{1,16}$/.test(value)).slice(0,100));
+    const allRows = filterPublishedRows(filterFixtureRowsByDay(selected.rows,req.query.day),{
       service,
       league: categoryId ? String(categoryId) : null,
       tournamentId: tournamentId ? String(tournamentId) : null,
       sportId: sportId ? String(sportId) : null,
       q: q ? String(q) : null,
-    });
+    }).filter(row=>!fixtureIds||fixtureIds.has(String(row.match_id)));
 
-    // A multi-fixture list must never pull full odds for every game.
-    // All markets are delivered only by /matches/:id on explicit demand.
-    const board = true;
-    const serialized = await withOdds(rows,Date.now(),{board});
-    const matches = (board?toClientMatches(projectBoardMatches(serialized)):toClientMatches(serialized));
-    // Board cards show base odds; build the complete automatic menu when a
-    // visitor opens /matches/:id rather than sending it for 500 matches per poll.
-    res.json(!board&&ledger.isLedgerReady() ? await builders.decorateMatches(matches,{includeAutomatic:false}) : matches);
+    // Pagination is opt-in: preserve existing API consumers, but never
+    // serialize all 300+ odds boards for a browser showing its first screen.
+    const paged=req.query.limit!==undefined;
+    const limit=paged?Math.min(60,Math.max(1,Math.floor(Number(req.query.limit)||24))):allRows.length;
+    const offset=paged?Math.min(10000,Math.max(0,Math.floor(Number(req.query.offset)||0))):0;
+    const rows=paged?allRows.slice(offset,offset+limit):allRows;
+    const serialized = await withOdds(rows,Date.now(),{board:true});
+    const matches=toClientMatches(projectBoardMatches(serialized));
+    if(paged)return res.json({items:matches,total:allRows.length,
+      nextOffset:offset+matches.length,hasMore:offset+matches.length<allRows.length});
+    return res.json(matches);
   }),
 );
 
@@ -433,7 +438,12 @@ ledgerRouter.get(
     if (ledger.isLedgerReady()) await builders.decorateMatches([match]);
     decoratedAt=Date.now();
     const category=CATEGORIES.includes(req.query.category)?req.query.category:'all';
-    return res.json({...detailProjection(match,category),fullMarketsReady:req.app.locals.matchMarketsReady?.(matchId)??true});
+    const page=req.query.marketLimit===undefined?undefined:{
+      limit:Math.min(80,Math.max(1,Math.floor(Number(req.query.marketLimit)||40))),
+      offset:Math.min(10000,Math.max(0,Math.floor(Number(req.query.marketOffset)||0))),
+      search:String(req.query.q??'').trim().slice(0,120),
+    };
+    return res.json({...detailProjection(match,category,page),fullMarketsReady:req.app.locals.matchMarketsReady?.(matchId)??true});
   }),
 );
 
