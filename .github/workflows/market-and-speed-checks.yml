@@ -83,6 +83,9 @@ jobs:
       - name: Native Zizobet LIVE offers accept exact races numbered events and future minute bands
         if: always()
         run: node scripts/test-native-quoted-event-acceptance.mjs
+      - name: Native Zizobet quote placement, SQL review hold and player interval combo regression
+        if: always()
+        run: node scripts/test-native-placement-and-review.mjs
       - name: Two independently verified LIVE payout decisions
         if: always()
         run: node scripts/test-verified-live-settlement.mjs
