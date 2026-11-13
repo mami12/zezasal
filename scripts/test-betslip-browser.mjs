@@ -12,6 +12,7 @@ const root = fileURLToPath(new URL('../web', import.meta.url));
 const fixture = `<!doctype html><html><body><div id="root"></div><script type="module">
 import React from '/src/../node_modules/.vite/deps/react.js';
 import {createRoot} from '/src/../node_modules/.vite/deps/react-dom_client.js';
+import {MemoryRouter} from 'react-router-dom';
 import {BetslipProvider,useBetslip} from '/src/context/BetslipContext.tsx';
 import {LanguageProvider} from '/src/context/LanguageContext.tsx';
 import {AuthProvider} from '/src/context/AuthContext.tsx';
@@ -32,9 +33,9 @@ function BuilderButtonFixture(){
   window.builderQuote=quote;window.setBuilderQuote=setQuote;
   return React.createElement('div',{id:'fixture-combo'},React.createElement(OddsButton,quote));
 }
-createRoot(document.getElementById('root')).render(React.createElement(LanguageProvider,null,
+createRoot(document.getElementById('root')).render(React.createElement(MemoryRouter,null,React.createElement(LanguageProvider,null,
   React.createElement(AuthProvider,null,React.createElement(BetslipProvider,null,
-    React.createElement(LiveFeedProvider,null,React.createElement(Probe),React.createElement(BuilderButtonFixture),React.createElement('span',{id:'fixture-clock'},React.createElement(LiveMatchTime,{minute:12,second:10,seconds:true})),React.createElement(Betslip))))));
+    React.createElement(LiveFeedProvider,null,React.createElement(Probe),React.createElement(BuilderButtonFixture),React.createElement('span',{id:'fixture-clock'},React.createElement(LiveMatchTime,{minute:12,second:10,seconds:true})),React.createElement(Betslip)))))));
 </script></body></html>`;
 // Resolve React through Vite's dependency optimizer rather than a fixed cache filename.
 const html = fixture.replace("'/src/../node_modules/.vite/deps/react.js'", "'react'")
@@ -67,7 +68,7 @@ const makeTickets = body => {
 try {
   vite = await createServer({ root, configFile: false, plugins: [(await import('@vitejs/plugin-react')).default()],
     server: { middlewareMode: true, hmr: false, fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] } },
-    appType: 'custom', optimizeDeps: { include: ['react', 'react-dom/client', 'axios', 'lucide-react'] },
+    appType: 'custom', optimizeDeps: { include: ['react', 'react-dom/client', 'react-router-dom', 'axios', 'lucide-react'] },
   });
   const app = express();
   app.use(express.json());
