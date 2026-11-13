@@ -60,10 +60,14 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  const nativeActive=live&&line.nativeQuoteVerified===true;
  const quoteAnchoredRace=nativeActive&&contract.kind==='race';
  const quoteAnchoredOrdinal=nativeActive&&contract.kind==='nth-time';
+ // Numbered First/Next #2/#3 offers use the absolute match ordinal.
+ // Bare "Next Goal" is different: its target requires the CURRENT score.
+ const explicitSequence=/^(?:next\\s+(?:goal|corner|card|booking)\\s+\\d{1,3}(?:st|nd|rd|th)?|(?:(?:who|which team)\\s+(?:scores|takes|wins)\\s+(?:the\\s+)?)?(?:first|second|third|\\d{1,3}(?:st|nd|rd|th)?)\\s+(?:goal|corner|card|booking)|(?:(?:who|which team)\\s+(?:scores|takes|wins)\\s+(?:the\\s+)?)?(?:goal|corner|card|booking)\\s+\\d{1,3})\\b/i.test(name);
+ const quoteAnchoredSequence=nativeActive&&contract.kind==='sequence'&&explicitSequence;
 
  const current=contract.event==='goal'?goals:contract.event==='corner'?corners:
   contract.event==='card'?verifiedCards:null;
- if(live&&!quoteAnchoredRace&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
+ if(live&&!quoteAnchoredRace&&!quoteAnchoredSequence&&(contract.kind==='sequence'||contract.kind==='race'||contract.kind==='window')){
   const observedAt=time(match.score_at);
   const clockAt=time(match.clock_at);
   if((contract.event==='goal'&&(goals.home==null||goals.away==null||observedAt===null||
@@ -94,7 +98,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       status:400,code:'MARKET_DECIDED'});
  }
  if(live&&(contract.kind==='race'||contract.kind==='sequence')){
-  if(contract.event==='card'&&!primaryCards&&!quoteAnchoredRace){
+  if(contract.event==='card'&&!primaryCards&&!quoteAnchoredRace&&!quoteAnchoredSequence){
    const observed=time(cardSnapshot?.observed_at);
    const confirmed=time(cardSnapshot?.confirmed_at);
    const through=cardSnapshot?.through_minute==null?null:Number(cardSnapshot.through_minute);
@@ -107,7 +111,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
       through<Math.floor(clock))
      throw fail('Mungojnë numëruesit e konfirmuar të kartonëve LIVE.');
   }
-  if((current?.home==null||current?.away==null)&&!quoteAnchoredRace)
+  if((current?.home==null||current?.away==null)&&!quoteAnchoredRace&&!quoteAnchoredSequence)
    throw fail('Mungojnë numëruesit e konfirmuar të garës LIVE.');
  }
  if(live&&(contract.kind==='half-total'||contract.kind==='half-exact-count'||contract.kind==='half-parity'||
@@ -168,7 +172,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
     throw fail('Ngjarja e parë e pjesës së parë ka ndodhur tashmë.');
  }
  if(contract.kind==='sequence'&&current?.home!=null&&current?.away!=null&&
-    contract.target<=current.home+current.away)throw fail('Goli/korneri i kërkuar ka ndodhur tashmë.');
+    contract.target<=current.home+current.away&&!quoteAnchoredSequence)throw fail('Goli/korneri i kërkuar ka ndodhur tashmë.');
  if(contract.kind==='nth-time'&&current?.home!=null&&current?.away!=null&&
     contract.target<=current.home+current.away&&!quoteAnchoredOrdinal)
     throw fail('Goli i kërkuar ka ndodhur tashmë.');
@@ -192,7 +196,7 @@ export function frozenLiveContract(line,match={},at=Date.now()){
  // Live "Next Goal" needs *exactly* the current confirmed cumulative count.
  // Never infer it from the displayed odds or the browser's score.
  if(contract.kind==='sequence'&&/next/i.test(name)&&
-    (current?.home==null||current?.away==null))throw fail('Mungon numri i konfirmuar i golave/kornerave.');
+    (current?.home==null||current?.away==null)&&!quoteAnchoredSequence)throw fail('Mungon numri i konfirmuar i golave/kornerave.');
  return (contract.kind==='sequence'||contract.kind==='race')&&current?.home!=null&&current?.away!=null
   ?{...contract,baseline:{home:current.home,away:current.away}}:contract;
 }
