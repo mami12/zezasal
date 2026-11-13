@@ -68,7 +68,7 @@ try{
  const second=await settleMatch(matchId);
  assert.equal(second.settled,0,'Repeated settlement must not credit a ticket twice');
  assert.equal(Number((await db.query('select balance from app_user where id=$1',[userId])).rows[0].balance),722);
- assert.equal((await db.query("select count(*) as n from app_transaction where user_id=$1 and type='BET_WON'",[userId])).rows[0].n,2);
+ assert.equal(Number((await db.query("select count(*) as n from app_transaction where user_id=$1 and type='BET_WON'",[userId])).rows[0].n),2);
  console.log('PASS full isolated SQL settlement and payout: 0-1 Matchbet two tickets + DC complementary outcomes, no replay, unknown PENDING.');
 }finally{
  pool.query=original.query;pool.connect=original.connect;
