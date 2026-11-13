@@ -76,7 +76,9 @@ jobs:
         run: node scripts/test-half-combinations.mjs
       - name: Financial invariant - composite markets and historical review recovery
         if: always()
-        run: node scripts/test-composite-settlement-invariants.mjs
+        run: |
+          node scripts/test-composite-settlement-invariants.mjs
+          node scripts/test-composite-settlement-money-flow.mjs
       - name: Market 04 - player goal specials
         if: always()
         run: node scripts/test-player-goal-specials.mjs
