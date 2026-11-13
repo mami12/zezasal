@@ -165,7 +165,9 @@ jobs:
         run: node scripts/test-selection-market.mjs && node scripts/test-no-duplicate-market-columns.mjs && node scripts/test-system-columns.mjs && node scripts/test-betslip-columns.mjs
       - name: Mobile HTTP browser financial request UUID fallback
         if: always()
-        run: node scripts/test-browser-request-id.mjs
+        run: |
+          node scripts/test-browser-request-id.mjs
+          node scripts/test-browser-uuid-compat.mjs
       - name: Supplemental event and actor rotation archive
         if: always()
         run: node scripts/test-supplemental-incidents.mjs
