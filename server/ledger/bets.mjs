@@ -93,11 +93,14 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
   const match = await loadMatch(matchId,executor);
   if (!match) throw badRequest('Ndeshja nuk është më e disponueshme.');
   if(isSyntheticFootballMatch(match))throw Object.assign(badRequest('Kjo ndeshje virtuale nuk ofrohet.'),{code:'MATCH_NOT_OFFERED',outcomeId:selection.outcomeId});
-  if (match.listing_stale === true || match.has_open_odds === false) throw Object.assign(
-    badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.'), { code: 'SELECTION_UNAVAILABLE', outcomeId: selection.outcomeId });
-  if (match.active === false || phaseFromStatus(match.feed_status) === 'FT' || ['ended','finished','cancelled'].includes(String(match.status ?? '').toLowerCase())) {
-    throw badRequest('Ndeshja ka përfunduar ose është anuluar.');
-  }
+  // Zizobet's match-wide suspended flag is an authoritative provider
+  // refusal. Local listing/clock/FT heuristics are not native market status.
+  if(match.has_open_odds===false)throw Object.assign(
+    badRequest('Kuota për këtë zgjedhje nuk është më e disponueshme.'),
+    {code:'SELECTION_UNAVAILABLE',outcomeId:selection.outcomeId});
+  const internallyClosedMatch=match.listing_stale===true||match.active===false||
+    phaseFromStatus(match.feed_status)==='FT'||
+    ['ended','finished','cancelled'].includes(String(match.status??'').toLowerCase());
 
   const quotedOffers = await loadOdds(matchId,executor);
   const selectedRow = quotedOffers.find(
@@ -123,6 +126,8 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     settlementHold??=reason;
     return true;
   };
+  if(!nativeQuoteVerified&&internallyClosedMatch)
+    throw badRequest('Ndeshja ka përfunduar ose është anuluar.');
   // Zizobet itself decides which native markets are offered. A local
   // category/name exclusion is not a provider suspension.
   if(!nativeQuoteVerified&&isExcludedOfferMarket(row))
