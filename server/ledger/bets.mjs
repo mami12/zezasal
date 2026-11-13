@@ -23,7 +23,7 @@ import { parseBuilderId, findLeg, listAvailableTemplates } from './bet-builders.
 import { multipliedComboPrice, isSameGameComboLine } from './automatic-combos.mjs';
 import { liveRiskSettings } from '../live-risk-settings.mjs';
 import { isDecidedLiveOutcome, isYbetsNativeOffer } from './decided-markets.mjs';
-import {isExcludedOfferMarket} from '../market-policy.mjs';
+import {isExcludedOfferMarket,isRetiredPlayerOfferMarket} from '../market-policy.mjs';
 import {assertMarketEnabled} from './market-catalog-store.mjs';
 import { chargeManagerCommission, refundManagerCommission } from './manager-finance.mjs';
 import { assertPlayerCanBet } from './player-controls.mjs';
@@ -130,7 +130,7 @@ async function resolveSelectionInternal(selection, {executor = query} = {}) {
     throw badRequest('Ndeshja ka përfunduar ose është anuluar.');
   // Zizobet itself decides which native markets are offered. A local
   // category/name exclusion is not a provider suspension.
-  if(!nativeQuoteVerified&&isExcludedOfferMarket(row))
+  if(isRetiredPlayerOfferMarket(row)||(!nativeQuoteVerified&&isExcludedOfferMarket(row)))
     throw Object.assign(badRequest('Ky treg nuk ofrohet.'),{code:'MARKET_NOT_OFFERED',outcomeId:selection.outcomeId});
   await assertMarketEnabled(row,executor,match);
   const nativeOffer=isYbetsNativeOffer(row,match);
