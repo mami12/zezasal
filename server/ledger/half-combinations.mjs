@@ -72,7 +72,7 @@ const names={
 };
 export function isHalfComboFamily(line){
  const name=stripLine(fold(line?.market_name??line?.marketName??line?.name));
- const rest=name.replace(/^(?:(?:1st|first|2nd|second) half|full time|match)\s*[-:.\s]*/,'');
+ const rest=name.replace(/^(?:(?:1st|first|2nd|second) half|full time|match)\b\s*[-:.\s]*/,'');
  return Object.values(names).some(regex=>regex.test(rest));
 }
 export function parseHalfCombination(line,teams={}){
@@ -82,7 +82,7 @@ export function parseHalfCombination(line,teams={}){
  const match=original.match(/^(1st|first|2nd|second) half\s*[-:.]?\s*(.+)$/);
  let half=0,name=original;
  if(match){half=/^(?:1st|first)$/.test(match[1])?1:2;name=match[2];}
- else name=name.replace(/^(?:full time|match)\s*[-:.]?\s*/,'');
+ else name=name.replace(/^(?:full time|match)\b\s*[-:.]?\s*/,'');
  const explicit=Number(line?.period??0);
  if(!Number.isSafeInteger(explicit)||![0,1,2].includes(explicit)||
     (half===0&&explicit!==0)||(half!==0&&explicit!==0&&explicit!==half))return null;
