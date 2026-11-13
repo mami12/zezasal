@@ -41,7 +41,11 @@ const millis=value=>{
 };
 export function primaryLiveDecision(contract,frame){
  if(!contract||!frame||frame.source!=='zizobet')return null;
- const timeline=gradeLiveContract(contract,frame,{ended:frame.ended===true});
+ // A LIVE timed purchase concerns events AFTER its frozen baseline, not
+ // earlier events in the same named minute band. Only the delta can decide
+ // an irreversible timed outcome from raw primary frames.
+ const timed=['window','window-total'].includes(contract.kind)&&contract.entryBaseline!=null;
+ const timeline=timed?null:gradeLiveContract(contract,frame,{ended:frame.ended===true});
  const delta=gradeFromAcceptedCounters(contract,frame);
  if(timeline&&delta&&timeline!==delta)return null;
  const decision=timeline??delta;
@@ -95,11 +99,18 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  // may authorize a financial write. Partial lists cannot choose the winner.
  const firstDelta=gradeFromAcceptedCounters(contract,oldFrame);
  const secondDelta=gradeFromAcceptedCounters(contract,current);
- if(!firstDelta||firstDelta!==secondDelta||
-    !['WON','LOST'].includes(firstDelta))return null;
+ if(!firstDelta||!['WON','LOST'].includes(firstDelta))return null;
+ // The interval may end between two provider observations. If an earlier
+ // in-window snapshot already proved an irreversible event, the second
+ // observation still confirms it when both team totals are unchanged.
+ // Never infer which minute a NEW post-window delta belongs to.
+ const crossedTimedEnd=timed&&Number(current.clock)>Number(contract.to);
+ if(crossedTimedEnd){
+  if(!Number.isFinite(Number(contract.to))||secondDelta!==null)return null;
+ }else if(secondDelta!==firstDelta)return null;
  const firstDecision=primaryLiveDecision(contract,oldFrame);
- const secondDecision=primaryLiveDecision(contract,current);
- return firstDecision===firstDelta&&secondDecision===secondDelta&&
+ const secondDecision=crossedTimedEnd?firstDelta:primaryLiveDecision(contract,current);
+ return firstDecision===firstDelta&&secondDecision===firstDelta&&
     firstDelta===row.proposed_status?firstDelta:null;
 }
 
