@@ -59,7 +59,8 @@ export function verifiedSecondLiveDecision(row,{now=Date.now()}={}){
  const old=obj(row.payload),contract=obj(row.live_contract),current=obj(row.provider_frame);
  const oldFrame=old?.frame;
  if(!contract||!oldFrame||!current||!old?.contract||
-    JSON.stringify(contract)!==JSON.stringify(old.contract))return null;
+    JSON.stringify(contract)!==JSON.stringify(old.contract)||
+    oldFrame.source!=='zizobet'||current.source!=='zizobet')return null;
  // Prove ONLY irreversible outcomes by comparing accepted counters with
  // TWO independent primary observations. Sequence/race uses whole-match
  // counters. An interval uses its own purchase baseline and must still be
