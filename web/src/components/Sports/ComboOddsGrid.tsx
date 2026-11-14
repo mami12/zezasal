@@ -55,65 +55,13 @@ function visibleChoice(market: Market, outcome: Outcome, match: Match, lang: 'al
   const existingNumbers = (base.match(/\d+(?:[.,]\d+)?/g) ?? []).map(n => n.replace(',', '.'));
   if (existingNumbers.includes(line)) return base;
   const direction = quoteDirection(market, outcome);
-  // If the outcome already says "Under" or "Over", append only the missing
-  // number instead of displaying e.g. "X/1 & Under · Under 2.5".
-  if (direction && new RegExp('\\b' + direction + '\\s*
-}
-
-/** Visual grouping only. Keep the original market/outcome/quote intact. */
-export default function ComboOddsGrid({ markets, match }: { markets: Market[]; match: Match }) {
-  const { lang } = useLanguage();
-  const seen = new Set<string>();
-  const choices = markets.flatMap(market => filterDecidedOutcomes(market.outcomes ?? [], market, match)
-    .filter(outcome => {
-      const key = JSON.stringify([market.id, outcome.id]);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).map(outcome => ({ market, outcome, line: quoteLine(market, outcome) })));
-
-  if (!choices.length) return null;
-  const groups = new Map<string, typeof choices>();
-  for (const choice of choices) {
-    const list = groups.get(choice.line) ?? [];
-    list.push(choice);
-    groups.set(choice.line, list);
-  }
-  const sortedGroups = [...groups.entries()].sort(([a], [b]) =>
-    a && b ? Number(a) - Number(b) : a ? -1 : b ? 1 : 0);
-
-  return (
-    <div className="divide-y divide-tertiary/70" data-combo-quote-groups>
-      {sortedGroups.map(([line, entries]) => (
-        <div key={line || 'unquoted'}>
-          {line && (
-            <div data-combo-quoted-line={line}
-              className="flex items-center gap-2 bg-[#354152] px-2.5 py-1.5 text-xs font-semibold text-slate-100">
-              <span>{lang === 'al' ? 'Kufiri' : 'Line'}</span>
-              <span className="rounded-sm bg-[#202a37] px-2 py-0.5 font-mono text-amber-200">{line}</span>
-            </div>
-          )}
-          <div data-combo-odds-grid className="grid grid-cols-2 gap-px bg-tertiary/80 lg:grid-cols-3 2xl:grid-cols-4">
-            {entries.map(({ market, outcome }) => (
-              <div key={JSON.stringify([market.id, outcome.id])}
-                className="min-w-0 bg-[#252e3b] [&_button]:h-full [&_button]:min-h-[44px] [&_button]:w-full [&_button]:rounded-none [&_button]:px-2 [&_button>span:first-child]:line-clamp-none">
-                <OddsButton match={match} market={market} outcome={outcome} isWide showRawLabel
-                  displayLabel={outcome.id.startsWith('BB|') ? undefined : visibleChoice(market, outcome, match, lang)} />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-, 'i').test(base)) {
-    return `${base} ${line}`;
+  if (direction && base.toLowerCase().trim().endsWith(direction.toLowerCase())) {
+    return base + ' ' + line;
   }
   if (direction && /\b(?:over|under|lart|mbi|poshte|poshtë|nen|nën)\b/i.test(base)) {
-    return `${base} · ${line}`;
+    return base + ' · ' + line;
   }
-  return `${base} · ${direction ? direction + ' ' : ''}${line}`;
+  return base + ' · ' + (direction ? direction + ' ' : '') + line;
 }
 
 /** Visual grouping only. Keep the original market/outcome/quote intact. */
