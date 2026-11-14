@@ -1,4 +1,4 @@
-/** Exact contract identity. Display names and translated labels are never IDs. */
+/** Stable market GROUP identity. Quoted lines are alternatives within one provider market key.\n * Never group by translated names or generic marketType: those may describe different contracts. */
 export function selectionMarketIdentity(selection) {
   const outcome = String(selection?.outcomeId ?? '').split('|');
   const market = String(selection?.marketId ?? '').split('|');
@@ -8,8 +8,8 @@ export function selectionMarketIdentity(selection) {
   if (isBuilder && Array.isArray(selection?.builderLegs) && selection.builderLegs.length === 2) {
     const matchId = outcome[0] === 'BB' ? outcome[1] : outcome.length >= 4 ? outcome[0]
       : market[0] === 'BB' ? market[1] : selection.matchId ?? selection.match_id ?? market[0];
-    // Different templates are options of one builder market when their two
-    // source markets match. Outcomes do not identify a market; lines/periods do.
+    // Builder options sharing the same two source market groups are alternatives,
+    // even when one leg quotes a different numeric line.
     const legs = selection.builderLegs.map(leg => leg && typeof leg === 'object' ? selectionMarketIdentity({
       ...leg, matchId:leg.matchId ?? leg.match_id ?? matchId, builderLegs:undefined,
     }) : null);
@@ -22,18 +22,18 @@ export function selectionMarketIdentity(selection) {
     return JSON.stringify([outcome[1], `BB:${outcome[2]}`, '']);
   }
   if (outcome.length >= 4 && outcome[0] && outcome[1]) {
-    return JSON.stringify(outcome.slice(0, 3));
+    return JSON.stringify(outcome.slice(0, 2));
   }
   // The resolver supplies authoritative fields, rather than browser metadata.
   const matchId = selection?.matchId ?? selection?.match_id;
   if (matchId != null && marketKey != null) {
-    return JSON.stringify([String(matchId), String(marketKey), String(selection.line ?? '')]);
+    return JSON.stringify([String(matchId), String(marketKey)]);
   }
   if (market[0] === 'BB' && market.length >= 3 && market[1] && market[2]) {
     return JSON.stringify([market[1], `BB:${market[2]}`, '']);
   }
   if (market.length >= 3 && market[0] && market[1]) {
-    return JSON.stringify(market.slice(0, 3));
+    return JSON.stringify(market.slice(0, 2));
   }
   if (selection?.matchId != null && selection?.marketId) {
     return JSON.stringify([String(selection.matchId), String(selection.marketId), String(selection.marketLine ?? ''), Number(selection.period ?? 0)]);
@@ -41,9 +41,10 @@ export function selectionMarketIdentity(selection) {
   return null;
 }
 
-/** A logical slip may contain ONE outcome per exact market/line/period.
- * Different markets on the SAME match are allowed; different quoted lines
- * remain independent. Clicking another outcome REPLACES the previous one.
+/** A logical slip may contain ONE outcome per match/provider market group.
+ * Quoted lines (e.g. goal totals 1.5, 2.5, 3.5) are alternatives, not
+ * independent picks. Different markets on the SAME match remain compatible.
+ * Clicking another outcome REPLACES the previous one.
  * Historical columns already paid out remain intact in the database.
  */
 export function toggleMarketSelection(previous, selection) {
@@ -70,7 +71,7 @@ export function assertDistinctSelectionMarkets(selections) {
     const identity = selectionMarketIdentity(selection);
     if (identity === null) continue; // The normal resolver rejects unidentified picks.
     if (seen.has(identity)) {
-      throw Object.assign(new Error('Lejohet vetëm një zgjedhje nga i njëjti treg. Hiq zgjedhjen tjetër dhe provo përsëri.'), {
+      throw Object.assign(new Error('Lejohet vetëm një zgjedhje nga i njëjti grup tregu. Hiq zgjedhjen tjetër dhe provo përsëri.'), {
         status: 400, code: 'DUPLICATE_MARKET', outcomeId: selection.outcomeId,
       });
     }
