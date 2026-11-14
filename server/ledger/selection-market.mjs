@@ -36,7 +36,7 @@ export function selectionMarketIdentity(selection) {
     return JSON.stringify(market.slice(0, 2));
   }
   if (selection?.matchId != null && selection?.marketId) {
-    return JSON.stringify([String(selection.matchId), String(selection.marketId), String(selection.marketLine ?? ''), Number(selection.period ?? 0)]);
+    return JSON.stringify([String(selection.matchId), String(selection.marketId)]);
   }
   return null;
 }
