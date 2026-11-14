@@ -22,13 +22,18 @@ The server reconstructs the contract and validates prices, freshness, suspension
 and the persisted combo switch again before any wallet debit. A changed price
 requires acceptance; a browser price is never an authority.
 
-## One outcome per exact market (current policy)
+## One outcome per match/provider market group (current policy)
 
-The current betslip allows **one outcome from each match/market/line**.
+The current betslip allows **one outcome from each provider market group per match**.
 Selecting `X` after `1` in the same 1X2 market **replaces** `1`.
-Selecting Under after Over on the exact same 2.5 total replaces Over.
-Different markets on the same match (for example 1X2 + BTTS, or
-Over 2.5 + Over 3.5) remain distinct source contracts and can be combined.
+Selecting `Under 2.5` after `Over 1.5` or `Over 3.5` in Total Goals
+**replaces** the previous selection: numeric lines of the same market key
+are alternatives, not separate combination legs. The same rule applies
+to corners, cards, player markets, intervals and all other provider groups.
+Different *actual* market keys on the same match (for example 1X2 +
+BTTS, or full-time Total Goals + first-half Total Goals) can still be
+combined. Different matches are independent. Grouping is based on
+source identity, not translated or similar-looking market labels.
 
 Automatic System columns from alternatives of one market are **no longer
 created**. The server rejects such duplicate-market selections across the
