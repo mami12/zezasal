@@ -17,9 +17,9 @@ import {useQuoteExpiry} from '../../hooks/useQuoteExpiry';
 import {latestQuoteDeadline,earliestQuoteDeadline} from '../../utils/quoteValidity';
 import { repairDisplayText } from '../../utils/repairDisplayText';
 
-interface Props { match: Match; market: Market; outcome: Outcome; isWide?: boolean; showRawLabel?: boolean; }
+interface Props { match: Match; market: Market; outcome: Outcome; isWide?: boolean; showRawLabel?: boolean; displayLabel?: string; }
 
-function OddsButton({ match, market, outcome, isWide, showRawLabel = false }: Props) {
+function OddsButton({ match, market, outcome, isWide, showRawLabel = false, displayLabel }: Props) {
   const {isSelected,addSelection,removeSelection}=useOutcomeSelection(outcome.id);
   const { oddsDeltas, lockedOutcomes, riskLockedOutcomes, lockedMarkets, lockedMatches, combosEnabled,feedMode } = useOutcomeFeed(String(match.id),market.id,outcome.id,market.builderLegs);
   const { t, lang } = useLanguage();
@@ -65,9 +65,9 @@ function OddsButton({ match, market, outcome, isWide, showRawLabel = false }: Pr
     currentOdds === null || currentOdds === undefined || !Number.isFinite(currentOdds) || currentOdds <= 1 ||
     (outcome.id.startsWith('BB|') && currentOdds > 1000);
 
-  const label = repairDisplayText((outcome.id.startsWith('BB|')?formatBuilderSelection(market.comboLegs,t):null) ?? (showRawLabel
+  const label = repairDisplayText(displayLabel ?? ((outcome.id.startsWith('BB|')?formatBuilderSelection(market.comboLegs,t):null) ?? (showRawLabel
     ? marketSelectionLabel(String(outcome.name || outcome.code || 'Zgjedhje'), lang, market.name, `${match.homeTeam} vs ${match.awayTeam}`, outcome.code, market.line || market.specifier)
-    : formatOddsButtonLabel(outcome.name, market.name, market.line || market.specifier, t, `${match.homeTeam} vs ${match.awayTeam}`, outcome.code)));
+    : formatOddsButtonLabel(outcome.name, market.name, market.line || market.specifier, t, `${match.homeTeam} vs ${match.awayTeam}`, outcome.code))));
   const scoringTimeLabel = !showRawLabel && /\btime\s+of\s+scoring\b|\bgoal\s+(?:before|after|in|during|until|by|within|between)\b|\b(?:to\s+score|scores?|scoring)\s+(?:before|after|in|during|until|by|within|between)\b/i.test(market.name);
 
   // Compare the displayed price, including synthetic leg products. Unrelated
@@ -144,4 +144,4 @@ function OddsButton({ match, market, outcome, isWide, showRawLabel = false }: Pr
   );
 }
 
-export default memo(OddsButton,(a,b)=>a.market===b.market&&a.outcome===b.outcome&&a.isWide===b.isWide&&a.showRawLabel===b.showRawLabel&&['id','status','homeTeam','awayTeam','homeScore','awayScore','scoreAt','period','currentMinute','isSuspended','corners','cards','shots','shotsOnTarget','fouls'].every(key=>(a.match as any)[key]===(b.match as any)[key]));
+export default memo(OddsButton,(a,b)=>a.market===b.market&&a.outcome===b.outcome&&a.isWide===b.isWide&&a.showRawLabel===b.showRawLabel&&a.displayLabel===b.displayLabel&&['id','status','homeTeam','awayTeam','homeScore','awayScore','scoreAt','period','currentMinute','isSuspended','corners','cards','shots','shotsOnTarget','fouls'].every(key=>(a.match as any)[key]===(b.match as any)[key]));
