@@ -155,7 +155,7 @@ try {
       const identity=value=>{
         const parts=String(value.outcomeId??'').split('|');
         if(parts.length>=4&&parts[0]&&parts[1])
-          return JSON.stringify(parts.slice(0,3));
+          return JSON.stringify(parts.slice(0,2));
         return JSON.stringify([String(value.matchId??''),String(value.marketId??''),
           String(value.marketLine??''),Number(value.period??0)]);
       };
@@ -189,6 +189,21 @@ try {
     'two outcomes of the same builder source contracts must not create independent columns');
   await page.evaluate(()=>window.slip.clearAll());
   await page.waitForFunction(()=>window.slip.selections.length===0);
+
+  // Real provider IDs: different numeric lines in the same market group are
+  // mutually exclusive across all families, and cannot create SYSTEM columns.
+  for (const marketKey of ['gTotal', 'gCorners', 'gCards', 'gGoalsInMinutes', 'gPlayer']) {
+    const first={matchId:'A',outcomeId:`A|${marketKey}|1.5|Over`,
+      marketId:`A|${marketKey}|1.5`,marketName:marketKey,outcomeName:'Over',matchName:'A vs B',odds:2};
+    const second={...first,outcomeId:`A|${marketKey}|3.5|Under`,
+      marketId:`A|${marketKey}|3.5`,outcomeName:'Under'};
+    await add([first,second]);
+    assert.deepEqual((await snapshot()).columns,[[second.outcomeId]],
+      `${marketKey}: only the most recently selected line belongs in the ticket`);
+    await waitType('SINGLE');
+    await page.evaluate(()=>window.slip.clearAll());
+    await page.waitForFunction(()=>window.slip.selections.length===0);
+  }
 
   // Different markets on the SAME match remain valid in one COMBO.
   await add([fixtureSelections[0],fixtureSelections[2]]);
