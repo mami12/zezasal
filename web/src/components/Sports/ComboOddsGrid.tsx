@@ -8,8 +8,8 @@ import OddsButton from './OddsButton';
  * outcome's original label/code. This is display-only: never alter its IDs.
  */
 function quoteLine(market: Market, outcome: Outcome): string {
-  const line = marketLineValue(market).trim().replace(',', '.');
-  if (/^\d+(?:\.\d+)?$/.test(line)) return line;
+  // Individual outcome terms win over the parent market's fallback line.
+  // One provider market can publish several different quoted thresholds.
   for (const value of [outcome.name, outcome.code]) {
     const raw = String(value ?? '');
     const explicit = raw.match(/\b(?:over|under|lart|mbi|poshte|poshtë|nen|nën)\s*(\d+(?:[.,]\d+)?)/i);
@@ -18,7 +18,8 @@ function quoteLine(market: Market, outcome: Outcome): string {
     const compact = raw.match(/(?:[&+]|\s)(?:P_|L_|[+-])\s*(\d+[.,]\d+)\b/i);
     if (compact) return compact[1].replace(',', '.');
   }
-  return '';
+  const line = marketLineValue(market).trim().replace(',', '.');
+  return /^\d+(?:\.\d+)?$/.test(line) ? line : '';
 }
 
 function quoteDirection(market: Market, outcome: Outcome): 'Over' | 'Under' | '' {
@@ -37,6 +38,18 @@ function visibleChoice(market: Market, outcome: Outcome, match: Match, lang: 'al
   const base = marketSelectionLabel(String(outcome.name || outcome.code || ''), lang,
     market.name, `${match.homeTeam} vs ${match.awayTeam}`, outcome.code, market.line || market.specifier);
   const line = quoteLine(market, outcome);
+  // Zizobet-style compact combo terms are represented by P_ (Under)
+  // and L_ (Over). Decode only within an explicitly named total/goal combo.
+  if (/\b(?:total|goals?)\b/i.test(market.name)) {
+    for (const text of [outcome.name, outcome.code]) {
+      const compact = String(text ?? '').match(/^(.+?)\s*[&+]\s*([PL])_\s*(\d+(?:[.,]\d+)?)$/i);
+      if (compact) {
+        const choice = marketSelectionLabel(compact[1].trim(), lang, market.name,
+          `${match.homeTeam} vs ${match.awayTeam}`);
+        return `${choice} · ${compact[2].toUpperCase() === 'L' ? 'Over' : 'Under'} ${compact[3].replace(',', '.')}`;
+      }
+    }
+  }
   if (!line) return base;
   // A correctly translated original offer may already contain its threshold.
   const existingNumbers = (base.match(/\d+(?:[.,]\d+)?/g) ?? []).map(n => n.replace(',', '.'));
