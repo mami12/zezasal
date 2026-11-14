@@ -32,12 +32,18 @@ const btts=market('native-btts','Both Teams to Score and Total Goals',[
  outcome('native-btts','native-btts-yes','Yes And Over 2.5'),
  outcome('native-btts','native-btts-no','No And Over 2.5'),
 ]);
+// The same native combo can quote different O/U lines with only compact
+// selection names. They must be understandable before opening a betslip.
+const compactNative=market('native-compact','Double Chance & Total',[
+ outcome('native-compact','compact-under-1.5','X/1',{code:'X/1&P_1.5'}),
+ outcome('native-compact','compact-over-2.5','X/1',{code:'X/1&L_2.5'}),
+]);
 const unrelated=['a','b'].map(suffix=>market(`provider-${suffix}`,'Result and BTTS',[
  outcome(`provider-${suffix}`,`provider-${suffix}-home`,'Home And Yes'),
 ],{extId:`different-family-${suffix}`}));
 const main=market('result','1X2',[outcome('result','result-1','1'),outcome('result','result-x','X'),outcome('result','result-2','2')],{marketType:'1x2'});
-const fixture={id:'fixture',tournamentId:1,homeTeam:'Home Club',awayTeam:'Away Club',status:'PREMATCH',startTime:'2099-01-01T12:00:00Z',isSuspended:false,markets:[main,...builders,...native,btts,...unrelated]};
-const expectedIds=[...builders,...native,btts,...unrelated].flatMap(m=>m.outcomes.map(o=>o.id)).filter((id,i,a)=>a.indexOf(id)===i);
+const fixture={id:'fixture',tournamentId:1,homeTeam:'Home Club',awayTeam:'Away Club',status:'PREMATCH',startTime:'2099-01-01T12:00:00Z',isSuspended:false,markets:[main,...builders,...native,btts,compactNative,...unrelated]};
+const expectedIds=[...builders,...native,btts,compactNative,...unrelated].flatMap(m=>m.outcomes.map(o=>o.id)).filter((id,i,a)=>a.indexOf(id)===i);
 const app=express(),errors=[],unexpected=[];
 app.get('/app/api/matches/fixture',(_req,res)=>res.json(fixture));
 app.use('/app/api',(req,res)=>{unexpected.push(req.method+' '+req.path);res.status(404).json({});});
@@ -65,6 +71,13 @@ try{
   assert.deepEqual([...metrics.ids].sort(),[...expectedIds].sort(),`${view}/${width}: all original combo contracts exactly once`);
   assert.equal(metrics.overflow,false,`${view}/${width}: no page overflow`);assert.equal(metrics.small,false,`${view}/${width}: touch target`);
   assert.ok(metrics.grids.every(g=>g.columns>=2&&!g.nonButtons),`${view}/${width}: buttons only, horizontal grid`);
+  const compactUnder=await page.$eval('[data-outcome-id="compact-under-1.5"]',b=>b.textContent);
+  const compactOver=await page.$eval('[data-outcome-id="compact-over-2.5"]',b=>b.textContent);
+  assert.match(compactUnder,/X\/1.*Under 1\.5/,`${view}/${width}: visible Under 1.5 beside X/1`);
+  assert.match(compactOver,/X\/1.*Over 2\.5/,`${view}/${width}: visible Over 2.5 beside X/1`);
+  const quoted=await page.$eval('[data-combo-quoted-line]',els=>els.map(el=>el.getAttribute('data-combo-quoted-line')));
+  for (const line of ['1.5','2.5','3.5','4.5']) assert.ok(quoted.includes(line),
+    `${view}/${width}: quoted ${line} has its own visible section`);
   const target='BB|fixture|template-0';await page.click(`[data-outcome-id="${target}"]`);await page.waitForFunction(id=>window.comboSelections?.some(s=>s.outcomeId===id),{},target);
   const picked=await page.evaluate(()=>window.comboSelections[0]);assert.equal(picked.marketId,builders[0].id);assert.equal(picked.odds,3.55);assert.deepEqual(picked.builderLegs,builders[0].builderLegs);
   assert.equal(await page.$eval(`[data-outcome-id="${target}"]`,b=>b.getAttribute('aria-pressed')),'true');
