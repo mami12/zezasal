@@ -23,6 +23,9 @@ const request=picks=>({user,totalStake:100,selections:picks,clientRequestId:rand
 for(const [label,picks] of [
  ['1X2 home and draw',[first,draw,other]],
  ['goal total over and under',[other,{...other,outcomeId:'90001|total|2.5|Under'},otherMatch]],
+ ['goal total different lines',[other,anotherLine,otherMatch]],
+ ['corners different lines',[{outcomeId:'90001|corners|6.5|Over'}, {outcomeId:'90001|corners|8.5|Under'}]],
+ ['cards different lines',[{outcomeId:'90001|cards|2.5|Over'}, {outcomeId:'90001|cards|4.5|Under'}]],
  ['two different players only if same EXACT quoted player market',[first,draw]],
  ['same outcome duplicated',[first,first]],
 ]){
@@ -43,7 +46,8 @@ assert.equal(typeof placeColumns,'function');
 const changed=toggleMarketSelection([first,other,otherMatch],draw);
 assert.deepEqual(changed.map(s=>s.outcomeId),[draw.outcomeId,other.outcomeId,otherMatch.outcomeId]);
 assert.equal(new Set(changed.map(selectionMarketIdentity)).size,changed.length);
-assert.notEqual(selectionMarketIdentity(other),selectionMarketIdentity(anotherLine),
- 'Two independently quoted goal-total lines remain different markets');
+assert.equal(selectionMarketIdentity(other),selectionMarketIdentity(anotherLine),
+ 'All quoted lines of one goal-total group are mutually exclusive');
+assert.deepEqual(toggleMarketSelection([other,otherMatch],anotherLine),[anotherLine,otherMatch]);
 assert.doesNotThrow(()=>new Set([first,other,anotherLine,otherMatch].map(selectionMarketIdentity)));
-console.log('PASS strict columns: 1X2 and O/U duplicates, explicit forged columns, zero wallet/DB calls, correct UI replacement and distinct lines.');
+console.log('PASS strict columns: 1X2, multi-line totals/corners/cards, forged columns, zero wallet/DB calls and UI replacement.');
