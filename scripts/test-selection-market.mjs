@@ -20,11 +20,24 @@ for(const key of ['g6257','gBothScore','gCorrectScore','gGoalTime','gCorners','g
 const over=pick('100|g6379|2.5|Over'),under=pick('100|g6379|2.5|Under');
 const line35=pick('100|g6379|3.5|Under');
 const half1=pick('100|g6379p1|2.5|Under');
-assert.deepEqual(toggleMarketSelection([over,line35,half1],under),[under,line35,half1],
-  'Same total line replaces; distinct line and period remain separate contracts');
-assert.doesNotThrow(()=>assertDistinctSelectionMarkets([under,line35,half1]));
-assert.notEqual(selectionMarketIdentity(over),selectionMarketIdentity(line35));
-assert.notEqual(selectionMarketIdentity(over),selectionMarketIdentity(half1));
+assert.deepEqual(toggleMarketSelection([over,line35,half1],under),[under,half1],
+  'All quoted lines of the same goal-total market replace one another');
+assert.throws(()=>assertDistinctSelectionMarkets([under,line35,half1]),
+  error=>error.code==='DUPLICATE_MARKET');
+assert.equal(selectionMarketIdentity(over),selectionMarketIdentity(line35));
+assert.notEqual(selectionMarketIdentity(over),selectionMarketIdentity(half1),
+  'Distinct first-half market key remains a separate bettable group');
+// The restriction applies to every market family, not just totals.
+for(const key of ['gGoals','gCorners','gCards','gGoalTime','gPlayer','gTeamFouls','gShotsOnTarget']){
+ const low=pick(`100|${key}|1.5|Over`), high=pick(`100|${key}|3.5|Under`);
+ assert.equal(selectionMarketIdentity(low),selectionMarketIdentity(high),`${key}: lines belong to one group`);
+ assert.deepEqual(toggleMarketSelection([low],high),[high],`${key}: replace previous line`);
+ assert.throws(()=>assertDistinctSelectionMarkets([low,high]),
+   error=>error.code==='DUPLICATE_MARKET',`${key}: reject multi-line tickets`);
+}
+// Other fixtures and other actual provider market keys are independent.
+assert.notEqual(selectionMarketIdentity(over),selectionMarketIdentity(pick('101|g6379|2.5|Over')));
+assert.notEqual(selectionMarketIdentity(over),selectionMarketIdentity(pick('100|g6379p1|2.5|Over')));
 // IDs and frozen source contracts, never translated names, drive identity.
 assert.equal(selectionMarketIdentity(over),selectionMarketIdentity({matchId:100,marketKey:'g6379',line:'2.5'}));
 assert.deepEqual(toggleMarketSelection(
@@ -58,10 +71,10 @@ assert.equal(selectionMarketIdentity(yesOver),selectionMarketIdentity(noUnder));
 assert.deepEqual(toggleMarketSelection([yesOver],noUnder),[noUnder],
  'Same two source markets in different builder template cannot create parallel columns');
 const sameIdRepeated=[over,under,over,line35];
-assert.deepEqual(toggleMarketSelection(sameIdRepeated,under),[line35],
- 'Clicking a selected option also cleans up old duplicate-market slip state');
-assert.deepEqual(toggleMarketSelection(sameIdRepeated,pick('100|g6379|2.5|Exact')),[pick('100|g6379|2.5|Exact'),line35],
- 'A new option removes every old duplicate from that market');
+assert.deepEqual(toggleMarketSelection(sameIdRepeated,under),[],
+ 'Clicking a selected option also cleans up duplicate outcomes and lines from old slip state');
+assert.deepEqual(toggleMarketSelection(sameIdRepeated,pick('100|g6379|2.5|Exact')),[pick('100|g6379|2.5|Exact')],
+ 'A new option removes every old line from that market group');
 // Different markets on the same fixture continue to build a normal COMBO.
 const distinct=[
  {outcomeId:'100|1x2||1',matchId:'100',marketId:'100|1x2|',odds:2},
@@ -75,4 +88,4 @@ assert.equal(slip.columns[0].length,3);
 const changed=toggleMarketSelection(distinct,{...distinct[0],outcomeId:'100|1x2||X'});
 assert.equal(buildBetslipColumns(changed).columns.length,1);
 assert.deepEqual(changed.map(v=>v.outcomeId),['100|1x2||X','100|btts||Yes','101|1x2||2']);
-console.log('PASS one choice per market/line across the whole slip, builder aliases, same-fixture different markets, no duplicate columns.');
+console.log('PASS one choice per match/market group across all lines, builder aliases, same-fixture different markets, no duplicate columns.');
