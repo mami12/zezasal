@@ -18,7 +18,7 @@ function quoteLine(market: Market, outcome: Outcome): string {
     const compact = raw.match(/(?:[&+]|\s)(?:P_|L_|[+-])\s*(\d+[.,]\d+)\b/i);
     if (compact) return compact[1].replace(',', '.');
   }
-  const line = marketLineValue(market).trim().replace(',', '.');
+  const line = String(marketLineValue(market) || market.specifier || '').trim().replace(',', '.');
   return /^\d+(?:\.\d+)?$/.test(line) ? line : '';
 }
 
@@ -96,7 +96,7 @@ export default function ComboOddsGrid({ markets, match }: { markets: Market[]; m
               <div key={JSON.stringify([market.id, outcome.id])}
                 className="min-w-0 bg-[#252e3b] [&_button]:h-full [&_button]:min-h-[44px] [&_button]:w-full [&_button]:rounded-none [&_button]:px-2 [&_button>span:first-child]:line-clamp-none">
                 <OddsButton match={match} market={market} outcome={outcome} isWide showRawLabel
-                  displayLabel={visibleChoice(market, outcome, match, lang)} />
+                  displayLabel={outcome.id.startsWith('BB|') ? undefined : visibleChoice(market, outcome, match, lang)} />
               </div>
             ))}
           </div>
